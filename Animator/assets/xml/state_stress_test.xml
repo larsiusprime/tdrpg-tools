@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<data>
+	
+		<definition id="label" color="0xffffff" outline="0x000000"/>
+		<definition id="black" color="0x000000"/>
+		<definition id="input" input="true" color="0x000000"/>
+		
+		<text id="label_change" use_def="label" text="Change Amount by:" width="100" align="left" x="4" y="4"/>
+		<numeric_stepper id="step_change" step="10" value="100" min="0" max="1000" x="5">
+			<anchor x="label_change.right" x-flush="left" y="label_change.top" y-flush="top"/>
+		</numeric_stepper>
+		
+		<button id="btn_add" label="ADD" x="5">
+			<anchor x="step_change.right" x-flush="left" y="step_change.center" y-flush="center"/>
+			<exact_size width="50"/>
+		</button>
+		
+		<button id="btn_remove" label="REMOVE" x="5">
+			<anchor x="btn_add.right" x-flush="left" y="btn_add.center" y-flush="center"/>
+			<exact_size width="50"/>
+		</button>
+		
+		<text id="label_colors" use_def="label" text="# of color sets:" width="100" align="left" y="5">
+			<anchor x="label_change.left" x-flush="left" y="label_change.bottom" y-flush="top"/>
+		</text>
+		<numeric_stepper id="step_colors" step="1" value="1" min="1" max="100" x="5">
+			<anchor x="label_colors.right" x-flush="left" y="label_colors.top" y-flush="top"/>
+		</numeric_stepper>
+		
+		<button id="btn_animator" label="ANIMATOR" x="-5" y="5">
+			<anchor x="right" x-flush="right"/>
+			<exact_size width="100" height="35"/>
+			<param type="String" value="animator"/>
+		</button>
+</data>
