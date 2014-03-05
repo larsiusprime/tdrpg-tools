@@ -219,7 +219,7 @@ class AnimationPreviewSprite extends FlxSpriteGroup
 	}
 	
 	private inline function indexToGridLoc(i:Int):FlxPoint {
-		var pt:FlxPoint = new FlxPoint();
+		var pt:FlxPoint = FlxPoint.get();
 		pt.y = Math.floor(i / _widthInCells);
 		pt.x = i % _widthInCells;
 		return pt;
@@ -332,7 +332,7 @@ class AnimationPreviewSprite extends FlxSpriteGroup
 			}
 		}											//if sheet size is now within bounds, exit loop
 		
-		return new FlxPoint(gridW, gridH);			//return number of cells that will fit within bounds
+		return FlxPoint.get(gridW, gridH);			//return number of cells that will fit within bounds
 	}
 	
 }

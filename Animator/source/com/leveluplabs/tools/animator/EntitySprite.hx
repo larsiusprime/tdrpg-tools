@@ -215,8 +215,6 @@ class EntitySprite extends FlxSprite
 					piece.color = G.skin.list_colors[i];
 				}
 				
-				FlxG.log.addBmp(piece.pixels);
-				
 				//Stamp it on the base
 				stamp(piece);
 				

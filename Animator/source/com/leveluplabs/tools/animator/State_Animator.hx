@@ -695,6 +695,7 @@ class State_Animator extends FlxUIState
 								{
 									trace("selectByColors");
 									swatchSelecter.selectByColors(currSwatch, true);
+									trace("swatchSelecter.selectedSwatch.colorKey = " + swatchSelecter.selectedSwatch.colorKey());
 								}else
 								{
 									trace("unselect");
@@ -1352,7 +1353,7 @@ class State_Animator extends FlxUIState
 	private function showSpriteSheetFrame(i:Int):Void {
 		var box:FlxUI9SliceSprite = cast _ui.getAsset("frame_box");
 		if (frame_rect == null) {
-			frame_rect = new FlxRect(box.x, box.y, box.width, box.height);
+			frame_rect = FlxRect.get(box.x, box.y, box.width, box.height);
 		}
 		
 		if (frame_sprite == null) {
@@ -1394,7 +1395,7 @@ class State_Animator extends FlxUIState
 		entity_click.width = entity_sprite.width;
 		entity_click.height = entity_sprite.height;
 		if (bounds == null) {
-			bounds = new FlxRect();
+			bounds = FlxRect.get();
 		}
 		bounds.x = entity_sprite.x-entity_sprite.width;
 		bounds.y = entity_sprite.y-entity_sprite.height;
@@ -1452,7 +1453,7 @@ class State_Animator extends FlxUIState
 	private function loadAnimation(anim:String):Void {
 		var box:FlxUI9SliceSprite = cast _ui.getAsset("preview_box");
 		if (anim_rect == null) {
-			anim_rect = new FlxRect(box.x,box.y,box.width,box.height);
+			anim_rect = FlxRect.get(box.x,box.y,box.width,box.height);
 		}
 		
 		if (entity_sprite == null) {
