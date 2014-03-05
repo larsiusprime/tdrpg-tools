@@ -39,11 +39,11 @@ import flixel.util.FlxTimer;
 import flixel.util.FlxVector;
 import haxe.xml.Printer;
 #if sys
+	import systools.Dialogs;
 	import sys.FileSystem;
 	import sys.io.File;
 	import sys.io.FileInput;
 	import sys.io.FileOutput;
-	import systools.Dialogs;
 #end
 
 import firetongue.FireTongue;

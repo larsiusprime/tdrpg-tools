@@ -1,5 +1,4 @@
 package com.leveluplabs.tools.animator;
-import com.leveluplabs.tdrpg.MapMarker;
 import flixel.addons.ui.StrIdLabel;
 import flixel.addons.ui.SwatchData;
 import flixel.addons.ui.U;

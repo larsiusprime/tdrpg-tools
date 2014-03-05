@@ -19,7 +19,7 @@
 	<haxelib name="openfl"/>
 	<haxelib name="firetongue"/>
 	<haxelib name="task"/>
-	<haxelib name="tdrpg-haxe"/>
+	<haxelib name="systools"/>
 
 	<haxedef name="FLX_BMP_DEBUG"/>
 	<haxedef name="FLX_NO_DEBUG" unless="debug"/>
