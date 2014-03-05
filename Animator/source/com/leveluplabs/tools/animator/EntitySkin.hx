@@ -167,6 +167,7 @@ class EntitySkin implements IFlxDestroyable
 				if (cf.name == name)
 				{
 					match = cf;
+					trace("Found a match! Match = " + match);
 					break;
 				}
 			}
@@ -177,9 +178,12 @@ class EntitySkin implements IFlxDestroyable
 					list_colors = [];
 				}
 				
+				trace("Match = " + match + " , list_colors = " + list_colors + " , data.colors = " + data.colors);
+				
 				var i:Int = 0;
 				for (cIndex in match.colors) {
 					if (cIndex >= 0) {
+						trace("cIndex = " + cIndex + ", data.colors[" + i + "] = #" + StringTools.hex(data.colors[i]));
 						list_colors[cIndex] = data.colors[i];
 					}
 					i++;

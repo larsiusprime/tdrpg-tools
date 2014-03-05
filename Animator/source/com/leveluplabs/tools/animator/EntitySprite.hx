@@ -59,17 +59,14 @@ class EntitySprite extends FlxSprite
 	}
 
 	public function loadEntityGraphics(G:EntityGraphics):Void {
-		trace("loadEntityGraphics");
 		var s:EntitySkin = cast G.skin;
 		
 		if (G.skin.color_change_mode != EntityGraphics.COLOR_CHANGE_NONE)
 		{
-			trace("load custom");
 			loadCustomColors(G);
 		}
 		else 
 		{
-			trace("load regular");
 			loadGraphic(U.gfx(G.asset_src), true, false, s.width, s.height);
 		}
 		

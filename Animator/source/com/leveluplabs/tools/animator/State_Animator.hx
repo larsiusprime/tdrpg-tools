@@ -130,7 +130,7 @@ class State_Animator extends FlxUIState
 	private var sweetSpotTestOn:Bool = false;
 	
 	private var group_sweet_test:FlxSpriteGroup;
-	private var vector:FlxVector = new FlxVector();
+	private var vector:FlxVector = FlxVector.get();
 	
 	private var colorFeatureToEdit:String = "";
 	
@@ -1157,6 +1157,7 @@ class State_Animator extends FlxUIState
 				}
 			case FlxUIColorSwatchSelecter.CLICK_EVENT:
 				var swatch:SwatchData = cast data;
+				trace("Clicked on swatch(" + swatch + ")");
 				var swatchSelecter:FlxUIColorSwatchSelecter = cast sender;
 				entity_graphics.skin.changeColorFeature(swatchSelecter.id, swatch);
 				refreshSprite();
