@@ -5,7 +5,8 @@ A set of tools for the tdrpg-haxe project
 
 #PathFindingTest
 A simple test of the [many-to-one pathfinding method](http://gamasutra.com/blogs/TylerGlaiel/20121007/178966/Some_experiments_in_pathfinding__AI.php)
-![](http://github.com/larsiusprime/tdrpg-tools/PathFindingTest/screenshot.png)
+
+![](http://raw.github.com/larsiusprime/tdrpg-tools/master/PathFindingTest/screenshot.png)
 
 #Animator (moved!)
 Animator has been officially accepted into the [HaxeFlixel](http://github.com/HaxeFlixel) project @ [flixel-editors](http://github.com/HaxeFlixel/flixel-editors)! 
