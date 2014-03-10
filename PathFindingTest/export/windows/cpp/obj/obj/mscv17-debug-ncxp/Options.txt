@@ -1,2 +1,0 @@
- -Ddesktop="1" -Dflixel="1" -Dhaxe3="1" -Dhaxe_ver="3.1" -Dhxcpp_api_level="310" -Dhxlibc="1" -Dlime="1" -Dlime_native="1" -Dno-compilation="1" -Dno_compilation="1" -Dno_console="1" -Dopenfl="1" -Dopenfl-native="1" -Dopenfl_native="1" -Dtools="1.3.0" -Dwindows="1"
-C:\HaxeToolkit\haxe\lib\hxcpp/3,1,21/
