@@ -4,13 +4,8 @@ tdrpg-tools
 A set of tools for the tdrpg-haxe project
 
 #Animator
-Animator is a tool for viewing, building, and colorizing animations and "skins" for HaxeFlixel-based "Entity" objects.
-It's NOT for creating animations from scratch (like GraphicsGale), but for easily creating the necessary animation & colorization metadata visually.
+Animator has been officially accepted into the [HaxeFlixel](http://github.com/HaxeFlixel) project @ [flixel-editors](http://github.com/HaxeFlixel/flixel-editors)! 
 
-Currently only works on C++ and Neko targets, because it has to write to file system.
+I'm permanently moving Animator over there to avoid accidentally committing to the wrong place. 
 
-Currently has some bugs.
-![Colorized Pixel Sprite](https://raw.github.com/larsiusprime/tdrpg-tools/master/Animator/screenshot_0.png)
-![Colorized HD Sprite](https://raw.github.com/larsiusprime/tdrpg-tools/master/Animator/screenshot_1.png)
-![HD Sprite Stress Test](https://raw.github.com/larsiusprime/tdrpg-tools/master/Animator/screenshot_2.png)
-![Pixel Sprite Stress Test](https://raw.github.com/larsiusprime/tdrpg-tools/master/Animator/screenshot_3.png)
+I'll still keep this repo around for tools that HaxeFlixel isn't interested in.
