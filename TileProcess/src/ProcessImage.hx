@@ -119,7 +119,7 @@ class ProcessImage
 		//Long thing horz
 			copyTiles(input, output, new Point(0, 15), [NplusE(), SplusE()],[mS,mN]);
 			copyTiles(input, output, new Point(1, 15), [NORTH(),   SOUTH()],[mS,mN]);
-			copyTiles(input, output, new Point(2, 15), [NplusW(), SplusW()],[mS,mN]);
+			copyTiles(input, output, new Point(2, 15), [SplusW(), NplusW()],[mN,mS]);
 			
 		//Corner sockets
 			copyTiles(input, output, new Point(0, 16), [NplusW(), SE()]);

@@ -8,8 +8,8 @@
 	<!-- output -->
 	<app main="Main" file="TileProcess" path="bin" />
 	
-	<window background="#ffffff" fps="60" />
-	<window width="800" height="600" unless="mobile" />
+	<window background="#808080" fps="60" />
+	<window width="1024" height="768" unless="mobile" />
 	<window orientation="landscape" vsync="false" antialiasing="0" if="cpp" />
 	
 	<!-- classpath, haxe libs -->
