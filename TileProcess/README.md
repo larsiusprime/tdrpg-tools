@@ -1,5 +1,6 @@
 #TileProcess
-[Example Image](https://github.com/larsiusprime/tdrpg-tools/blob/master/TileProcess/LOOKATME.png "Example Image")
+
+![](https://github.com/larsiusprime/tdrpg-tools/blob/master/TileProcess/LOOKATME.png)
 
 TileProcess lets an artist create a "sparse" tileset, then does all the boring scut-work of generating tile connection permutations for final use in the game.
 
