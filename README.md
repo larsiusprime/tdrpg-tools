@@ -1,7 +1,7 @@
 tdrpg-tools
 ===========
 
-A set of tools for the tdrpg-haxe project
+A set of tools for the tdrpg-haxe project (ie, [Defender's Quest 2](http://www.defendersquest.com/2/))
 
 #TileProcess
 
