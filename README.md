@@ -12,7 +12,7 @@ It also creates a "Quick Brown Fox" tiling test that uses every tile connection 
 ![](https://raw.githubusercontent.com/larsiusprime/tdrpg-tools/master/TileProcess/LOOKATME.png)
 
 
-#PathFindingTest
+#PathFindingTest (moved!)
 PathFindingTest has now become an official [HaxeFlixel](http://github.com/HaxeFlixel) demo, [Heatmap Pathfinding](https://github.com/HaxeFlixel/flixel-demos/tree/dev/Flixel%20Features/HeatmapPathfinding)
 
 (The version in this repo is now obsolete)
