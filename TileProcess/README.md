@@ -19,7 +19,6 @@ These comments are taken from the "default.txt" script file:
 
 ````
 //Two slashes indicate a comment; blank and/or malformed lines are also ignored
-//Two slashes indicate a comment; blank and/or malformed lines are also ignored
 //You separate blocks with two tabs, and finish a line with a single endline
 //Leading spaces and tabs at the beginning of a line are trimmed
 //A comment can only be preceded by whitespace, you can't insert one on the same line as a command
