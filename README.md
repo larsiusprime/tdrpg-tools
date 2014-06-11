@@ -9,6 +9,8 @@ TileProcess lets an artist create a "sparse" tileset, then does all the boring s
 
 It also creates a "Quick Brown Fox" tiling test that uses every tile connection so the artist can see how they're doing.
 
+TileProcess can be scripted to generate arbitrary output. So you can use it for processing and re-arranging tilesets as well as compositing.
+
 ![](https://raw.githubusercontent.com/larsiusprime/tdrpg-tools/master/TileProcess/LOOKATME.png)
 
 
