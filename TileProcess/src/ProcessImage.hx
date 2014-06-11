@@ -43,7 +43,7 @@ class ProcessImage
 	private var mt:Matrix = new Matrix();
 	private var zero:Point = new Point();
 	
-	public function addAutoTiles(input:BitmapData,TileSize:Int,Scale:Float):BitmapData {
+	public function addAutoTiles(input:BitmapData,TileSize:Int,Scale:Float,script:String="default.txt"):BitmapData {
 		tileSize = Std.int(TileSize * Scale);
 		
 		var temp:BitmapData = new BitmapData(Std.int(input.width * Scale), Std.int(input.height * Scale), true, 0x00000000);
@@ -51,44 +51,45 @@ class ProcessImage
 		mt.scale(Scale, Scale);
 		temp.draw(input, mt, true);
 		
-		var mNW:BitmapData = getScaledBitmap("img/NW.png", TileSize * Scale);
-		var mNE:BitmapData = getScaledBitmap("img/NE.png", TileSize * Scale);
-		var mSE:BitmapData = getScaledBitmap("img/SE.png", TileSize * Scale);
-		var mSW:BitmapData = getScaledBitmap("img/SW.png", TileSize * Scale);
-		var mN:BitmapData = getScaledBitmap("img/NORTH.png", TileSize * Scale);
-		var mW:BitmapData = getScaledBitmap("img/WEST.png", TileSize * Scale);
-		var mS:BitmapData = getScaledBitmap("img/SOUTH.png", TileSize * Scale);
-		var mE:BitmapData = getScaledBitmap("img/EAST.png", TileSize * Scale);
-		
-		var miNW:BitmapData = invert(mNW);
-		var miNE:BitmapData = invert(mNE);
-		var miSE:BitmapData = invert(mSE);
-		var miSW:BitmapData = invert(mSW);
-		
-		//Lib.current.stage.addChild(new Bitmap(mNW));
-		
 		input = temp;
 		
 		var zero:Point = new Point(0, 0);
 		var output:BitmapData = new BitmapData(tileSize * wit, tileSize * hit, true, 0x00000000);
 		output.copyPixels(input, input.rect, zero);
 		
-		//Triple corner
+		var scriptText:String = Assets.getText("assets/scripts/" + script);
+		
+		if (scriptText != null && scriptText != "")
+		{
+			doScript(scriptText, TileSize, Scale, input, output);
+		}
+		else
+		{
+			var mNW:BitmapData = getScaledBitmap("img/NW.png", TileSize * Scale);
+			var mNE:BitmapData = getScaledBitmap("img/NE.png", TileSize * Scale);
+			var mSE:BitmapData = getScaledBitmap("img/SE.png", TileSize * Scale);
+			var mSW:BitmapData = getScaledBitmap("img/SW.png", TileSize * Scale);
+			var mN:BitmapData = getScaledBitmap("img/NORTH.png", TileSize * Scale);
+			var mW:BitmapData = getScaledBitmap("img/WEST.png", TileSize * Scale);
+			var mS:BitmapData = getScaledBitmap("img/SOUTH.png", TileSize * Scale);
+			var mE:BitmapData = getScaledBitmap("img/EAST.png", TileSize * Scale);
+		
+			//Triple corner
 			copyTiles(input, output, new Point(0, 6), [NW(), NE(), SW()]  , [mSE, mSW, mNE]);
 			copyTiles(input, output, new Point(2,6), [NW(), NE(), SE()] , [mSE,mSW,mNW]);
 			copyTiles(input, output, new Point(0,8), [NW(), SW(), SE()] , [mSE,mNE,mNW]);
 			copyTiles(input, output, new Point(2,8), [NE(), SE(), SW()] , [mSW,mNW,mNE]);
 			
-		//Double corner
+			//Double corner
 			copyTiles(input, output, new Point(1, 6), [NW(), NE()] , [mSE,mSW]);
 			copyTiles(input, output, new Point(0, 7), [NW(), SW()] , [mSE,mNE]);
 			copyTiles(input, output, new Point(1, 8), [SW(), SE()] , [mNE,mNW]);
 			copyTiles(input, output, new Point(2, 7), [NE(), SE()] , [mSW,mNW]);
 		
-		//Quadruple corner
+			//Quadruple corner
 			copyTiles(input, output, new Point(1, 7), [NW(), NE(), SW(), SE()] ,[mSE,mSW,mNE,mNW]);
 			
-		//Faces donut, spinner
+			//Faces donut, spinner
 			copyTiles(input, output, new Point(0, 9), [SOUTH(), NW()],[mN,mSE]);
 			copyTiles(input, output, new Point(1, 9), [SE(), SW(), NORTH()],[mNW,mNE,mS]);
 			copyTiles(input, output, new Point(2, 9), [NE(), WEST()],[mSW,mE]);
@@ -101,33 +102,173 @@ class ProcessImage
 			copyTiles(input, output, new Point(1, 11), [SOUTH(), NE(), NW()],[mN,mSW,mSE]);
 			copyTiles(input, output, new Point(2, 11), [SE(), NORTH()],[mNW,mS]);
 			
-		//Long thing vert
+			//Long thing vert
 			copyTiles(input, output, new Point(0, 12), [SplusW(),SplusE()],[mE,mW]);
 			copyTiles(input, output, new Point(0, 13), [WEST(), EAST()],[mE,mW]);
 			copyTiles(input, output, new Point(0, 14), [NplusW(),NplusE()],[mE,mW]);
 			
-		//Small spinner
+			//Small spinner
 			copyTiles(input, output, new Point(1, 12), [EAST(), NW()], [mW,mSE]);
 			copyTiles(input, output, new Point(2, 12), [SOUTH(), NE()], [mN, mSW]);
 			copyTiles(input, output, new Point(1, 13), [NORTH(), SW()], [mS, mNE]);
 			copyTiles(input, output, new Point(2, 13), [WEST(), SE()], [mE, mNW]);
 			
-		//Double corner
+			//Double corner
 			copyTiles(input, output, new Point(1, 14), [NE(), SW()], [mSW,mNE]);
 			copyTiles(input, output, new Point(2, 14), [NW(), SE()], [mSE,mNW]);
 			
-		//Long thing horz
+			//Long thing horz
 			copyTiles(input, output, new Point(0, 15), [NplusE(), SplusE()],[mS,mN]);
 			copyTiles(input, output, new Point(1, 15), [NORTH(),   SOUTH()],[mS,mN]);
 			copyTiles(input, output, new Point(2, 15), [SplusW(), NplusW()],[mN,mS]);
 			
-		//Corner sockets
+			//Corner sockets
 			copyTiles(input, output, new Point(0, 16), [NplusW(), SE()]);
 			copyTiles(input, output, new Point(1, 16), [NplusE(), SW()]);
 			copyTiles(input, output, new Point(0, 17), [SplusW(), NE()]);
 			copyTiles(input, output, new Point(1, 17), [SplusE(), NW()]);
-			
+		}
+		
 		return output;
+	}
+	
+	private function doScript(script:String, TileSize:Int, Scale:Float, input:BitmapData, output:BitmapData)
+	{
+		var mNW:BitmapData = getScaledBitmap("img/NW.png", TileSize * Scale);
+		var mNE:BitmapData = getScaledBitmap("img/NE.png", TileSize * Scale);
+		var mSE:BitmapData = getScaledBitmap("img/SE.png", TileSize * Scale);
+		var mSW:BitmapData = getScaledBitmap("img/SW.png", TileSize * Scale);
+		var mN:BitmapData = getScaledBitmap("img/NORTH.png", TileSize * Scale);
+		var mW:BitmapData = getScaledBitmap("img/WEST.png", TileSize * Scale);
+		var mS:BitmapData = getScaledBitmap("img/SOUTH.png", TileSize * Scale);
+		var mE:BitmapData = getScaledBitmap("img/EAST.png", TileSize * Scale);
+		
+		var masks:Array<BitmapData> = [mN, mW, mS, mE, mNW, mNE, mSE, mSW];
+		var scriptLines:Array<String> = getScriptLines(script);
+		
+		var trimFirst:Array<String> = ["\t", " "];
+		
+		for (line in scriptLines)
+		{
+			var done:Bool = false;
+			while (!done) {
+				done = true;
+				for (trim in trimFirst) {
+					while (line.indexOf(trim) == 0)
+					{
+						line = StringTools.replace(line, trim, "");
+						done = false;
+					}
+				}
+			}
+			
+			if (line.indexOf("//") == 0)
+			{
+				//donothing
+			}
+			else
+			{
+				var groups:Array<String> = line.split("\t\t");
+				trace("-->groups = " + groups);
+				if (groups != null && groups.length >= 2)
+				{
+					var point:Point = scriptPoint(groups[0]);
+					var regions:Array<Point> = scriptRegions(groups[1]);
+					var maskBmps:Array<BitmapData> = null;
+					if (groups.length >= 3)
+					{
+						maskBmps = scriptMasks(groups[2], masks);
+					}
+					copyTiles(input, output, point, regions, maskBmps);
+				}
+			}
+		}
+	}
+	
+	private function scriptRegions(str:String):Array<Point> {
+		var strs:Array<String> = str.split(",");
+		var arr:Array<Point> = [];
+		if (strs != null) {
+			var pt:Point = null;
+			for (ptstr in strs) {
+				ptstr = ptstr.toUpperCase();
+				switch(ptstr) {
+					case "CENT": pt = CENT();
+					case "N": pt = NORTH();
+					case "E": pt = EAST();
+					case "W": pt = WEST();
+					case "S": pt = SOUTH();
+					case "NW": pt = NW();
+					case "NE": pt = NE();
+					case "SW": pt = SW();
+					case "SE": pt = SE();
+					case "N+W": pt = NplusW();
+					case "N+E": pt = NplusE();
+					case "S+W": pt = SplusW();
+					case "S+E": pt = SplusE();
+				}
+				arr.push(pt);
+			}
+		}
+		return arr;
+	}
+	
+	private function scriptMasks(str:String,masks:Array<BitmapData>):Array<BitmapData> {
+		var mN:BitmapData = masks[0];
+		var mW:BitmapData = masks[1];
+		var mS:BitmapData = masks[2];
+		var mE:BitmapData = masks[3];
+		var mNW:BitmapData = masks[4];
+		var mNE:BitmapData = masks[5];
+		var mSE:BitmapData = masks[6];
+		var mSW:BitmapData = masks[7];
+		var strs:Array<String> = str.split(",");
+		var arr:Array<BitmapData> = [];
+		if (strs != null) {
+			var bmp:BitmapData = null;
+			var i:Int = 0;
+			for (bmpstr in strs) {
+				bmpstr = bmpstr.toUpperCase();
+				//MURDER THE WHITESPACE!!!!!
+				while (bmpstr.indexOf("\t") != -1) {bmpstr = StringTools.replace(bmpstr, "\t", "");}
+				while (bmpstr.indexOf("\n") != -1) {bmpstr = StringTools.replace(bmpstr, "\n", "");}
+				while (bmpstr.indexOf("\r") != -1) {bmpstr = StringTools.replace(bmpstr, "\r", "");}
+				switch(bmpstr) {
+					case "N": bmp = mN;
+					case "W": bmp = mW;
+					case "E": bmp = mE;
+					case "S": bmp = mS;
+					case "NW": bmp = mNW;
+					case "NE": bmp = mNE;
+					case "SW": bmp = mSW;
+					case "SE": bmp = mSE;
+				}
+				arr.push(bmp);
+			}
+		}
+		return arr;
+	}
+	
+	private function scriptPoint(str:String):Point {
+		var numStr:Array<String> = str.split(",");
+		if (numStr != null && numStr.length == 2) {
+			return new Point(Std.parseInt(numStr[0]), Std.parseInt(numStr[1]));
+		}
+		return null;
+	}
+	
+	private function getScriptLines(script:String):Array<String> {
+		var lines:Array<String> = script.split("\n");
+		for (line in lines)
+		{
+			while (line.indexOf("\n") != -1) { line = StringTools.replace(line, "\n", ""); }
+			while (line.indexOf("\r") != -1) { line = StringTools.replace(line, "\r", ""); }
+			while (line.indexOf(" ") == 0)
+			{
+				line = line.substr(1, line.length - 1);
+			}
+		}
+		return lines;
 	}
 	
 	private function invert(bmp:BitmapData):BitmapData {
