@@ -149,7 +149,7 @@ class Main extends Sprite
 	}
 	
 	function doProcess(input:BitmapData,write:Bool=true):Void {
-		var output:BitmapData = process.addAutoTiles(input, tileSize, 1.0, "default.txt");
+		var output:BitmapData = process.addAutoTiles(input, "default.txt");
 		
 		if(write){
 			if (stageBmp == null) {

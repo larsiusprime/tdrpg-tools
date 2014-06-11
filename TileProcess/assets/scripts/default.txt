@@ -27,6 +27,9 @@
 
 //Script begins now
 
+//Establish basic settings
+ widthInTiles=3		heightInTiles=18		tileSize=64		scale=1.0
+
 //Triple corner
  0,6		NW,NE,SW		SE,SW,NE
  2,6		NW,NE,SE		SE,SW,NW

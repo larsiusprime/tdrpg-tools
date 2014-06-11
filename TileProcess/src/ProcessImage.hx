@@ -15,9 +15,11 @@ import openfl.Assets;
  */
 class ProcessImage
 {
-	private var wit:Int=3;
-	private var hit:Int=18;
-	private var tileSize:Int = 1;
+	private var wit:Int=-1;
+	private var hit:Int=-1;
+	private var origTileSize:Int = -1;
+	private var finalTileSize:Int = -1;
+	private var scale:Float = -1;
 	private var rect:Rectangle = new Rectangle();
 	
 	public function new() 
@@ -43,36 +45,45 @@ class ProcessImage
 	private var mt:Matrix = new Matrix();
 	private var zero:Point = new Point();
 	
-	public function addAutoTiles(input:BitmapData,TileSize:Int,Scale:Float,script:String="default.txt"):BitmapData {
-		tileSize = Std.int(TileSize * Scale);
+	public function addAutoTiles(input:BitmapData,script:String="default.txt"):BitmapData {
+		finalTileSize = Std.int(origTileSize * scale);
 		
-		var temp:BitmapData = new BitmapData(Std.int(input.width * Scale), Std.int(input.height * Scale), true, 0x00000000);
+		var temp:BitmapData = new BitmapData(Std.int(input.width * scale), Std.int(input.height * scale), true, 0x00000000);
 		mt.identity();
-		mt.scale(Scale, Scale);
+		mt.scale(scale, scale);
 		temp.draw(input, mt, true);
 		
 		input = temp;
 		
-		var zero:Point = new Point(0, 0);
-		var output:BitmapData = new BitmapData(tileSize * wit, tileSize * hit, true, 0x00000000);
-		output.copyPixels(input, input.rect, zero);
-		
 		var scriptText:String = Assets.getText("assets/scripts/" + script);
+		
+		var output:BitmapData = null;
 		
 		if (scriptText != null && scriptText != "")
 		{
-			doScript(scriptText, TileSize, Scale, input, output);
+			output = doScript(scriptText, input);
 		}
 		else
 		{
-			var mNW:BitmapData = getScaledBitmap("img/NW.png", TileSize * Scale);
-			var mNE:BitmapData = getScaledBitmap("img/NE.png", TileSize * Scale);
-			var mSE:BitmapData = getScaledBitmap("img/SE.png", TileSize * Scale);
-			var mSW:BitmapData = getScaledBitmap("img/SW.png", TileSize * Scale);
-			var mN:BitmapData = getScaledBitmap("img/NORTH.png", TileSize * Scale);
-			var mW:BitmapData = getScaledBitmap("img/WEST.png", TileSize * Scale);
-			var mS:BitmapData = getScaledBitmap("img/SOUTH.png", TileSize * Scale);
-			var mE:BitmapData = getScaledBitmap("img/EAST.png", TileSize * Scale);
+			//hard-coded default fallback:
+			wit = 3;
+			hit = 18;
+			origTileSize = 64;
+			scale = 1.0;
+			finalTileSize = Std.int(origTileSize * scale);
+			
+			var zero:Point = new Point(0, 0);
+			output = new BitmapData(finalTileSize * wit, finalTileSize * hit, true, 0x00000000);
+			output.copyPixels(input, input.rect, zero);
+			
+			var mNW:BitmapData = getScaledBitmap("img/NW.png", origTileSize * scale);
+			var mNE:BitmapData = getScaledBitmap("img/NE.png", origTileSize * scale);
+			var mSE:BitmapData = getScaledBitmap("img/SE.png", origTileSize * scale);
+			var mSW:BitmapData = getScaledBitmap("img/SW.png", origTileSize * scale);
+			var mN:BitmapData = getScaledBitmap("img/NORTH.png", origTileSize * scale);
+			var mW:BitmapData = getScaledBitmap("img/WEST.png", origTileSize * scale);
+			var mS:BitmapData = getScaledBitmap("img/SOUTH.png", origTileSize * scale);
+			var mE:BitmapData = getScaledBitmap("img/EAST.png", origTileSize * scale);
 		
 			//Triple corner
 			copyTiles(input, output, new Point(0, 6), [NW(), NE(), SW()]  , [mSE, mSW, mNE]);
@@ -132,21 +143,20 @@ class ProcessImage
 		return output;
 	}
 	
-	private function doScript(script:String, TileSize:Int, Scale:Float, input:BitmapData, output:BitmapData)
+	private function doScript(script:String, input:BitmapData):BitmapData
 	{
-		var mNW:BitmapData = getScaledBitmap("img/NW.png", TileSize * Scale);
-		var mNE:BitmapData = getScaledBitmap("img/NE.png", TileSize * Scale);
-		var mSE:BitmapData = getScaledBitmap("img/SE.png", TileSize * Scale);
-		var mSW:BitmapData = getScaledBitmap("img/SW.png", TileSize * Scale);
-		var mN:BitmapData = getScaledBitmap("img/NORTH.png", TileSize * Scale);
-		var mW:BitmapData = getScaledBitmap("img/WEST.png", TileSize * Scale);
-		var mS:BitmapData = getScaledBitmap("img/SOUTH.png", TileSize * Scale);
-		var mE:BitmapData = getScaledBitmap("img/EAST.png", TileSize * Scale);
+		var output:BitmapData = null;
 		
-		var masks:Array<BitmapData> = [mN, mW, mS, mE, mNW, mNE, mSE, mSW];
 		var scriptLines:Array<String> = getScriptLines(script);
 		
 		var trimFirst:Array<String> = ["\t", " "];
+		
+		var zero:Point = new Point(0, 0);
+		
+		var scriptStarted:Bool = false;
+		var scriptReady:Bool = false;
+		
+		var masks:Array<BitmapData> = null;
 		
 		for (line in scriptLines)
 		{
@@ -169,20 +179,98 @@ class ProcessImage
 			else
 			{
 				var groups:Array<String> = line.split("\t\t");
-				trace("-->groups = " + groups);
 				if (groups != null && groups.length >= 2)
 				{
-					var point:Point = scriptPoint(groups[0]);
-					var regions:Array<Point> = scriptRegions(groups[1]);
-					var maskBmps:Array<BitmapData> = null;
-					if (groups.length >= 3)
+					if (groups.length == 4)
 					{
-						maskBmps = scriptMasks(groups[2], masks);
+						for (thing in groups)
+						{
+							tryMatch(thing, "widthintiles=");
+							tryMatch(thing, "heightintiles=");
+							tryMatch(thing, "tilesize=");
+							tryMatch(thing, "scale=");
+						}
+						if (wit > 0 && hit > 0 && origTileSize > 0 && scale > 0)
+						{
+							finalTileSize = Std.int(origTileSize * scale);
+							output = new BitmapData(finalTileSize * wit, finalTileSize * hit, true, 0x00000000);
+							output.copyPixels(input, input.rect, zero);
+							masks = getMasks();
+							scriptStarted = true;
+						}
 					}
-					copyTiles(input, output, point, regions, maskBmps);
+					else if(groups.length >= 2)
+					{
+						if (scriptStarted)
+						{
+							var point:Point = scriptPoint(groups[0]);
+							var regions:Array<Point> = scriptRegions(groups[1]);
+							var maskBmps:Array<BitmapData> = null;
+							if (groups.length >= 3)
+							{
+								maskBmps = scriptMasks(groups[2], masks);
+							}
+							copyTiles(input, output, point, regions, maskBmps);
+						}
+						else
+						{
+							throw "Command lines were found before the basic settings line was executed! Start with a line like this: {widthInTiles=3		heightInTiles=18		tileSize=64		scale=1.0}";
+						}
+					}
 				}
 			}
 		}
+		
+		return output;
+	}
+	
+	private function getMasks():Array<BitmapData>
+	{
+		var mNW:BitmapData = getScaledBitmap("img/NW.png", finalTileSize);
+		var mNE:BitmapData = getScaledBitmap("img/NE.png", finalTileSize);
+		var mSE:BitmapData = getScaledBitmap("img/SE.png", finalTileSize);
+		var mSW:BitmapData = getScaledBitmap("img/SW.png", finalTileSize);
+		var mN:BitmapData = getScaledBitmap("img/NORTH.png", finalTileSize);
+		var mW:BitmapData = getScaledBitmap("img/WEST.png", finalTileSize);
+		var mS:BitmapData = getScaledBitmap("img/SOUTH.png", finalTileSize);
+		var mE:BitmapData = getScaledBitmap("img/EAST.png", finalTileSize);
+		return [mN, mW, mS, mE, mNW, mNE, mSE, mSW];
+	}
+	
+	private function tryMatch(str:String, match:String):Bool
+	{
+		str = stripWhiteSpace(str.toLowerCase());
+		if (str.indexOf(match) != -1)
+		{
+			str = StringTools.replace(str, match, "");
+			switch(match)
+			{
+				case "widthintiles=": wit = Std.parseInt(str); return true;
+				case "heightintiles=": hit = Std.parseInt(str); return true;
+				case "tilesize=": origTileSize = Std.parseInt(str); return true;
+				case "scale=": scale = Std.parseFloat(str); return true;
+			}
+		}
+		return false;
+	}
+	
+	private function stripWhiteSpace(str:String):String
+	{
+		var white:Array<String> = [" ", "\t", "\r", "\n"];
+		var done:Bool = false;
+		while (!done)
+		{
+			done = true;
+			for (w in white)
+			{
+				while (str.indexOf(w) != -1)
+				{
+					done = false;
+					str = StringTools.replace(str, w, "");
+				}
+			}
+		}
+		return str;
 	}
 	
 	private function scriptRegions(str:String):Array<Point> {
@@ -192,6 +280,7 @@ class ProcessImage
 			var pt:Point = null;
 			for (ptstr in strs) {
 				ptstr = ptstr.toUpperCase();
+				ptstr = stripWhiteSpace(ptstr);
 				switch(ptstr) {
 					case "CENT": pt = CENT();
 					case "N": pt = NORTH();
@@ -229,10 +318,7 @@ class ProcessImage
 			var i:Int = 0;
 			for (bmpstr in strs) {
 				bmpstr = bmpstr.toUpperCase();
-				//MURDER THE WHITESPACE!!!!!
-				while (bmpstr.indexOf("\t") != -1) {bmpstr = StringTools.replace(bmpstr, "\t", "");}
-				while (bmpstr.indexOf("\n") != -1) {bmpstr = StringTools.replace(bmpstr, "\n", "");}
-				while (bmpstr.indexOf("\r") != -1) {bmpstr = StringTools.replace(bmpstr, "\r", "");}
+				bmpstr = stripWhiteSpace(bmpstr);
 				switch(bmpstr) {
 					case "N": bmp = mN;
 					case "W": bmp = mW;
@@ -251,7 +337,10 @@ class ProcessImage
 	
 	private function scriptPoint(str:String):Point {
 		var numStr:Array<String> = str.split(",");
-		if (numStr != null && numStr.length == 2) {
+		if (numStr != null && numStr.length == 2)
+		{
+			numStr[0] = stripWhiteSpace(numStr[0]);
+			numStr[1] = stripWhiteSpace(numStr[1]);
 			return new Point(Std.parseInt(numStr[0]), Std.parseInt(numStr[1]));
 		}
 		return null;
@@ -297,13 +386,13 @@ class ProcessImage
 		var i:Int = 0;
 		for (pt in regions)
 		{
-			rect.x = pt.x * tileSize;
-			rect.y = pt.y * tileSize;
-			rect.width = rect.height = tileSize;
-			var destPoint = new Point(dest.x * tileSize, dest.y * tileSize);
+			rect.x = pt.x * finalTileSize;
+			rect.y = pt.y * finalTileSize;
+			rect.width = rect.height = finalTileSize;
+			var destPoint = new Point(dest.x * finalTileSize, dest.y * finalTileSize);
 			var mask:BitmapData = null;
 			
-			var tileBit:BitmapData = new BitmapData(tileSize, tileSize, true, 0x00000000);
+			var tileBit:BitmapData = new BitmapData(finalTileSize, finalTileSize, true, 0x00000000);
 			tileBit.copyPixels(input, rect, zero, true);
 			
 			if (masks != null && masks.length > i)
@@ -379,8 +468,6 @@ class ProcessImage
 			{
 				output.copyPixels(tileBit, tileBit.rect, destPoint, true);
 			}
-			
-			
 			i++;
 		}
 	}
