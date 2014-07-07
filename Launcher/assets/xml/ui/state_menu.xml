@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<data>
+
+	<definition id="sans10" font="vera" size="10" style="bold" color="0x000000" align="left"/>
+	<definition id="sans12" font="vera" size="12" style="bold" color="0x000000" align="left"/>
+	<definition id="sans14" font="vera" size="14" style="bold" color="0x000000" align="left"/>
+	
+	<sprite id="bkg" width="100%" height="100%" color="0xFFFFFF"/>
+	
+	<text id="title" width="100%" y="5" use_def="sans14" text="Defender's Quest: Valley of the Forgotten" align="center"/>
+	<text id="subtitle" width="100%" y="5" use_def="sans12" style="regular" text="Select Version to launch (both have identical content)" align="center">
+		<anchor y="title.bottom" y-flush="top"/>
+	</text>
+	
+	<button id="btn_simple" label="Simple" y="20" width="100" height="30" x="110">
+		<text use_def="sans14" align="center"/>
+		<anchor y="subtitle.bottom" y-flush="top"/>
+		<param type="string" value="simple"/>
+	</button>
+	
+	<text id="simple_desc" x="10" width="70%" use_def="sans12" style="regular" text='- Browser Window$N- Adobe AIR NOT required$N- Saves data to "Flash Cookies"$N- Fewer Video Options$N- No Mod Support'>
+		<anchor y="btn_simple.top" y-flush="top" x="btn_simple.right" x-flush="left"/>
+	</text>
+	
+	<button id="btn_fancy" label="Fancy" width="100" height="30" y="155" x="110">
+		<text use_def="sans14" align="center" />
+		<param type="string" value="fancy"/>
+	</button>
+	
+	<text id="fancy_desc" x="10" width="70%" use_def="sans12" style="regular" text="- Application Window$N- Adobe AIR required*$N- Saves data to actual files$N- More Video Options$N- Full Mod Support">
+		<anchor y="btn_fancy.top" y-flush="top" x="btn_fancy.right" x-flush="left" />
+	</text>
+	
+	<text id="note" y="-50" width="100%" use_def="sans12" style="italic" align="center" text='*Adobe AIR is ONLY required for the "fancy" version; it is auto-installed by our custom "easy installer" script (will prompt before first run).'>
+		<anchor y="bottom" y-flush="bottom"/>
+	</text>
+	
+	<text id="note2" width="100%" use_def="sans12" style="regular" y="-15" text="(Save files between versions must be transferred manually)" align="center">
+		<anchor y="note.top" y-flush="bottom"/>
+	</text>
+	
+	<button id="btn_cancel" label="Cancel Launch" y="-10" width="200" height="30">
+		<text use_def="sans14" align="center"/>
+		<anchor y="bottom" y-flush="bottom" x="center" x-flush="center"/>
+		<param type="string" value="cancel"/>
+	</button>
+	
+</data>
