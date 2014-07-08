@@ -11,6 +11,7 @@ import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxSpriteUtil;
 import openfl.Lib;
+import sys.FileSystem;
 
 /**
  * A FlxState which can be used for the game's menu.
@@ -36,6 +37,15 @@ class MenuState extends FlxUIState
 		while (fancy_desc.text.indexOf("$N") != -1) {
 			fancy_desc.text = StringTools.replace(fancy_desc.text, "$N", "\n");
 		}
+		refreshMode();
+	}
+
+	public function refreshMode():Void{
+		if(detectAIR()){
+			_ui.setMode("air");
+		}else{
+			_ui.setMode("no_air");
+		}
 	}
 	
 	override public function getEvent(id:String, sender:Dynamic, data:Dynamic, ?params:Array<Dynamic>):Void
@@ -48,15 +58,31 @@ class MenuState extends FlxUIState
 					case "cancel":
 						Sys.exit(0);
 					case "simple":
-						Sys.command("simple.sh");
+						Sys.command("./simple.sh");
 						Sys.exit(0);
 					case "fancy":
-						Sys.command("fancy.sh");
+						Sys.command("./fancy.sh");
 						Sys.exit(0);
+					case "uninstall_air":
+						Sys.command("./uninstall_air.sh");
+						refreshMode();
 				}
 		}
 	}
 	
+	private function detectAIR():Bool
+	{
+		if(FileSystem.exists("/opt/Adobe AIR/Versions/1.0/libCore.so"))
+		{
+			return true;
+		}
+		if(FileSystem.exists("/opt/adobe-air-sdk/"))
+		{
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Function that is called when this state is destroyed - you might want to 
 	 * consider setting all objects this state uses to null to help garbage collection.
