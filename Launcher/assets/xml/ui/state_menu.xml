@@ -31,7 +31,7 @@
 		<anchor y="btn_fancy.top" y-flush="top" x="btn_fancy.right" x-flush="left" />
 	</text>
 	
-	<text id="note" y="-50" width="100%" use_def="sans12" style="italic" align="center" text='*Adobe AIR is ONLY required for the "fancy" version; it is auto-installed by our custom "easy installer" script (will prompt before first run).'>
+	<text id="note_air_false" y="-50" width="100%" use_def="sans12" style="italic" align="center" text='*Adobe AIR is ONLY required for the "fancy" version; it is auto-installed by our custom "easy installer" script (will prompt before first run).'>
 		<anchor y="bottom" y-flush="bottom"/>
 	</text>
 	
@@ -44,5 +44,27 @@
 		<anchor y="bottom" y-flush="bottom" x="center" x-flush="center"/>
 		<param type="string" value="cancel"/>
 	</button>
+
+	<button id="btn_uninstall_air" label="Uninstall Adobe AIR" y="-10" width="200" height="30">
+		<text use_def="sans14" align="center"/>
+		<anchor y="btn_cancel.top" y-flush="bottom" x="center" x-flush="center"/>
+		<param type="string" value="uninstall_air"/>
+	</button>
+
+	<text id="note_air_true" y="-10" width="100%" use_def="sans12" style="italic" align="center" text='*Adobe AIR is already installed on your system.'>
+		<anchor y="btn_uninstall_air.top" y-flush="bottom"/>
+	</text>
+
+	<mode id="air">
+		<show id="note_air_true"/>
+		<hide id="note_air_false"/>
+		<show id="btn_uninstall_air"/>
+	</mode>
+
+	<mode id="no_air">
+		<show id="note_air_false"/>
+		<hide id="note_air_true"/>
+		<hide id="btn_uninstall_air"/>
+	</mode>
 	
 </data>
