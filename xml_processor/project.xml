@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="XmlProcess" package="" version="1.0.0" company="Level Up Labs" />
+	<app main="Main" path="Export" file="XmlProcess" />
+	
+	<source path="Source" />
+	
+	<haxelib name="openfl" />
+	<haxelib name="flixel" />
+	<haxelib name="flixel-ui" />
+	
+	<set name="SWF_VERSION" value="11.8"/>
+	
+	<assets path="Assets" rename="assets" exclude="*.svg" />
+	<icon path="Assets/openfl.svg" />
+	
+</project>
