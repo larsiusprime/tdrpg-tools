@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="xbr" package="ImageProcess2" version="1.0.0" company="larsiusprime" />
+	<app main="Main" file="waifu2x" path="bin" />
+	
+	<source path="src" />
+	
+	<haxelib name="lime" />
+	<haxelib name="openfl" />
+	
+	<assets path="assets" exclude="*.svg" />
+	<icon path="assets/lime.svg" />
+	
+</project>

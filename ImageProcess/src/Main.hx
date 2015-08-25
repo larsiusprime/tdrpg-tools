@@ -103,7 +103,24 @@ class Main
 					case "help", "-help", "-h", "h": 
 								help();
 					case "clean": 
-								writeBmp(cleanAlpha(src), output);
+								var hasColor:Bool = false;
+								var cleanColor:Int = 0;
+								if (params != null)
+								{
+									if (params[0].indexOf("0x") == 0)
+									{
+										hasColor = true;
+										cleanColor = Std.parseInt(params[0]);
+									}
+								}
+								if (hasColor)
+								{
+									writeBmp(cleanAlpha(src, cleanColor), output);
+								}
+								else
+								{
+									writeBmp(cleanAlpha(src), output);
+								}
 					case "3xbr":
 								writeBmp(xbr_3x(src), output);
 					case "xbr": 
@@ -275,7 +292,7 @@ class Main
 			
 			for (i in 0...frames.length)
 			{
-				out.copyPixels(frames[i], frames[i].rect, pt.x, pt.y);
+				out.copyPixels(frames[i], frames[i].rect, pt);
 				pt.x += w;
 				if (pt.x >= out.width)
 				{

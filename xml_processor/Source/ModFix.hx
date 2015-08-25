@@ -80,28 +80,6 @@ class ModFix
 			}
 		}
 		
-		/*
-		output = Printer.print(outXml);// outXml.toString();
-		
-		var fix_in = 
-		[
-			"\n<effect"
-		];
-		
-		var fix_out = 
-		[
-			"\n\t<effect"
-		];
-		
-		for (i in 0...fix_in.length)
-		{
-			while (output.indexOf(fix_in[i]) != -1)
-			{
-				output = StringTools.replace(output, fix_in[i], fix_out[i]);
-			}
-		}
-		*/
-		
 		return xmlWrap(output);
 	}
 	
@@ -185,6 +163,7 @@ class ModFix
 								animNode.x.set("name", animId);
 								animNode.x.remove("id");
 							}
+							animNode.x.set("looped", "true");
 						}
 					}
 					
