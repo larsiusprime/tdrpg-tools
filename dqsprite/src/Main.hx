@@ -107,18 +107,11 @@ class Main extends Application
 			
 			list = removeDupesAndFlips(list);
 			
-			/*
-			var packed = BitmapPacker.pack(bmp.width, bmp.height, list);
-			writeBmp(packed.bmp, output);
-			writeStr(Printer.print(packed.metadata.x,true), output+".xml");
-			*/
-			
 			var scaledList   = scaleList(list, scale);
+			
 			var scaledPacked = BitmapPacker.pack(Std.int(bmp.width*scale), Std.int(bmp.height*scale), scaledList);
 			
 			output = StringTools.replace(output, ".png", "_scaled.png");
-			
-			var f:Fast = scaledPacked.metadata.node.TextureAtlas.node.SubTexture;
 			
 			writeBmp(scaledPacked.bmp, output);
 			writeStr(FancyPrinter.print(scaledPacked.metadata.x, true), output + ".xml");
@@ -214,8 +207,6 @@ class Main extends Application
 												  Std.int(entry.rect.height * scale));
 			
 			newList.push( {index:entry.index, bmp:newBmp, rect:newRect, flipX:false, dupe:false} );
-			
-			lastEntry = entry;
 		}
 		
 		return newList;

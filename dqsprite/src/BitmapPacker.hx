@@ -58,9 +58,6 @@ class BitmapPacker
 			
 			fail = false;
 			
-			var lastGoodRect:Rectangle = null;
-			var lastGoodBlock:Block = null;
-			
 			var j:Int = 0;
 			
 			var lastSub:Xml = null;
@@ -71,7 +68,9 @@ class BitmapPacker
 				{
 					lastSub.set("name", Std.string(list[i].index));
 					lastSub.set("flipX", Std.string(list[i].flipX));
+					trace("pushing dupe --> " + lastSub.toString());
 					subs.push(lastSub);
+					lastSub = dupeSub(Std.string(list[i].index), lastSub);
 					continue;
 				}
 				
@@ -87,7 +86,6 @@ class BitmapPacker
 				
 				var flipX = (list[i].dupe && list[i].flipX);
 				
-				
 				sub = subTexNode(list[i].index, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
 				
 				subs.push(sub);
@@ -97,10 +95,13 @@ class BitmapPacker
 					fail = true;
 					powerOf2 *= 2;
 					meta = new Fast(Xml.parse('<TextureAtlas imagePath="pack.png"></TextureAtlas>'));
+					lastSub = null;
+					subs = [];
 					break;
 				}
 				
-				lastSub = subTexNode(list[i].index, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
+				lastSub = dupeSub(Std.string(list[i].index), sub);
+				//lastSub = subTexNode(list[i].index, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
 			}
 		}
 		
@@ -165,6 +166,20 @@ class BitmapPacker
 				Sys.print("ERROR! (" + msg + ")\n");
 			}
 		}
+	}
+	
+	static public function dupeSub(name:String, orig:Xml):Xml
+	{
+		var sub = Xml.createElement("SubTexture");
+		
+		for (att in orig.attributes())
+		{
+			sub.set(att, orig.get(att));
+		}
+		
+		sub.set("name", name);
+		
+		return sub;
 	}
 	
 	static public function subTexNode(i:Int,x:Int,y:Int,width:Int,height:Int,frameX:Int,frameY:Int,frameWidth:Int,frameHeight:Int,flipX:Bool=false,flipY:Bool=false):Xml
