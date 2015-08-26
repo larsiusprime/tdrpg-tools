@@ -50,6 +50,8 @@ class BitmapPacker
 		
 		while (fail)
 		{
+			trace("attempting " + powerOf2 + " x " + powerOf2 + "...");
+			
 			packer = new MaxRectsBinPack(powerOf2, powerOf2);
 			
 			var list2 = [];
@@ -66,11 +68,11 @@ class BitmapPacker
 			{
 				if (list[i].dupe) 
 				{
-					lastSub.set("name", Std.string(list[i].index));
+					var n = list[i].layer + "_" + StringTools.lpad(Std.string(list[i].index), "0", 4);
+					lastSub.set("name", n);
 					lastSub.set("flipX", Std.string(list[i].flipX));
-					trace("pushing dupe --> " + lastSub.toString());
 					subs.push(lastSub);
-					lastSub = dupeSub(Std.string(list[i].index), lastSub);
+					lastSub = dupeSub(n, lastSub);
 					continue;
 				}
 				
@@ -86,7 +88,8 @@ class BitmapPacker
 				
 				var flipX = (list[i].dupe && list[i].flipX);
 				
-				sub = subTexNode(list[i].index, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
+				var n = list[i].layer + "_" + StringTools.lpad(Std.string(list[i].index), "0", 4);
+				sub = subTexNode(n, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
 				
 				subs.push(sub);
 				
@@ -97,13 +100,15 @@ class BitmapPacker
 					meta = new Fast(Xml.parse('<TextureAtlas imagePath="pack.png"></TextureAtlas>'));
 					lastSub = null;
 					subs = [];
+					trace("failed.");
 					break;
 				}
 				
-				lastSub = dupeSub(Std.string(list[i].index), sub);
-				//lastSub = subTexNode(list[i].index, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
+				lastSub = dupeSub(n, sub);
 			}
 		}
+		
+		trace("success!");
 		
 		subs.sort(sortSubsAscending);
 		
@@ -111,6 +116,8 @@ class BitmapPacker
 		{
 			meta.node.TextureAtlas.x.addChild(sub);
 		}
+		
+		trace("drawing output...");
 		
 		var canvas:BitmapData = new BitmapData(rightMost, bottomMost, true, 0x00000000);
 		var pt = new Point();
@@ -133,10 +140,11 @@ class BitmapPacker
 	
 	public static function sortSubsAscending(a:Xml, b:Xml):Int
 	{
-		var ai:Int = Std.parseInt(a.get("name"));
-		var bi:Int = Std.parseInt(b.get("name"));
-		if (ai < bi) return -1;
-		if (ai > bi) return  1;
+		var an:String = a.get("name");
+		var bn:String = b.get("name");
+		
+		if (an < bn) return -1;
+		if (an > bn) return  1;
 		return 0;
 	}
 	
@@ -182,11 +190,11 @@ class BitmapPacker
 		return sub;
 	}
 	
-	static public function subTexNode(i:Int,x:Int,y:Int,width:Int,height:Int,frameX:Int,frameY:Int,frameWidth:Int,frameHeight:Int,flipX:Bool=false,flipY:Bool=false):Xml
+	static public function subTexNode(name:String,x:Int,y:Int,width:Int,height:Int,frameX:Int,frameY:Int,frameWidth:Int,frameHeight:Int,flipX:Bool=false,flipY:Bool=false):Xml
 	{
 		var sub = Xml.createElement("SubTexture");
 		
-		sub.set("name", Std.string(i));
+		sub.set("name", name);
 		sub.set("x", Std.string(x));
 		sub.set("y", Std.string(y));
 		sub.set("width", Std.string(width));
@@ -214,5 +222,6 @@ typedef BmpEntry = {
 	bmp:BitmapData,
 	rect:Rectangle,
 	flipX:Bool,
-	dupe:Bool
+	dupe:Bool,
+	?layer:String
 }

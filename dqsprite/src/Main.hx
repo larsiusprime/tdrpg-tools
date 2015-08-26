@@ -3,6 +3,7 @@ package;
 import flixel.util.FlxColor;
 import haxe.xml.Fast;
 import haxe.xml.Printer;
+import openfl.geom.ColorTransform;
 import openfl.geom.Matrix;
 import lime.app.Application;
 import lime.graphics.Image;
@@ -47,6 +48,7 @@ class Main extends Application
 		}
 		var input:String = args[0];
 		var output:String = args[1];
+		
 		var new_w:Int = Std.parseInt(args[2]);
 		var new_h:Int = Std.parseInt(args[3]);
 		
@@ -59,6 +61,13 @@ class Main extends Application
 			orig_h = Std.parseInt(args[5]);
 		}
 		
+		var layers:String = "";
+		
+		if (args.length >= 7)
+		{
+			layers = args[6];
+		}
+		
 		var ww = orig_w;
 		var hh = orig_h;
 		
@@ -68,10 +77,22 @@ class Main extends Application
 		{
 			var bmp = BitmapData.fromFile(input);
 			
+			var layers:Array<{name:String,?color:FlxColor}> = getLayerData(layers);
+			
+			if (layers == null)
+			{
+				layers = [ { name:"", color:null } ];
+			}
+			
 			var cellsWide:Int = Std.int(bmp.width / ww);
 			var cellsTall:Int = Std.int(bmp.height / hh);
 			
-			var list:Array<BmpEntry> = [];
+			var lists:Array<Array<BmpEntry>> = [];
+			
+			for (layer in layers)
+			{
+				lists.push([]);
+			}
 			
 			var rect:Rectangle = new Rectangle();
 			var pt:Point = new Point();
@@ -82,6 +103,12 @@ class Main extends Application
 			var str:String = "";
 			
 			var i:Int = 0;
+			
+			//go through and slice out all of the image files
+			
+			trace("slicing cells....");
+			
+			var total:Int = cellsTall * cellsWide;
 			
 			for (yy in 0...cellsTall)
 			{
@@ -94,24 +121,170 @@ class Main extends Application
 					cell.copyPixels(bmp, rect, pt);
 					
 					var notAlphaBounds:Rectangle = cell.getColorBoundsRect(0xFFFFFFFF, 0x00000000, false);
+					
+					if (notAlphaBounds.width == 0 && notAlphaBounds.height == 0)
+					{
+						continue;
+					}
+					
 					var trimmed:BitmapData = new BitmapData(Std.int(notAlphaBounds.width), Std.int(notAlphaBounds.height), true, 0x00000000);
 					trimmed.copyPixels(cell, notAlphaBounds, pt);
 					
-					list.push( {index:i, bmp:trimmed, rect:new Rectangle(-notAlphaBounds.x, -notAlphaBounds.y, ww, hh), flipX:false, dupe:false} );
+					var baseCopy:BitmapData = null;
+					var baseName:String = "";
+					var baseLi:Int = -1;
+					
+					var li:Int = 0;
+					
+					for (layer in layers)
+					{
+						var trimCopy:BitmapData = trimmed.clone();	//copy the original trimmed layer cell
+						
+						if (layer.color != null) {
+							
+							var c:FlxColor = layer.color;
+							
+							if (c.red == c.green && c.green == c.blue)	//special case, greyscale -- must be strictly monochromatic (no shading)
+							{
+								//remove anything that isn't exactly the same color
+								trimCopy.threshold(trimCopy, trimCopy.rect, pt, "!=", c, 0x00000000, 0x00FFFFFF);
+								
+								//make it 100% white
+								trimCopy.copyChannel(trimCopy, trimCopy.rect, pt, BitmapDataChannel.ALPHA, BitmapDataChannel.RED);
+								trimCopy.copyChannel(trimCopy, trimCopy.rect, pt, BitmapDataChannel.ALPHA, BitmapDataChannel.GREEN);
+								trimCopy.copyChannel(trimCopy, trimCopy.rect, pt, BitmapDataChannel.ALPHA, BitmapDataChannel.BLUE);
+							}
+							else {
+								
+								var testColor:FlxColor = FlxColor.fromRGB(
+									((c.red   > 0) ? 1 : 0),
+									((c.green > 0) ? 1 : 0),
+									((c.blue  > 0) ? 1 : 0)
+								);
+								
+								var rMask:FlxColor = FlxColor.fromRGB((c.red > 0) ? 255 : 0, 0, 0);
+								var gMask:FlxColor = FlxColor.fromRGB(0, (c.green > 0) ? 255 : 0, 0);
+								var bMask:FlxColor = FlxColor.fromRGB(0, 0, (c.blue > 0) ? 255 : 0);
+								
+								var invMask:FlxColor = FlxColor.fromRGB(255 - rMask.red, 255 - gMask.green, 255 - bMask.blue);
+								
+								var invRMask:FlxColor = FlxColor.fromRGB((c.red > 0) ? 0 : 255, 0, 0, 0);
+								var invGMask:FlxColor = FlxColor.fromRGB(0, (c.green > 0) ? 0 : 255, 0, 0);
+								var invBMask:FlxColor = FlxColor.fromRGB(0, 0, (c.blue > 0) ? 0 : 255, 0);
+								
+								if(c.red > 0)
+									trimCopy.threshold(trimCopy, trimCopy.rect, pt, "<", testColor, 0x00000000, rMask);  //remove anything that DOESN'T have a value >= 1 in     matching channels
+									
+								if(c.green > 0)
+									trimCopy.threshold(trimCopy, trimCopy.rect, pt, "<", testColor, 0x00000000, gMask);  //remove anything that DOESN'T have a value >= 1 in     matching channels
+								
+								if(c.blue > 0)
+									trimCopy.threshold(trimCopy, trimCopy.rect, pt, "<", testColor, 0x00000000, bMask);  //remove anything that DOESN'T have a value >= 1 in     matching channels
+								
+								if(c.red == 0)
+									trimCopy.threshold(trimCopy, trimCopy.rect, pt, ">", 0x00000000, 0x00000000,  invRMask);  //remove anything that DOES    have a value >= 1 in non-matching channels
+								
+								if(c.green == 0)
+									trimCopy.threshold(trimCopy, trimCopy.rect, pt, ">", 0x00000000, 0x00000000,  invGMask);  //remove anything that DOES    have a value >= 1 in non-matching channels
+								
+								if(c.blue == 0)
+									trimCopy.threshold(trimCopy, trimCopy.rect, pt, ">", 0x00000000, 0x00000000,  invBMask);  //remove anything that DOES    have a value >= 1 in non-matching channels
+								
+								var copyChannel:Int = 0;
+								if (c.red   > 0) copyChannel = BitmapDataChannel.RED;
+								if (c.green > 0) copyChannel = BitmapDataChannel.GREEN;
+								if (c.blue  > 0) copyChannel = BitmapDataChannel.BLUE;
+								
+								//Make the layer monochrome
+								
+								if (c.red   <= 0) trimCopy.copyChannel(trimCopy, trimCopy.rect, pt, copyChannel, BitmapDataChannel.RED);
+								if (c.green <= 0) trimCopy.copyChannel(trimCopy, trimCopy.rect, pt, copyChannel, BitmapDataChannel.GREEN);
+								if (c.blue  <= 0) trimCopy.copyChannel(trimCopy, trimCopy.rect, pt, copyChannel, BitmapDataChannel.BLUE);
+							}
+							
+							//We're left with ONLY colors that are a pure tint of this layer's color
+							
+							if (baseCopy != null)
+							{
+								var black:BitmapData = new BitmapData(trimCopy.width, trimCopy.height, true, 0xFF000000);
+								black.copyChannel(trimCopy, trimCopy.rect, pt, BitmapDataChannel.ALPHA, BitmapDataChannel.ALPHA);
+								baseCopy.copyPixels(black, black.rect, pt, null, null, true);
+								black.dispose();
+							}
+							
+							var layerBounds:Rectangle = trimCopy.getColorBoundsRect(0xFFFFFFFF, 0x00000000, false);
+							var trimColor:BitmapData = new BitmapData(Std.int(layerBounds.width), Std.int(layerBounds.height), true, 0x00000000);
+							trimColor.copyPixels(trimCopy, layerBounds, pt);
+							
+							var xx = notAlphaBounds.x + layerBounds.x;
+							var yy = notAlphaBounds.y + layerBounds.y;
+							
+							lists[li].push( { index:i, bmp:trimColor, rect:new Rectangle( -xx, -yy, ww, hh), flipX:false, dupe:false, layer:layer.name } );
+							
+							trimCopy.dispose();
+						}
+						else {
+							
+							baseCopy = trimCopy;
+							baseName = layer.name;
+							baseLi = li;
+						}
+						
+						li++;
+					}
+					
+					if (baseCopy != null)
+					{
+						var xx = notAlphaBounds.x;
+						var yy = notAlphaBounds.y;
+						
+						lists[baseLi].push( { index:i, bmp:baseCopy, rect:new Rectangle( -xx, -yy, ww, hh), flipX:false, dupe:false, layer:baseName } );
+					}
 					
 					i++;
+					
+					var percent = Math.floor((i / total) * 1000)/10;
+					
+					trace("..." + percent + "%");
+					
+					trimmed.dispose();
+					cell.dispose();
 				}
 			}
 			
-			list.sort(sortWidestThenTallest);
+			var megaList:Array<BmpEntry> = [];
 			
-			list = removeDupesAndFlips(list);
+			trace("sorting & removing dupes & flips...");
 			
-			var scaledList   = scaleList(list, scale);
+			for (list in lists)
+			{
+				list.sort(sortWidestThenTallest);
+				list = removeDupesAndFlips(list);
+				for (entry in list)
+				{
+					megaList.push(entry);
+				}
+			}
 			
-			var scaledPacked = BitmapPacker.pack(Std.int(bmp.width*scale), Std.int(bmp.height*scale), scaledList);
+			trace("sorting megalist...");
+			
+			megaList.sort(sortWidestThenTallest);
+			
+			trace("scaling megalist...");
+			
+			megaList = scaleList(megaList, scale);
+			
+			//list.sort(sortWidestThenTallest);
+			//list = removeDupesAndFlips(list);
+			//var scaledList   = scaleList(list, scale);
+			
+			trace("packing...");
+			
+			var scaledPacked = BitmapPacker.pack(Std.int(bmp.width*scale), Std.int(bmp.height*scale), megaList);
 			
 			output = StringTools.replace(output, ".png", "_scaled.png");
+			
+			trace("writing to disk...");
 			
 			writeBmp(scaledPacked.bmp, output);
 			writeStr(FancyPrinter.print(scaledPacked.metadata.x, true), output + ".xml");
@@ -123,55 +296,122 @@ class Main extends Application
 		}
 	}
 	
+	private function getLayerData(filename:String):Array<{name:String,?color:FlxColor}>
+	{
+		if (filename != "")
+		{
+			var str = File.getContent(filename);
+			var xml = new Fast(Xml.parse(str));
+			if (xml.hasNode.layer)
+			{
+				var arr = [];
+				for (l in xml.nodes.layer)
+				{
+					var color = l.has.color ? FlxColor.fromString(l.att.color) : null;
+					arr.push( { name:l.att.name, color:color } );
+				}
+				return arr;
+			}
+		}
+		return null;
+	}
+	
 	public function removeDupesAndFlips(list:Array<BmpEntry>):Array<BmpEntry>
 	{
-		var newList = [];
-		var lastEntry = null;
+		var newList:Array<BmpEntry> = [];
+		
+		trace("removeDupesAndFlips");
+		
+		var i:Int = 0;
+		var dupes:Int = 0;
+		var flips:Int = 0;
 		
 		for(entry in list) {
 			
 			var flipX = false;
+			var isDupe = false;
 			
-			if (lastEntry != null) {
+			var j:Int = 0;
+			//check every other bitmap we've stashed so far
+			for (prevEntry in newList) {
 				
-				var compare = entry.bmp.compare(lastEntry.bmp);
-				
-				if (compare != 0 && Std.is(compare,BitmapData))
-				{
-					//If they're not identical
-					var delta = diffInComparison(cast compare);
+				if (prevEntry != null && entry != null && prevEntry.bmp != null && entry.bmp != null) {
 					
-					//If they're close
-					if (delta > 1000)
+					if(prevEntry.bmp.width == entry.bmp.width && prevEntry.bmp.height == entry.bmp.height)
 					{
-						//Flip it and check again
-						var flip = new BitmapData(entry.bmp.width, entry.bmp.height, true, 0x00000000);
-						var m = new Matrix();
-						m.scale( -1, 1);
-						m.translate(entry.bmp.width, 0);
-						flip.draw(entry.bmp, m);
+						var compare:Dynamic = entry.bmp.compare(prevEntry.bmp);
 						
-						var newCompare = lastEntry.bmp.compare(flip);
-						if (newCompare == 0)
+						if (Std.is(compare, BitmapData))			//a valid comparison
 						{
-							compare = newCompare;
-							flipX = true;
+							var bmp:BitmapData = cast compare;
+							
+							//If they're not identical
+							var delta:Int = diffInComparison(bmp);
+							
+							if (delta > 1000)
+							{
+								//Flip it and check again
+								var flip = new BitmapData(entry.bmp.width, entry.bmp.height, true, 0x00000000);
+								var m = new Matrix();
+								m.scale( -1, 1);
+								m.translate(entry.bmp.width, 0);
+								flip.draw(entry.bmp, m);
+								
+								var newCompare:Dynamic = flip.compare(prevEntry.bmp);
+								if (newCompare == 0)
+								{
+									compare = newCompare;
+									flipX = true;
+									flips++;
+								}
+								else if (Std.is(newCompare, BitmapData))
+								{
+									var nc:BitmapData = cast newCompare;
+									nc.dispose();
+								}
+								
+								flip.dispose();
+							}
+							
+							if (delta < 10000)
+							{
+								writeBmp(bmp, "out/"+ prevEntry.layer+"_"+ prevEntry.index + "_vs_" + entry.layer+"_"+entry.index + ".png");
+							}
+							
+							bmp.dispose();
+						}
+						
+						if (Std.is(compare,Int))			//either a perfect match (0) or an error code (anything else)
+						{
+							var compareVal:Int = cast compare;
+							if (compareVal == 0)
+							{
+								//if this block is identical (or a flipped mirror) of the previous one, then we just want to copy the previous metadata but with the duplicate frame name
+								newList.push( { index:entry.index, bmp:null, rect:prevEntry.rect, flipX:flipX, dupe:true, layer:entry.layer } );
+								isDupe = true;
+								dupes++;
+								break;
+							}
 						}
 					}
 				}
 				
-				if (compare == 0)
-				{
-					//if this block is identical (or a flipped mirror) of the previous one, then we just want to copy the previous metadata but with the duplicate frame name
-					newList.push( { index:entry.index, bmp:null, rect:null, flipX:flipX, dupe:true } );
-					continue;
-				}
+				j++;
 			}
 			
-			newList.push( { index:entry.index, bmp:entry.bmp, rect:entry.rect, flipX:false, dupe:false } );
+			if (isDupe)
+			{
+				i++;
+				continue;
+			}
 			
-			lastEntry = entry;
+			var newEntry:BmpEntry = { index:entry.index, bmp:entry.bmp, rect:entry.rect, flipX:false, dupe:false, layer:entry.layer };
+			newList.push(newEntry);
+			
+			i++;
 		}
+		
+		trace("detected and removed " + dupes + " duplicates, including " + flips + " horizontal mirror images");
 		
 		return newList;
 	}
@@ -189,7 +429,7 @@ class Main extends Application
 		{
 			if (entry.dupe)
 			{
-				newList.push( {index:entry.index, bmp:null, rect:null, flipX:entry.flipX, dupe:entry.dupe } );
+				newList.push( {index:entry.index, bmp:null, rect:null, flipX:entry.flipX, dupe:entry.dupe, layer:entry.layer } );
 				continue;
 			}
 			
@@ -206,12 +446,13 @@ class Main extends Application
 												  Std.int(entry.rect.width * scale),
 												  Std.int(entry.rect.height * scale));
 			
-			newList.push( {index:entry.index, bmp:newBmp, rect:newRect, flipX:false, dupe:false} );
+			newList.push( {index:entry.index, bmp:newBmp, rect:newRect, flipX:false, dupe:false, layer:entry.layer} );
 		}
 		
 		return newList;
 	}
 	
+	/*
 	public function scaleAtlas(orig:BitmapData, atlas:Fast, scale:Float, smooth:Bool = true): { bmp:BitmapData, atlas:Fast }
 	{
 		if (Math.abs(scale - 1.0) > 0.001)
@@ -302,6 +543,7 @@ class Main extends Application
 		}
 		return { bmp:orig.clone(), atlas:new Fast(a2) };
 	}
+	*/
 	
 	
 	/**
@@ -393,10 +635,10 @@ class Main extends Application
 	
 	private function sortWidestThenTallest(a: { bmp:BitmapData, rect:Rectangle }, b: { bmp:BitmapData, rect:Rectangle } ):Int
 	{
-		if (a.bmp.width > b.bmp.width) return -1;
-		if (a.bmp.width < b.bmp.width) return  1;
-		if (a.bmp.height > b.bmp.height) return -1;
-		if (a.bmp.height < b.bmp.height) return 1;
+		if (a.rect.width > b.rect.width) return -1;
+		if (a.rect.width < b.rect.width) return  1;
+		if (a.rect.height > b.rect.height) return -1;
+		if (a.rect.height < b.rect.height) return 1;
 		return 0;
 	}
 	
@@ -488,7 +730,7 @@ class Main extends Application
 	
 	public function usage():Void
 	{
-		trace("usage: dqsprite <inputfile> <outputfile> <final_width> <final_height> ?<orig_width> ?<orig_height>, ex: dqsprite in.png out.png 128 128");
+		trace("usage: dqsprite <inputfile> <outputfile> <final_width> <final_height> ?<orig_width> ?<orig_height>, ex: dqsprite in.png out.png 128 128 192 192 ");
 	}
 	
 	private function diffInComparison(bmp:BitmapData):Int {
