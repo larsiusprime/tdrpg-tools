@@ -33,12 +33,14 @@ NOTE: The original sprite should NOT be anti-aliased if you want this to work we
 
 The tool will split the file into layers. First, it looks for layer definitions in the xml that have been assigned 6 special colors:
 
+```
 0xFF0000 (RED)
 0x00FF00 (GREEN)
 0x0000FF (BLUE)
 0xFFFF00 (YELLOW)
 0x00FFFF (CYAN)
 0xFF00FF (MAGENTA)
+```
 
 Then it will look for pixel values in the image that are monochromatic tints of that value. So the 0x0000FF layer will match any
 values like 0x000080, 0x000001, 0x0000F0, but not 0x0080F0 or 0x0101FF. It then grabs these as a separate layer and converts it to grayscale,
@@ -50,9 +52,11 @@ The tool can only do this special trick with the above six colors. It can, howev
 
 So it can match:
 
+```
 0xFFFFFF
 0x808080
 0x404040
+```
 
 And it will separate that out as its own layer. It will ONLY grab pixels that exactly match that value, so you don't get to grab shaded regions like
 you can with the color channel method.
