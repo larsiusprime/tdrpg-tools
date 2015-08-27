@@ -37,7 +37,8 @@ class BitmapPacker
 		var maxpixels = maxW * maxH;
 		
 		var fail = true;
-		var powerOf2:Int = 2;
+		var powerOf2X:Int = 2;
+		var powerOf2Y:Int = 2;
 		
 		var packer:MaxRectsBinPack;
 		
@@ -50,9 +51,9 @@ class BitmapPacker
 		
 		while (fail)
 		{
-			trace("attempting " + powerOf2 + " x " + powerOf2 + "...");
+			trace("attempting " + powerOf2X + " x " + powerOf2Y + "...");
 			
-			packer = new MaxRectsBinPack(powerOf2, powerOf2);
+			packer = new MaxRectsBinPack(powerOf2X, powerOf2Y);
 			
 			var list2 = [];
 			
@@ -62,17 +63,25 @@ class BitmapPacker
 			
 			var j:Int = 0;
 			
-			var lastSub:Xml = null;
-			
 			for(i in 0...list.length)
 			{
 				if (list[i].dupe) 
 				{
-					var n = list[i].layer + "_" + StringTools.lpad(Std.string(list[i].index), "0", 4);
-					lastSub.set("name", n);
-					lastSub.set("flipX", Std.string(list[i].flipX));
-					subs.push(lastSub);
-					lastSub = dupeSub(n, lastSub);
+					var n = Std.string(list[i].index);
+					
+					var dentry:BmpEntry = list[list[i].dupeOf];
+					var dblock:Block    = blocks[list[i].dupeOf];
+					
+					var dfx = Std.int(dblock.fit.x);
+					var dfy = Std.int(dblock.fit.y);
+					
+					var drx = Std.int(list[i].rect.x);
+					var dry = Std.int(list[i].rect.y);
+					var drw = Std.int(list[i].rect.width);
+					var drh = Std.int(list[i].rect.height);
+					
+					var dupeSub = subTexNode(n, dfx, dfy, dentry.bmp.width, dentry.bmp.height, drx, dry, drw, drh, list[i].flipX);
+					subs.push(dupeSub);
 					continue;
 				}
 				
@@ -88,27 +97,39 @@ class BitmapPacker
 				
 				var flipX = (list[i].dupe && list[i].flipX);
 				
-				var n = list[i].layer + "_" + StringTools.lpad(Std.string(list[i].index), "0", 4);
-				sub = subTexNode(n, Std.int(block.fit.x), Std.int(block.fit.y), block.w, block.h, Std.int(rect.x), Std.int(rect.y), Std.int(rect.width), Std.int(rect.height), flipX);
+				var n = Std.string(list[i].index);
+				
+				var bfx = Std.int(block.fit.x);
+				var bfy = Std.int(block.fit.y);
+				
+				var rx = Std.int(rect.x);
+				var ry = Std.int(rect.y);
+				var rw = Std.int(rect.width);
+				var rh = Std.int(rect.height);
+				
+				sub = subTexNode(n, bfx, bfy, list[i].bmp.width, list[i].bmp.height, rx, ry, rw, rh, flipX);
 				
 				subs.push(sub);
 				
 				if (i != 0 && block.fit.x == 0 && block.fit.y == 0)
 				{
 					fail = true;
-					powerOf2 *= 2;
+					if (powerOf2Y < powerOf2X)
+					{
+						powerOf2Y *= 2;
+					}
+					else
+					{
+						powerOf2X *= 2;
+					}
 					meta = new Fast(Xml.parse('<TextureAtlas imagePath="pack.png"></TextureAtlas>'));
-					lastSub = null;
 					subs = [];
-					trace("failed.");
 					break;
 				}
-				
-				lastSub = dupeSub(n, sub);
 			}
 		}
 		
-		trace("success!");
+		trace("...success!");
 		
 		subs.sort(sortSubsAscending);
 		
@@ -119,7 +140,19 @@ class BitmapPacker
 		
 		trace("drawing output...");
 		
-		var canvas:BitmapData = new BitmapData(rightMost, bottomMost, true, 0x00000000);
+		var rightMost2:Int = 2;
+		var bottomMost2:Int = 2;
+		
+		while (rightMost2 < rightMost)
+		{
+			rightMost2 *= 2;
+		}
+		while (bottomMost2 < bottomMost)
+		{
+			bottomMost2 *= 2;
+		}
+		
+		var canvas:BitmapData = new BitmapData(rightMost2, bottomMost2, true, 0x00000000);
 		var pt = new Point();
 		
 		var i:Int = 0;
@@ -223,5 +256,7 @@ typedef BmpEntry = {
 	rect:Rectangle,
 	flipX:Bool,
 	dupe:Bool,
+	?origBmp:BitmapData,
+	?dupeOf:Int,
 	?layer:String
 }
