@@ -63,3 +63,4 @@ you can with the color channel method.
 
 This tool is kind of a hack but whatever. The asset data is spits out matches the "Sparrow" texture packer format that is one of many HaxeFlixel can read from.
 
+After the layer splitting is done, everything left over will be exported as the "base" layer, with black pixels stamped in wherever a layer was removed.
