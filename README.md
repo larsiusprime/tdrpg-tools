@@ -3,6 +3,8 @@ tdrpg-tools
 
 A set of tools for the tdrpg-haxe project (ie, [Defender's Quest 2](http://www.defendersquest.com/2/))
 
+These are just internal tools and are incredibly poorly documented because 99% of them are throwaway things I only use myself. Please don't email me asking how to use them, but if you're brave you're free to try getting my janky scripts to work for your own purposes.
+
 #TileProcess
 
 TileProcess lets an artist create a "sparse" tileset, then does all the boring scut-work of generating tile connection permutations for final use in the game.
