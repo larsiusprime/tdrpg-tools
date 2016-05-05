@@ -5,31 +5,32 @@
     <movie outputType="CustomBuild" />
     <movie input="" />
     <movie path="project.xml" />
-    <movie fps="30" />
-    <movie width="800" />
-    <movie height="600" />
+    <movie fps="0" />
+    <movie width="0" />
+    <movie height="0" />
     <movie version="1" />
     <movie minorVersion="0" />
     <movie platform="Lime" />
-    <movie background="FFFFFF" />
+    <movie background="#FFFFFF" />
+    <movie preferredSDK=";3;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\Development\Git\flixel" />
-    <class path="T:\Development\Git\lime" />
-    <class path="T:\Development\Git\openfl" />
-    <class path="T:\Development\Git\flixel-ui" />
-    <class path="Source" />
-    <class path="Export\windows\neko\haxe" />
+    <class path="T:\git\lime" />
+    <class path="T:\git\openfl" />
+    <class path="T:\git\firetongue" />
+    <class path="src" />
+    <class path="T:\git\openfl\extern" />
+    <class path="bin\windows\neko\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="flixel=3.3.11&#xA;lime=2.7.0&#xA;openfl=3.4.0&#xA;flixel-ui=1.0.2&#xA;openfl-next&#xA;tools=2.7.0&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="lime=2.9.1&#xA;openfl=3.6.1&#xA;firetongue=2.0.0&#xA;openfl-next&#xA;tools=2.9.1&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />
-    <option enabledebug="False" />
-    <option additional="--remap flash:openfl&#xA;--macro flixel.system.macros.FlxDefines.run()&#xA;#--macro keep(&quot;Main&quot;)&#xA;-debug " />
+    <option enabledebug="True" />
+    <option additional="--remap flash:openfl&#xA;#--macro keep(&quot;Main&quot;)&#xA;-debug " />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
@@ -37,7 +38,7 @@
   </haxelib>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <!-- example: <compile path="..." /> -->
+    <compile path="src\Main.hx" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>

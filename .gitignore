@@ -19,3 +19,9 @@ LegacyFix/bin/
 ImageProcess/bin/
 DoForAll/bin/
 fixmaps/Assets/maps/
+dq1tiles/bin/
+LocaleReconcile/bin/
+CSVtoTSV/bin/
+XMLFix/bin/
+SpriteSheet/bin/
+LimeWrap/bin/

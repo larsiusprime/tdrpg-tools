@@ -1,1 +1,1 @@
-T:\Development\Projects\DefendersQuest1\assets\gfx\cutscenes\char\hd\mouthify
+T:\git\DefendersQuest1\assets\gfx\_hd\cutscenes\char\mouthify\

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<data>
+	<size width="7" height="4" length="16"/>
+
+	<tile in_x="6"  out_x="0" out_y="0"/>
+	<tile in_x="14" out_x="1" out_y="0"/>
+	<tile in_x="12" out_x="2" out_y="0"/>
+	<tile in_x="7"  out_x="0" out_y="1"/>
+	<tile in_x="15" out_x="1" out_y="1"/>
+	<tile in_x="13" out_x="2" out_y="1"/>
+	<tile in_x="3"  out_x="0" out_y="2"/>
+	<tile in_x="11" out_x="1" out_y="2"/>
+	<tile in_x="9"  out_x="2" out_y="2"/>
+	
+	<tile in_x="1"  out_x="4" out_y="2"/>
+	<tile in_x="2"  out_x="4" out_y="1"/>
+	<tile in_x="4"  out_x="5" out_y="1"/>
+	<tile in_x="8"  out_x="5" out_y="2"/>
+	
+	<tile in_x="14" out_x="3" out_y="1" crop_half="left"   />
+	<tile in_x="14" out_x="6" out_y="1" crop_half="right"  />
+	<tile in_x="11" out_x="3" out_y="2" crop_half="left"   />
+	<tile in_x="11" out_x="6" out_y="2" crop_half="right"  />
+	<tile in_x="7"  out_x="4" out_y="3" crop_half="bottom" />
+	<tile in_x="13" out_x="5" out_y="3" crop_half="bottom" />
+	
+	<tile in_x="7"  out_x="4" out_y="0" crop_half="top"    />
+	<tile in_x="13" out_x="5" out_y="0" crop_half="top"    />
+	
+	<!--0 -->
+	<!--5 -->
+	<!--10-->
+</data>

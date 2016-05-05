@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="localereconcile" package="localereconcile" version="1.0.0" company="larsiusprime" />
+	<app main="Main" file="localereconcile" path="bin" />
+	
+	<source path="src" />
+	
+	<haxelib name="lime" />
+	<haxelib name="openfl" />
+	<haxelib name="firetongue" />
+	
+	<assets path="assets" exclude="*.svg" />
+	<icon path="assets/lime.svg" />
+	
+</project>

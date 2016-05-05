@@ -12,7 +12,7 @@ import lime.graphics.opengl.GL;
 import lime.graphics.RenderContext;
 import openfl.geom.Rectangle;
 import lime.ui.Window;
-import lime.utils.ByteArray;
+import openfl.utils.ByteArray;
 import openfl.display.BitmapData;
 import openfl.display.BitmapDataChannel;
 import openfl.display.PNGEncoderOptions;
@@ -77,11 +77,11 @@ class Main extends Application
 		{
 			var bmp = BitmapData.fromFile(input);
 			
-			var layers:Array<{name:String,?color:FlxColor}> = getLayerData(layers);
+			var layers:Array<{name:String,?color:FlxColor,?extra:Array<FlxColor>}> = getLayerData(layers);
 			
 			if (layers == null)
 			{
-				layers = [ { name:"", color:null } ];
+				layers = [ { name:"", color:null, extra:null } ];
 			}
 			
 			var cellsWide:Int = Std.int(bmp.width / ww);
@@ -132,7 +132,7 @@ class Main extends Application
 						
 						if (layer.color != null) {
 							
-							cellCopy = trimOutColorLayer(cellCopy, layer.color, pt);
+							cellCopy = trimOutColorLayer(cellCopy, layer.color, pt, layer.extra);
 							
 							//We're left with ONLY colors that are a pure tint of this layer's color
 							
@@ -234,8 +234,26 @@ class Main extends Application
 		}
 	}
 	
-	private function trimOutColorLayer(trimCopy:BitmapData, c:FlxColor, pt:Point):BitmapData
+	private function trimOutColorLayer(trimCopy:BitmapData, c:FlxColor, pt:Point, ?extra:Array<FlxColor>=null):BitmapData
 	{
+		if(extra != null)
+		{
+			extra.push(c);
+			var temps = [];
+			for (col in extra)
+			{
+				temps.push(trimOutColorLayer(trimCopy.clone(), col, pt));
+			}
+			trimCopy.fillRect(trimCopy.rect, FlxColor.TRANSPARENT);
+			for (temp in temps)
+			{
+				trimCopy.copyPixels(temp, temp.rect, new Point(), null, null, true);
+				temp.dispose();
+			}
+			temps = null;
+			return trimCopy;
+		}
+		
 		if (c.red == c.green && c.green == c.blue)	//special case, greyscale -- must be strictly monochromatic (no shading)
 		{
 			//remove anything that isn't exactly the same color
@@ -296,7 +314,7 @@ class Main extends Application
 		return trimCopy;
 	}
 	
-	private function getLayerData(filename:String):Array<{name:String,?color:FlxColor}>
+	private function getLayerData(filename:String):Array<{name:String,?color:FlxColor,?extra:Array<FlxColor>}>
 	{
 		if (filename != "")
 		{
@@ -308,7 +326,15 @@ class Main extends Application
 				for (l in xml.nodes.layer)
 				{
 					var color = l.has.color ? FlxColor.fromString(l.att.color) : null;
-					arr.push( { name:l.att.name, color:color } );
+					var extras = [];
+					if (l.has.extra) {
+						var strArr:Array<String> = l.att.extra.split(",");
+						for (str in strArr)
+						{
+							extras.push(FlxColor.fromString(str));
+						}
+					}
+					arr.push( { name:l.att.name, color:color, extra:extras } );
 				}
 				return arr;
 			}
@@ -450,8 +476,10 @@ class Main extends Application
 			{
 				var bmp = entry.bmp;
 				
+				var pad = 2;
+				
 				var layerBounds:Rectangle = bmp.getColorBoundsRect(0xFFFFFFFF, 0x00000000, false);
-				var trimColor:BitmapData = new BitmapData(Std.int(layerBounds.width), Std.int(layerBounds.height), true, 0x00000000);
+				var trimColor:BitmapData = new BitmapData(Std.int(layerBounds.width)+pad, Std.int(layerBounds.height)+pad, true, 0x00000000);
 				trimColor.copyPixels(bmp, layerBounds, pt);
 				
 				entry.bmp = trimColor;
@@ -781,7 +809,7 @@ class Main extends Application
 	
 	public function usage():Void
 	{
-		trace("usage: dqsprite <inputfile> <outputfile> <final_width> <final_height> ?<orig_width> ?<orig_height>, ex: dqsprite in.png out.png 128 128 192 192 ");
+		trace("usage: dqsprite <inputfile> <outputfile> <final_width> <final_height> <?orig_width> <?orig_height> <?layers_xml>, ex: dqsprite in.png out.png 128 128 192 192");
 	}
 	
 	private function diffInComparison(bmp:BitmapData):Int {

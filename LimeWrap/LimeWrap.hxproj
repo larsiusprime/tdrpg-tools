@@ -2,40 +2,33 @@
 <project version="2">
   <!-- Output SWF options -->
   <output>
-    <movie outputType="CustomBuild" />
+    <movie outputType="Application" />
     <movie input="" />
-    <movie path="project.xml" />
+    <movie path="bin\limewrap.n" />
     <movie fps="0" />
     <movie width="0" />
     <movie height="0" />
     <movie version="1" />
     <movie minorVersion="0" />
-    <movie platform="Lime" />
+    <movie platform="Neko" />
     <movie background="#FFFFFF" />
-    <movie preferredSDK=";3;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\Development\Git\flixel" />
-    <class path="T:\Development\Git\lime" />
-    <class path="T:\Development\Git\openfl" />
-    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,4" />
-    <class path="T:\Development\Git\flixel-editors" />
     <class path="src" />
-    <class path="bin\windows\neko\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="flixel=3.3.11&#xA;lime=2.7.0&#xA;openfl=3.4.0&#xA;hscript=2.0.4&#xA;flixel-editors=0.0.0&#xA;openfl-next&#xA;tools=2.7.0&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;lime-angle&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
-    <option mainClass="ApplicationMain" />
-    <option enabledebug="True" />
-    <option additional="--remap flash:openfl&#xA;--macro flixel.system.macros.FlxDefines.run()&#xA;#--macro keep(&quot;Main&quot;)&#xA;-debug " />
+    <option mainClass="Main" />
+    <option enabledebug="False" />
+    <option additional="--remap flash:openfl&#xA;" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
-    <!-- example: <library name="..." /> -->
+    <library name="openfl" />
   </haxelib>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
@@ -46,14 +39,14 @@
     <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand>"$(CompilerPath)/haxelib" run lime build "$(OutputFile)" $(TargetBuild) -$(BuildConfig) -Dfdb</preBuildCommand>
+  <preBuildCommand />
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="False" />
   <!-- Other project options -->
   <options>
     <option showHiddenPaths="False" />
     <option testMovie="Custom" />
-    <option testMovieCommand="" />
+    <option testMovieCommand="run.bat" />
   </options>
   <!-- Plugin storage -->
   <storage />
