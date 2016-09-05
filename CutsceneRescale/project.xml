@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
 	
-	<meta title="locale" package="" version="1.0.0" company="larsiusprime" />
-	<app main="Main" file="locale" path="bin" />
+	<meta title="rescale" package="" version="1.0.0" company="larsiusprime" />
+	<app main="Main" file="rescale" path="bin" />
 	
 	<source path="src" />
 	

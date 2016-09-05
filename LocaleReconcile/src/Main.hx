@@ -1,6 +1,7 @@
 package;
 import firetongue.CSV;
 import firetongue.TSV;
+import haxe.Utf8;
 import haxe.ds.ArraySort;
 import lime.app.Application;
 import sys.FileSystem;
@@ -25,22 +26,323 @@ class Main extends Application
 	
 	public function doStuff(args:Array<String>):Void
 	{
-		if (args == null || args.length < 3)
+		if (args == null || args.length < 4)
 		{
 			usage();
 			return;
 		}
 		
-		var inputDir1 = args[0];
-		var inputDir2 = args[1];
-		var outputDir = args[2];
+		var command = args[0];
+		
+		if (command == "reconcile")
+		{
+			commandReconcile(args);
+		}
+		else if (command == "construct")
+		{
+			commandConstruct(args);
+		}
+	}
+	
+	/*****************/
+	
+	public function commandConstruct(args:Array<String>)
+	{
+		var oldDir    = args[1];
+		var diffDir   = args[2];
+		var outputDir = args[3];
+		
+		var locales = [];
+		
+		var oldFiles = getFileNames(oldDir);
+		var diffFiles = getFileNames(diffDir);
+		
+		var constructedFiles = constructFiles(oldFiles, diffFiles);
+		
+		writeFiles(outputDir, constructedFiles);
+	}
+	
+	public function constructFiles(old:Array<String>, diff:Array<String>):Array<{filename:String,data:String}>
+	{
+		var files = [];
+		
+		var oldFiles = getFileContents(old);
+		var diffFiles = getFileContents(diff);
+		
+		for (i in 0...old.length)
+		{
+			var oldFile:TSV = new TSV(oldFiles[i]);
+			var diffFile:TSV = null;
+			
+			for (j in 0...diff.length)
+			{
+				if (strip(old[i]) == strip(diff[j]))
+				{
+					diffFile = new TSV(diffFiles[j]);
+					break;
+				}
+			}
+			
+			if (diffFile != null)
+			{
+				files.push(
+					{
+						filename:strip(old[i])+".tsv",
+						data:applyDiff(oldFile, diffFile)
+					}
+				);
+			}
+		}
+		
+		return files;
+	}
+	
+	public function applyDiff(old:TSV, diff:TSV):String
+	{
+		var comparison:Comparison = comparisonFromDiff(diff);
+		
+		var output:String = "";
+		for (i in 0...comparison.fields.length)
+		{
+			output += comparison.fields[i];
+			if (i != comparison.fields.length - 1)
+			{
+				output += "\t";
+			}
+		}
+		
+		for (i in 0...old.grid.length)
+		{
+			var row = old.grid[i];
+			
+			var flag = (row != null && row.length > 0) ? row[0] : "";
+			
+			if (flag != "" && flag != null)
+			{
+				//DELETED:
+				var deleted = false;
+				for (row in comparison.deleted)
+				{
+					if (row != null && row.length > 0 && row[0] == flag)
+					{
+						deleted = true;
+					}
+				}
+				
+				if (deleted) continue;
+				
+				output += "\n" + flag + "\t";
+				
+				//CHANGED:
+				if (comparison.changed.exists(flag))
+				{
+					var change = comparison.changed.get(flag);
+					for (j in 0...change.length)
+					{
+						output += change[j].b;
+						if (j != row.length - 1)
+						{
+							output += "\t";
+						}
+					}
+				}
+				else
+				{
+					for (j in 1...row.length)
+					{
+						output += row[j];
+						if (j != row.length - 1)
+						{
+							output += "\t";
+						}
+					}
+				}
+			}
+		}
+		
+		//INSERTED:
+		for (i in 0...comparison.inserted.length)
+		{
+			var row = comparison.inserted[i];
+			output += "\n" + row.join("\t");
+		}
+		
+		return output;
+	}
+	
+	public function comparisonFromDiff(diff:TSV):Comparison
+	{
+		var comparison:Comparison = {
+			name:"",
+			fields:diff.fields.copy(),
+			deleted:[],
+			inserted:[],
+			changed:new Map<String,Array<StringPair>>(),
+			changedContext:null,
+			totalWords:0,
+		}
+		
+		var state = "";
+		var changeFlag:String = "";
+		var changeRows:Array<Array<String>> = null;
+		
+		for (i in 0...diff.grid.length)
+		{
+			var row = diff.grid[i];
+			
+			var flag = (row != null && row.length > 0) ? row[0] : "";
+			
+			if (flag != "" && flag != null)
+			{
+					 if (flag.indexOf("DELETED:")  == 0)	{ state = "deleted"; continue; }
+				else if (flag.indexOf("INSERTED:") == 0)	{ state = "inserted"; continue; }
+				else if (flag.indexOf("CHANGED:") == 0)		{ state = "changed"; continue; }
+				else if (flag.indexOf("METRICS:") == 0)		{ state = "metrics"; continue; }
+				
+				switch(state)
+				{
+					case "metrics": //do nothing
+					case "deleted": comparison.deleted.push(row.copy());
+					case "inserted": comparison.inserted.push(row.copy());
+					case "changed":
+						if (flag.indexOf("  old") != -1 || flag.indexOf("  new") != -1)
+						{
+							if (changeRows == null)
+							{
+								changeRows = [];
+							}
+							//get all the "old,new,old(loc),new(loc)" rows & store them
+							changeRows.push(row);
+						}
+						else
+						{
+							if (changeRows != null && changeFlag != "")
+							{
+								//we've stored up change rows & hit a new flag
+								
+								var finalPairs = [];
+								
+								var origAs = [];
+								var origBs = [];
+								var locAs = [];
+								var locBs = [];
+								
+								for (cr in changeRows)
+								{
+									var crflag = cr[0];
+									
+									//Get the original english diffs
+									if (crflag.indexOf("old") != -1 && crflag.indexOf("old(") == -1)
+									{
+										for (j in 1...cr.length)
+										{
+											origAs.push(cr[j]);
+										}
+									}
+									else if (crflag.indexOf("new") != -1 && crflag.indexOf("new(") == -1)
+									{
+										for (j in 1...cr.length)
+										{
+											origBs.push(cr[j]);
+										}
+									}
+									
+									//Get the localized diffs
+									if (crflag.indexOf("old(") != -1)
+									{
+										for (j in 1...cr.length)
+										{
+											locAs.push(cr[j]);
+										}
+									}
+									else if (crflag.indexOf("new(") != -1)
+									{
+										for (j in 1...cr.length)
+										{
+											locBs.push(cr[j]);
+										}
+									}
+								}
+								
+								var len = Std.int(Math.max(Math.max(Math.max(origAs.length, origBs.length), locAs.length), locBs.length));
+								
+								for (i in 0...len)
+								{
+									var origA = origAs.length > i ? origAs[i] : null;
+									var origB = origBs.length > i ? origBs[i] : null;
+									var locA =   locAs.length > i ? locAs[i]  : null;
+									var locB =   locBs.length > i ? locBs[i]  : null;
+									
+									var final = {a:"", b:""};
+									
+									if (origA != null && origB != null)
+									{
+										if (locA != null && locB != null)
+										{
+											final.a = locA;
+											final.b = locB;
+											if (locB == "~~~")
+											{
+												final.b = locA;
+											}
+											if (origB == "~~~" || origB == origA)
+											{
+												final.b = locA;
+											}
+										}
+										else
+										{
+											if (origB == "~~~" || origB == origA)
+											{
+												final.b = origA;
+											}
+											else
+											{
+												final.b = origB;
+											}
+										}
+									}
+									
+									finalPairs.push(final);
+								}
+								
+								comparison.changed.set(changeFlag, finalPairs);
+							}
+							
+							//update to the new flag & reset the change rows
+							changeFlag = flag;
+							changeRows = null;
+						}
+				}
+			}
+		}
+		
+		return comparison;
+	}
+	
+	public function writeFiles(dir:String, files:Array<{filename:String,data:String}>)
+	{
+		for (file in files)
+		{
+			var fileDir = dir + "/" + file.filename;
+			writeStr(file.data, fileDir);
+		}
+	}
+	
+	/*****************/
+	
+	public function commandReconcile(args:Array<String>)
+	{
+		var inputDir1 = args[1];
+		var inputDir2 = args[2];
+		var outputDir = args[3];
 		
 		var locales = [];
 		var localeFiles = [];
 		
-		if (args.length > 3)
+		if (args.length > 4)
 		{
-			for (i in 3...args.length)
+			for (i in 4...args.length)
 			{
 				locales.push(args[i]);
 				localeFiles.push(getFileNames(args[i]));
@@ -123,11 +425,13 @@ class Main extends Application
 			}
 			
 			file += "\nMETRICS:\n";
-			file += "\nLINE INSERTION WORDS: " + metrics.wordsInserted;
+			file += "\nOLD WORDS           : " + diff.totalWords;
+			file += "\nLINE INSERTED WORDS : " + metrics.wordsInserted;
 			file += "\nLINE DELETED WORDS  : " + metrics.wordsDeleted;
 			file += "\nLINE CHANGED WORDS  : " + metrics.wordsChanged;
 			file += "\n---------------------\n";
-			file += "\nTOTAL NEW WORD COUNT: " + (metrics.wordsInserted + metrics.wordsChanged);
+			file += "\nTOTAL WORDS         : " + (diff.totalWords + metrics.wordsInserted - metrics.wordsDeleted);
+			file += "\nTOTAL *NEW* WORDS   : " + (metrics.wordsInserted + metrics.wordsChanged);
 			
 			writeStr(file, dir + "/" + d.name+".tsv");
 			
@@ -154,7 +458,6 @@ class Main extends Application
 	
 	public function countWords(arr:Array<String>):Int
 	{
-		//var print = true;// Math.random() < 1 / 100;
 		var i = 0;
 		for (str in arr)
 		{
@@ -282,7 +585,8 @@ class Main extends Application
 			deleted:[],
 			inserted:[],
 			changed:new Map<String,Array<StringPair>>(),
-			changedContext:new Map<String,Array<Array<String>>>()
+			changedContext:new Map<String,Array<Array<String>>>(),
+			totalWords:0
 		};
 		
 		var sheet1 = getSheet(file1, data1);
@@ -297,6 +601,8 @@ class Main extends Application
 		for (arr in sheet1.grid)
 		{
 			if (arr == null || arr.length == 0) continue;
+			
+			diff.totalWords += countWords(arr);
 			
 			var first1 = arr[0];
 			var match = false;
@@ -422,19 +728,54 @@ class Main extends Application
 		return new CSV(data);
 	}
 	
+	public function utf8IndexOf(str:String, char:String):Int
+	{
+		var charCode:Int = Utf8.charCodeAt(char, 0);
+		var returnVal = -1;
+		var i:Int = 0;
+		Utf8.iter(str, function(c:Int):Void{
+			if (c == charCode)
+			{
+				returnVal = i;
+			}
+			i++;
+		});
+		return returnVal;
+	}
+	
+	public function utf8LastIndexOf(str:String, char:String):Int
+	{
+		var charCode = Utf8.charCodeAt(char, 0);
+		var last:Int = -1;
+		var i:Int = 0;
+		Utf8.iter(str, function(c:Int):Void{
+			if (c == charCode)
+			{
+				last = i;
+			}
+			i++;
+		});
+		return last;
+	}
+	
+	public function utf8has(str:String, char:String):Bool
+	{
+		return utf8IndexOf(str, char) != -1;
+	}
+	
 	private inline function strip(str:String):String
 	{
-		if (str.indexOf(".") != -1)
+		if (utf8has(str,"."))
 		{
-			str = str.substr(0, str.indexOf("."));
+			str = Utf8.sub(str, 0, utf8IndexOf(str, "."));
 		}
-		if (str.indexOf("/") != -1)
+		if (utf8has(str,"/"))
 		{
-			str = str.substring(str.lastIndexOf("/") + 1, str.length);
+			str = Utf8.sub(str, utf8LastIndexOf(str, "/") + 1, Utf8.length(str));
 		}
-		if (str.indexOf("\\") != -1)
+		if (utf8has(str,"\\"))
 		{
-			str = str.substring(str.lastIndexOf("//") + 1, str.length);
+			str = Utf8.sub(str, utf8LastIndexOf(str, "\\") + 1, Utf8.length(str));
 		}
 		return str;
 	};
@@ -489,9 +830,7 @@ class Main extends Application
 		var error:Bool = false;
 		try
 		{
-			var f:FileOutput = File.write(name);
-			f.writeString(str);
-			f.close();
+			File.saveContent(name, str);
 		}
 		catch (msg:String)
 		{
@@ -502,7 +841,9 @@ class Main extends Application
 	
 	public function usage():Void
 	{
-		Sys.println("usage: localereconcile newdir olddir outputdir <?locale1> <?locale2> ... <?localen> ex: localereconcile new old output de fr");
+		var usage1:String = "usage 1: locale reconcile newdir olddir outputdir <?locale1> <?locale2> ... <?localen> ex: localereconcile new old output de fr";
+		var usage2:String = "usage 2: locale construct olddir diffdir outputdir ex: locale construct de de_trans output";
+		Sys.println(usage1 + "\n" + usage2);
 	}
 
 }
@@ -514,6 +855,7 @@ typedef Comparison = {
 	var inserted:Array<Array<String>>;
 	var changed:Map<String,Array<StringPair>>;
 	var changedContext:Map<String,Array<Array<String>>>;
+	var totalWords:Int;
 }
 
 typedef Metrics = {
