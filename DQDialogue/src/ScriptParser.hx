@@ -92,25 +92,36 @@ class ScriptParser
 		{
 			var plot = plotContent[i];
 			if (i != 0) metaContent += "\n";
-			metaContent += plot.plotLine+":" + plot.plotType+":\n";
-			metaContent += "\t";
-			for (j in 0...plot.entries.length)
+			
+			if (plot.plotLine != "")
 			{
-				var entry = plot.entries[j];
-				if (entry.modifier == "root" || entry.modifier == ""){
-					metaContent += entry.name;
-				}
-				else
-				{
-					metaContent += entry.name+"*" + entry.modifier;
-				}
-				if (j != plot.entries.length - 1)
-				{
-					metaContent += ",";
-				}
-				else
+				metaContent += plot.plotLine+":" + plot.plotType+":";
+				if (plot.entries == null || plot.entries.length == 0)
 				{
 					metaContent += ";\n";
+				}
+				else
+				{
+					metaContent += "\n\t";
+					for (j in 0...plot.entries.length)
+					{
+						var entry = plot.entries[j];
+						if (entry.modifier == "root" || entry.modifier == ""){
+							metaContent += entry.name;
+						}
+						else
+						{
+							metaContent += entry.name+"*" + entry.modifier;
+						}
+						if (j != plot.entries.length - 1)
+						{
+							metaContent += ",";
+						}
+						else
+						{
+							metaContent += ";\n";
+						}
+					}
 				}
 			}
 		}
@@ -177,6 +188,19 @@ class ScriptParser
 		return null;
 	}
 	
+	private function getPlotType(trigger:SceneTrigger):String
+	{
+		return switch(trigger) {
+			case INTRO, OUTRO, NEWGAME: "movies";
+			case REWARDS: "reward_movies";
+			case BATTLE: "battle_movies";
+			case OVERWORLD: "overworld_movies";
+			case PARTY: "party_movies";
+			case TOWN: "town_movies";
+			default: "unknown";
+		}
+	}
+	
 	public function processPlot(scene:Scene, prev:Scene, next:Scene)
 	{
 		var plot:MetaStruct = getMetaStruct(scene.plotLine);
@@ -184,11 +208,7 @@ class ScriptParser
 		{
 			plot = {
 				plotLine: scene.plotLine,
-				plotType: switch(scene.trigger) {
-					case INTRO, OUTRO, NEWGAME: "movies";
-					case OVERWORLD, PARTY, REWARDS, TOWN: "tut_movies";
-					default: "unknown";
-				},
+				plotType: getPlotType(scene.trigger),
 				entries: []
 			}
 			plotContent.push(plot);
@@ -196,59 +216,112 @@ class ScriptParser
 		
 		switch(plot.plotType)
 		{
-			case "movies":
-				var entry = getMetaEntry(plot, scene.pearlID);
-				if (entry == null)
-				{
-					var theName = scene.pearlID;
-					if (theName == null)
-					{
-						theName = scene.name;
-					}
-					else
-					{
-						theName = Util.padLeft(theName, 3);
-					}
-					
-					entry = {name:theName, modifier:""};
-					plot.entries.push(entry);
-				}
-				switch(scene.trigger)
-				{
-					case INTRO:
-						if (entry.modifier == "") entry.modifier = "i";
-						else if (entry.modifier == "o") entry.modifier = "";
-					case OUTRO:
-						if (entry.modifier == "") entry.modifier = "o";
-						else if (entry.modifier == "i") entry.modifier = "";
-					case NEWGAME:
-						entry.modifier = "root";
-						
-						var entryIndex = plot.entries.indexOf(entry);
-						//ensure root comes first!
-						if (entryIndex != 0)
-						{
-							plot.entries.splice(entryIndex, 1);
-							plot.entries.insert(0, entry);
-						}
-						
-						//ensure there are no other roots:
-						for (i in 1...plot.entries.length)
-						{
-							if (plot.entries[i].modifier == "root")
-							{
-								error( -1, -1, "only one NEWGAME block is allowed in the entire document!");
-							}
-						}
-				}
-			case "tut_movies":
+			case "movies": processPlotMovies(plot, scene);
+			case "battle_movies", "reward_movies", "overworld_movies", "party_movies", "town_movies": processPlotTutMovies(plot, scene, plot.plotType);
 			case "unknown":
+		}
+	}
+	
+	private function sceneName(scene:Scene):String
+	{
+		var theName = scene.pearlID;
+		if (theName == null)
+		{
+			theName = scene.name;
+		}
+		else
+		{
+			theName = Util.padLeft(theName, 3);
+		}
+		return theName;
+	}
+	
+	private function processPlotTutMovies(plot:MetaStruct, scene:Scene, plotType:String="")
+	{
+		var theName = sceneName(scene);
+		
+		if (plotType == "overworld_movies")
+		{
+			var i = theName.indexOf("_overworld");
+			if (i != -1 && i != 0)
+			{
+				theName = StringTools.replace(theName, "_overworld", "");
+			}
+		}
+		else if (plotType == "party_movies" || plotType == "reward_movies")
+		{
+			var pearl = scene.getParam("pearl");
+			var section = scene.getParam("section");
+			theName = Util.padLeft(pearl, 3);
+			if (section != "" && section != null)
+			{
+				theName = theName + "*" + section;
+			}
+		}
+		else if (plotType == "town_movies")
+		{
+			var town = scene.getParam("town");
+			var pearl = scene.getParam("pearl");
+			var section = scene.getParam("section");
+			trace("town = " + town + " pearl = " + pearl + " section = " + section);
+			theName = town;
+			if (section != "" && section != null)
+			{
+				theName = town + "*" + section + "*" + pearl;
+			}
+		}
+		
+		var entry = getMetaEntry(plot, theName);
+		if (entry == null)
+		{
+			entry = {name:theName, modifier:""};
+			plot.entries.push(entry);
+		}
+	}
+	
+	private function processPlotMovies(plot:MetaStruct, scene:Scene)
+	{
+		var theName = sceneName(scene);
+		var entry = getMetaEntry(plot, theName);
+		if (entry == null)
+		{
+			entry = {name:theName, modifier:""};
+			plot.entries.push(entry);
+		}
+		switch(scene.trigger)
+		{
+			case INTRO:
+				if (entry.modifier == "") entry.modifier = "i";
+				else if (entry.modifier == "o") entry.modifier = "";
+			case OUTRO:
+				if (entry.modifier == "") entry.modifier = "o";
+				else if (entry.modifier == "i") entry.modifier = "";
+			case NEWGAME:
+				entry.modifier = "root";
+				
+				var entryIndex = plot.entries.indexOf(entry);
+				//ensure root comes first!
+				if (entryIndex != 0)
+				{
+					plot.entries.splice(entryIndex, 1);
+					plot.entries.insert(0, entry);
+				}
+				
+				//ensure there are no other roots:
+				for (i in 1...plot.entries.length)
+				{
+					if (plot.entries[i].modifier == "root")
+					{
+						error( -1, -1, "only one NEWGAME block is allowed in the entire document!");
+					}
+				}
 		}
 	}
 	
 	public function processScene(scene:Scene, outDir:String, locale:String)
 	{
 		var scenesDir = outDir + "/scenes/" + locale+"/"; 
+		var tutsDir = outDir + "/tuts/" + locale+"/";
 		
 		var titleFlag = Utf8Ext.toUpperCase("$S_" + scene.name+"_TITLE");
 		
@@ -291,6 +364,10 @@ class ScriptParser
 		{
 			FileSystem.createDirectory(scenesDir);
 		}
+		if (!FileSystem.exists(tutsDir))
+		{
+			FileSystem.createDirectory(tutsDir); 
+		}
 		
 		if (bs == null)
 		{
@@ -306,12 +383,39 @@ class ScriptParser
 			};
 		}
 		
-		var sceneXML = 
-'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
-lineData.xml +
-'\n</scene>';
+		var plotType = getPlotType(scene.trigger);
 		
-		File.saveContent(scenesDir + scene.name + ".xml", sceneXML);
+		var sceneXML = "";
+		switch(plotType)
+		{
+			case "movies": 
+				sceneXML = getMoviesXML(scene, titleFlag, bs, lineData.xml);
+			case "battle_movies","reward_movies","overworld_movies","party_movies","town_movies":
+				sceneXML = getTutMoviesXML(scene, titleFlag, bs, lineData.xml);
+			default:
+				sceneXML = "";
+		}
+		
+		if (sceneXML != "")
+		{
+			File.saveContent(scenesDir + scene.name + ".xml", sceneXML);
+		}
+	}
+	
+	private function getMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
+	{
+		return 
+'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
+lineData +
+'\n</scene>';
+	}
+	
+	private function getTutMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
+	{
+		return
+'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
+lineData +
+'\n</scene>';
 	}
 	
 	private function doBlock_Begin(block:Block):BeginSettings
@@ -377,65 +481,14 @@ lineData.xml +
 	
 	private function doBlock_PlainText(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
-		var theText = null;
-		var subText = null;
-		var subSubText = null;
 		for (i in 0...block.lines.length)
 		{
-			var line = block.lines[i];
+			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
+			var content = block.lines[i];
 			
-			var t = (subText == null && subSubText == null ? line : null);
-			var s = (matchAndStrip(line, "sub"));
-			var ss = (matchAndStrip(line, "subsub"));
+			lineData.tsv += flag + "\t" + content + "\n";
 			
-			subText = s != null ? subText : null;
-			subSubText = ss != null ? subSubText : null;
-			
-			if (t != null)
-			{
-				var textFlag = "$S_" + scene.name+"_B" + block.number + "_L" + i;
-				var subTextFlag = textFlag + "_S";
-				var subSubTextFlag = textFlag + "_SS";
-				
-				var writeText = null;
-				var writeFlag = null;
-				
-				if (theText != null)
-				{
-					writeText = theText;
-					
-					theText = t;
-					t = null;
-					subText = null;
-					subSubText = null;
-				}
-				if (i == block.lines.length - 1)
-				{
-					writeText = t;
-				}
-				
-				if (writeText != null)
-				{
-					var subAtt = "";
-					var subSubAtt = "";
-					
-					lineData.tsv += textFlag + "\t" + writeText + "\n";
-					
-					if (subText != null)
-					{
-						lineData.tsv += subTextFlag + "\t" + subText + "\n";
-						subAtt = subTextFlag;
-					}
-					if (subSubText != null)
-					{
-						lineData.tsv += subSubTextFlag + "\t" + subSubText + "\n";
-						subSubAtt = subSubTextFlag;
-					}
-					
-					lineData.xml += 
-					"\n    <narration " + att("text", textFlag) + att("sub_text", subAtt) + att("sub_sub_text", subSubAtt) + att("color", "0xffffff") + att("bkg", "0x000000") + "/>";
-				}
-			}
+			lineData.xml += "\n    <tut " + att("title", "PLAINTEXT") + att("text", flag) + "/>";
 		}
 		return lineData;
 	}
@@ -447,7 +500,10 @@ lineData.xml +
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			lineData.tsv += flag + "\t" + content + "\n";
-			lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
+			
+			lineData.xml += "\n    <tut " + att("title", "TALK_$NARRATOR_NORMAL") + att("text", flag) +"/>";
+			
+			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
 		}
 		return lineData;
 	}
@@ -457,9 +513,12 @@ lineData.xml +
 		for (i in 0...block.lines.length)
 		{
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
-			var content = "PLACEHOLDER: " + block.lines[i];
+			var content = block.lines[i];
 			lineData.tsv += flag +"\t" + content + "\n";
-			lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
+			
+			lineData.xml += "\n    <tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
+			
+			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
 		}
 		return lineData;
 	}
@@ -467,15 +526,23 @@ lineData.xml +
 	private function doBlock_Speech(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
 		var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_SPEAKER");
-		var speaker = arrVal(block.parameters, 0);
-		var emote = arrVal(block.parameters, 1);
+		var speaker = block.getParameter("speaker");
+		var emote = block.getParameter("emote");
+		if (emote == "")
+		{
+			emote = "NORMAL";
+		}
+		speaker = Util.cleanString(speaker, "");
 		lineData.tsv += flag + "\t" + speaker + "\n";
 		for (i in 0...block.lines.length)
 		{
 			flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			lineData.tsv += flag + "\t" + content + "\n";
-			lineData.xml += "\n    <line " + att("character", speaker) + att("text", flag) +"/>";
+			
+			lineData.xml += "\n    <tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
+			
+			//lineData.xml += "\n    <line " + att("character", speaker) + att("text", flag) +"/>";
 		}
 		return lineData;
 	}
@@ -487,7 +554,15 @@ lineData.xml +
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			lineData.tsv += flag + "\t" + content + "\n";
-			lineData.xml += "\n    <line " + att("character", "", true) + att("text", content) +"/>";
+			var title = block.getParameter("title");
+			if (title == "")
+			{
+				title = "TUTORIAL";
+			}
+			
+			lineData.xml += "\n    <tut " + att("title", title) + att("text", flag) + "/>";
+			
+			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", content) +"/>";
 		}
 		return lineData;
 	}

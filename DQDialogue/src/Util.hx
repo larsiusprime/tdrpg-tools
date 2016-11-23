@@ -1,4 +1,5 @@
 package;
+import org.zamedev.lib.Utf8Ext;
 import unifill.CodePoint;
 using unifill.Unifill;
 /**
@@ -11,6 +12,14 @@ class Util
 	public function new() 
 	{
 		
+	}
+	
+	public static function cleanString(s:String,replaceSpacesWith:String="_"):String
+	{
+		s = stripStuff(s);
+		s = Utf8Ext.toUpperCase(s);
+		s = uReplace(s, " ", replaceSpacesWith, true);
+		return s;
 	}
 	
 	public static function stripStuff(s:String):String

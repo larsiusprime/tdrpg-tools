@@ -112,10 +112,12 @@ class Scene
 		}
 		
 		var p = getParam("pearl");
-		if (p != "")
+		if (p != "" && p != null)
 		{
 			p = Util.padLeft(p, 3);
 		}
+		
+		name = "";
 		
 		switch(trigger)
 		{
@@ -127,9 +129,7 @@ class Scene
 			case SceneTrigger.TOWN:    
 				var town = getParam("town");
 				var section = getParam("section");
-				name = name + town + "_town";
-				if (p != "") name = name + "_" + p;
-				if (section != "") name = name + "_" + section;
+				name = "town_" + town + "_" + section + "_" + p;
 			case SceneTrigger.PARTY:   
 				var section = getParam("section");
 				if (p != "") name = p + "_party";
@@ -145,17 +145,15 @@ class Scene
 				name = Std.string(Util.padDigits(number, 3)).uCat("_").uCat(name);
 		}
 		
-		trace("name = " + name + " p = " + p);
-		
 		var begin = getBlock(Keyword.BEGIN);
 		if (begin != null)
 		{
 			plotLine = begin.getParameter("plotline");
 			if (plotLine == "" || plotLine == null)
 			{
-				switch(trigger)
+				plotLine = switch(trigger)
 				{
-					case SceneTrigger.NEWGAME, SceneTrigger.INTRO, SceneTrigger.OUTRO: plotLine = "default_pearls";
+					case SceneTrigger.NEWGAME, SceneTrigger.INTRO, SceneTrigger.OUTRO:  "default_pearls";
 					case SceneTrigger.OVERWORLD: "default_overworld";
 					case SceneTrigger.BATTLE: "default_battles";
 					case SceneTrigger.TOWN: "default_towns";
@@ -293,8 +291,8 @@ class Scene
 		var i:Int = switch(string)
 		{
 			case "town": 0;
-			case "pearl": 1;
-			case "section": 2;
+			case "section": 1;
+			case "pearl": 2;
 			default: -1;
 		}
 		return getParam_GENERIC(i, string);

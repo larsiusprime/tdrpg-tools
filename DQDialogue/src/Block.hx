@@ -32,7 +32,28 @@ class Block
 		return switch(keyword)
 		{
 			case Keyword.BEGIN: getParameter_BEGIN(name);
+			case Keyword.SPEECH: getParameter_SPEECH(name);
+			case Keyword.TUTORIAL: getParameter_TUTORIAL(name);
 			default: getParameter_GENERIC( -1, name);
+		}
+	}
+	
+	private function getParameter_SPEECH(name:String):String
+	{
+		return switch(name)
+		{
+			case "speaker": getParameter_GENERIC(0);
+			case "emote": getParameter_GENERIC(1);
+			default: "";
+		}
+	}
+	
+	private function getParameter_TUTORIAL(name:String):String
+	{
+		return switch(name)
+		{
+			case "title": getParameter_GENERIC(0);
+			default: "";
 		}
 	}
 	

@@ -3,6 +3,7 @@ import haxe.xml.Fast;
 import haxe.xml.Printer;
 import sys.FileSystem;
 import sys.io.File;
+import unifill.Unifill;
 
 /**
  * ...
@@ -15,21 +16,25 @@ class MetaParser
 	
 	public function parse(inDir:String, outDir:String)
 	{
+		if (FileSystem.exists(outDir) == false)
+		{
+			FileSystem.createDirectory(outDir);
+		}
+		
 		var file = inDir + "/meta.txt";
 		if (FileSystem.exists(file))
 		{
 			var str = File.getContent(file);
 			if (str != null && str != "")
 			{
-				var document = processMap(str);
+				var document = processScenes(str);
 				if (document != null)
-				{
-					if (FileSystem.exists(outDir) == false)
-					{
-						FileSystem.createDirectory(outDir);
-					}
 					File.saveContent(outDir+"xml/game_progression.xml", Printer.print(document, true));
-				}
+				
+				document = processBattles(str);
+				if (document != null)
+					File.saveContent(outDir + "xml/scenes.xml", Printer.print(document, true));
+				
 			}
 			else
 			{
@@ -49,14 +54,30 @@ class MetaParser
 		Sys.println("META ERROR : " + msg);
 	}
 	
-	private function processMap(data:String):Xml
+	private function stripData(data:String):String
 	{
 		data = StringTools.replace(data, "\r", "");
 		data = StringTools.replace(data, "\n", "");
 		data = StringTools.replace(data, " ", "");
 		data = StringTools.replace(data, "\t", "");
+		return data;
+	}
+	
+	private function processScenes(data:String)
+	{
+		return processData(data, "<plotlines></plotlines>", ["pearls","movies","heroes"]);
+	}
+	
+	private function processBattles(data:String)
+	{
+		return processData(data, "<scenes></scenes>", ["battle_movies","reward_movies","overworld_movies","party_movies","town_movies"]);
+	}
+	
+	private function processData(data:String, header:String, match:Array<String>):Xml
+	{
+		data = stripData(data);
 		var lines:Array<String> = data.split(";");
-		var document = Xml.parse('<plotlines></plotlines>').firstChild();
+		var document = Xml.parse(header).firstChild();
 		for (line in lines)
 		{
 			if (line == null) continue;
@@ -68,11 +89,80 @@ class MetaParser
 				
 				var cells:Array<String> = entry[2].split(",");
 				
-				var xml = Xml.parse('<plotline name="$plotline"></plotline>').firstChild();
-				
-				xml = addCells(xml, cells, plottype);
-				
-				document.addChild(xml);
+				if (match.indexOf(plottype) != -1)
+				{
+					switch(plottype)
+					{
+						case "pearls", "movies", "heroes":
+							var xml = Xml.parse('<plotline name="$plotline"></plotline>').firstChild();
+							xml = addCells(xml, cells, plottype);
+							document.addChild(xml);
+						case "battle_movies":
+							for (cell in cells)
+							{
+								if (cell == null || cell == "") continue;
+								var xml = Xml.parse('<battle pearl="$cell" scene="'+cell+'_battle"/>');
+								document.addChild(xml);
+							}
+						case "reward_movies":
+							for (cell in cells)
+							{
+								if (cell == null || cell == "") continue;
+								var xml = Xml.parse('<rewards pearl="$cell" scene="'+cell+'_rewards"/>');
+								document.addChild(xml);
+							}
+						case "overworld_movies":
+							for (cell in cells)
+							{
+								if (cell == null || cell == "") continue;
+								var pearl = cell;
+								if (cell.indexOf("_overworld") == -1)
+								{
+									cell = cell + "_overworld";
+								}
+								else
+								{
+									pearl = "";
+								}
+								var xml = Xml.parse('<overworld pearl="$pearl" scene="$cell"/>');
+								document.addChild(xml);
+							}
+						case "party_movies":
+							for (cell in cells)
+							{
+								if (cell == null || cell == "") continue;
+								var arr = splitCell(cell, "*");
+								cell = arr[0];
+								var section = arr[1];
+								var pearl = cell;
+								var xml = Xml.parse('<party pearl="$pearl" section="$section" scene="' + cell + '_party"/>');
+								document.addChild(xml);
+							}
+						case "town_movies":
+							for (cell in cells)
+							{
+								if (cell == null || cell == "") continue;
+								var arr = splitCell(cell, "*");
+								var town = arr[0];
+								var section = arr[1];
+								var pearl = arr[2];
+								
+								if (town == null) town = "";
+								if (section == null) section = "";
+								if (pearl == null) pearl = "";
+								
+								if (pearl != ""){
+									pearl = Util.padLeft(pearl, 3);
+								}
+								
+								cell = "town_" + town+ "_" + section + "_" + pearl;
+								
+								var xml = Xml.parse('<town town="$town" pearl="$pearl" section="$section" scene="$cell"/>');
+								document.addChild(xml);
+							}
+						default:
+					}
+				}
 			}
 		}
 		return document;
@@ -83,7 +173,7 @@ class MetaParser
 		if (cell.indexOf(thing) == -1) return [cell, ""];
 		var arr = cell.split(thing);
 		if (arr == null || arr.length < 2) return [cell, ""];
-		return [arr[0], arr[1]];
+		return [arr[0], arr[1], arr[2]];
 	}
 	
 	private function addCells(xml:Xml, cells:Array<String>, plottype:String):Xml
