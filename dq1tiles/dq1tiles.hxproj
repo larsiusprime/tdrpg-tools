@@ -16,18 +16,19 @@
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\Development\Git\flixel" />
-    <class path="T:\Development\Git\lime" />
-    <class path="T:\Development\Git\openfl" />
-    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,4" />
-    <class path="T:\Development\Git\flixel-ui" />
-    <class path="T:\Development\Git\flixel-editors" />
+    <class path="T:\git\flixel" />
+    <class path="T:\git\lime" />
+    <class path="T:\git\openfl" />
+    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,5" />
+    <class path="T:\git\flixel-ui" />
+    <class path="T:\git\flixel-editors" />
     <class path="src" />
+    <class path="T:\git\openfl\extern" />
     <class path="bin\html5\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="flixel=3.3.11&#xA;lime=2.7.0&#xA;openfl=3.4.0&#xA;hscript=2.0.4&#xA;flixel-ui=1.0.2&#xA;flixel-editors=0.0.0&#xA;openfl-next&#xA;tools=2.7.0&#xA;no-compilation&#xA;openfl-html5&#xA;canvas&#xA;lime-html5&#xA;html5&#xA;web&#xA;html5&#xA;html&#xA;display" />
+    <option directives="flixel=4.0.1&#xA;lime=2.9.1&#xA;openfl=4.0.0&#xA;hscript=2.0.5&#xA;flixel-ui=2.0.0&#xA;flixel-editors=0.0.0&#xA;HXCPP_QUIET&#xA;openfl-next&#xA;tools=2.9.1&#xA;no-compilation&#xA;openfl-html5&#xA;canvas&#xA;lime-html5&#xA;html5&#xA;web&#xA;html5&#xA;html&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

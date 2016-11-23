@@ -25,3 +25,14 @@ CSVtoTSV/bin/
 XMLFix/bin/
 SpriteSheet/bin/
 LimeWrap/bin/
+CutsceneRescale/bin/
+DQDialogue/bin/src/
+DQDialogue/bin/include/
+DQMap/bin/windows/
+DQMap/bin/.build
+DQDialogue/bin/_output/scenes/
+DQDialogue/bin/obj/
+DQDialogue/bin/Main-debug.exe.hash
+DQDialogue/bin/Main-debug.exp
+DQDialogue/bin/Options.txt
+DQDialogue/bin/

@@ -88,7 +88,7 @@ class Main
 				var requirement = Xml.parse('<requirement type="complete_pearl" value="$prevCell"/>').firstChild();
 				el.node.requirements.x.addChild(requirement);
 				
-				var connect = Xml.parse('<action type="connect_pearl" value="$prevCell,$cell"/>').firstChild();
+				var connect = Xml.parse('<action type="connect_pearls" value="$prevCell,$cell"/>').firstChild();
 				el.node.actions.x.addChild(connect);
 			}
 			
@@ -150,6 +150,10 @@ class Main
 		var scene = cell + (i != 0 ? (isIntro ? "_intro" : "_outro") : "");
 		
 		var nextScene = isIntro ? (cell + "_outro") : (nextCell + "_intro");
+		if (nextCell == "dummy")
+		{
+			nextScene = "dummy";
+		}
 		
 		var enable = Xml.parse('<action type="show_cutscene" value="$scene"/>').firstChild();
 		el.node.actions.x.addChild(enable);
@@ -160,6 +164,8 @@ class Main
 			{
 				var requirement = Xml.parse('<requirement type="have_hero" value="mcguffin"/>').firstChild();
 				el.node.requirements.x.addChild(requirement);
+				
+				el.x.set("next", nextScene);
 			}
 			else
 			{
@@ -222,7 +228,7 @@ class Main
 			var requirement = Xml.parse('<requirement type="complete_pearl" value="$prevCell"/>').firstChild();
 			el.node.requirements.x.addChild(requirement);
 			
-			var connect = Xml.parse('<action type="connect_pearl" value="$prevCell,$cell"/>').firstChild();
+			var connect = Xml.parse('<action type="connect_pearls" value="$prevCell,$cell"/>').firstChild();
 			el.node.actions.x.addChild(connect);
 		}
 		

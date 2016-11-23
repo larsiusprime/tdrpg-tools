@@ -16,15 +16,16 @@
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
     <class path="T:\git\openfl" />
+    <class path="T:\git\unifill" />
     <class path="T:\git\lime" />
     <class path="T:\git\systools" />
     <class path="Source" />
     <class path="T:\git\openfl\extern" />
-    <class path="Export\html5\haxe" />
+    <class path="Export\html5\release\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="openfl=3.5.3&#xA;lime=2.8.3&#xA;systools=1.0.0-beta&#xA;openfl-next&#xA;tools=2.8.3&#xA;no-compilation&#xA;openfl-html5&#xA;canvas&#xA;lime-html5&#xA;html5&#xA;web&#xA;html5&#xA;display" />
+    <option directives="openfl=3.6.1&#xA;unifill=0.4.1&#xA;lime=2.9.9&#xA;systools=1.0.0-beta&#xA;openfl-next&#xA;tools=2.9.9&#xA;no-compilation&#xA;openfl-html5&#xA;canvas&#xA;lime-html5&#xA;html5&#xA;web&#xA;html5&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

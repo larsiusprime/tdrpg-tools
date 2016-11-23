@@ -1,0 +1,344 @@
+<xml>
+<set name="HXCPP_API_LEVEL" value="331" />
+<files id="haxe">
+<compilerflag value="-Iinclude"/>
+  <file name="src/unifill/_Utf8/StringU8_Impl_.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/unifill/_Utf8/StringU8_Impl_.h"/>
+  </file>
+  <file name="src/unifill/_Utf8/Utf8Impl.cpp" >
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+   <depend name="include/unifill/InvalidCodeUnitSequence.h"/>
+   <depend name="include/unifill/_Utf8/Utf8Impl.h"/>
+  </file>
+  <file name="src/unifill/_Utf8/Utf8_Impl_.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/BytesBuffer.h"/>
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+   <depend name="include/unifill/_Utf8/Utf8Impl.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/unifill/Unifill.cpp" >
+   <depend name="include/StringBuf.h"/>
+   <depend name="include/haxe/Utf8.h"/>
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/BytesBuffer.h"/>
+   <depend name="include/unifill/CodePointIter.h"/>
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+   <depend name="include/unifill/Unifill.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/unifill/Unicode.cpp" >
+   <depend name="include/unifill/Unicode.h"/>
+  </file>
+  <file name="src/unifill/InternalEncodingIter.cpp" >
+   <depend name="include/unifill/InternalEncodingIter.h"/>
+  </file>
+  <file name="src/unifill/InternalEncoding.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/BytesBuffer.h"/>
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InternalEncoding.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+   <depend name="include/unifill/InvalidCodeUnitSequence.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/unifill/InvalidCodeUnitSequence.cpp" >
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodeUnitSequence.h"/>
+  </file>
+  <file name="src/unifill/InvalidCodePoint.cpp" >
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+  </file>
+  <file name="src/unifill/Exception.cpp" >
+   <depend name="include/unifill/Exception.h"/>
+  </file>
+  <file name="src/unifill/CodePointIter.cpp" >
+   <depend name="include/unifill/CodePointIter.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/unifill/_CodePoint/CodePoint_Impl_.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/BytesBuffer.h"/>
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+   <depend name="include/unifill/_CodePoint/CodePoint_Impl_.h"/>
+  </file>
+  <file name="src/sys/io/FileOutput.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/Error.h"/>
+   <depend name="include/haxe/io/Output.h"/>
+   <depend name="include/sys/io/FileOutput.h"/>
+  </file>
+  <file name="src/sys/io/File.cpp" >
+   <depend name="include/haxe/io/Output.h"/>
+   <depend name="include/sys/io/File.h"/>
+   <depend name="include/sys/io/FileOutput.h"/>
+  </file>
+  <file name="src/sys/FileSystem.cpp" >
+   <depend name="include/haxe/io/Path.h"/>
+   <depend name="include/sys/FileSystem.h"/>
+  </file>
+  <file name="src/org/zamedev/lib/Utf8Ext.cpp" >
+   <depend name="include/EReg.h"/>
+   <depend name="include/haxe/IMap.h"/>
+   <depend name="include/haxe/Utf8.h"/>
+   <depend name="include/haxe/ds/IntMap.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+   <depend name="include/org/zamedev/lib/internal/Utf8ExtInternal.h"/>
+  </file>
+  <file name="src/org/zamedev/lib/internal/Utf8ExtInternal.cpp" >
+   <depend name="include/haxe/IMap.h"/>
+   <depend name="include/haxe/ds/IntMap.h"/>
+   <depend name="include/org/zamedev/lib/internal/Utf8ExtInternal.h"/>
+  </file>
+  <file name="src/haxe/xml/Printer.cpp" >
+   <depend name="include/EReg.h"/>
+   <depend name="include/Std.h"/>
+   <depend name="include/StringBuf.h"/>
+   <depend name="include/StringTools.h"/>
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/Printer.h"/>
+  </file>
+  <file name="src/haxe/xml/Parser.cpp" >
+   <depend name="include/Std.h"/>
+   <depend name="include/StringBuf.h"/>
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/IMap.h"/>
+   <depend name="include/haxe/ds/StringMap.h"/>
+   <depend name="include/haxe/xml/Parser.h"/>
+   <depend name="include/haxe/xml/XmlParserException.h"/>
+  </file>
+  <file name="src/haxe/xml/XmlParserException.cpp" >
+   <depend name="include/Type.h"/>
+   <depend name="include/haxe/xml/XmlParserException.h"/>
+  </file>
+  <file name="src/haxe/xml/Fast.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/Fast.h"/>
+   <depend name="include/haxe/xml/_Fast/AttribAccess.h"/>
+   <depend name="include/haxe/xml/_Fast/HasAttribAccess.h"/>
+   <depend name="include/haxe/xml/_Fast/HasNodeAccess.h"/>
+   <depend name="include/haxe/xml/_Fast/NodeAccess.h"/>
+   <depend name="include/haxe/xml/_Fast/NodeListAccess.h"/>
+  </file>
+  <file name="src/haxe/xml/_Fast/NodeListAccess.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/_Fast/NodeListAccess.h"/>
+  </file>
+  <file name="src/haxe/xml/_Fast/HasNodeAccess.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/_Fast/HasNodeAccess.h"/>
+  </file>
+  <file name="src/haxe/xml/_Fast/HasAttribAccess.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/_Fast/HasAttribAccess.h"/>
+  </file>
+  <file name="src/haxe/xml/_Fast/AttribAccess.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/_Fast/AttribAccess.h"/>
+  </file>
+  <file name="src/haxe/xml/_Fast/NodeAccess.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/Fast.h"/>
+   <depend name="include/haxe/xml/_Fast/NodeAccess.h"/>
+  </file>
+  <file name="src/haxe/io/Path.cpp" >
+   <depend name="include/haxe/io/Path.h"/>
+  </file>
+  <file name="src/haxe/io/Output.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/Error.h"/>
+   <depend name="include/haxe/io/Output.h"/>
+  </file>
+  <file name="src/haxe/io/Error.cpp" >
+   <depend name="include/haxe/io/Error.h"/>
+  </file>
+  <file name="src/haxe/io/Eof.cpp" >
+   <depend name="include/haxe/io/Eof.h"/>
+  </file>
+  <file name="src/haxe/io/BytesBuffer.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/BytesBuffer.h"/>
+  </file>
+  <file name="src/haxe/io/Bytes.cpp" >
+   <depend name="include/haxe/io/Bytes.h"/>
+   <depend name="include/haxe/io/Error.h"/>
+  </file>
+  <file name="src/haxe/ds/StringMap.cpp" >
+   <depend name="include/haxe/IMap.h"/>
+   <depend name="include/haxe/ds/StringMap.h"/>
+  </file>
+  <file name="src/haxe/ds/IntMap.cpp" >
+   <depend name="include/haxe/IMap.h"/>
+   <depend name="include/haxe/ds/IntMap.h"/>
+  </file>
+  <file name="src/haxe/Utf8.cpp" >
+   <depend name="include/haxe/Utf8.h"/>
+  </file>
+  <file name="src/haxe/Log.cpp" >
+   <depend name="include/Std.h"/>
+   <depend name="include/haxe/Log.h"/>
+  </file>
+  <file name="src/haxe/IMap.cpp" >
+   <depend name="include/haxe/IMap.h"/>
+  </file>
+  <file name="src/firetongue/TSV.cpp" >
+   <depend name="include/firetongue/CSV.h"/>
+   <depend name="include/firetongue/TSV.h"/>
+  </file>
+  <file name="src/firetongue/CSV.cpp" >
+   <depend name="include/EReg.h"/>
+   <depend name="include/Std.h"/>
+   <depend name="include/firetongue/CSV.h"/>
+  </file>
+  <file name="src/Xml.cpp" >
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/IMap.h"/>
+   <depend name="include/haxe/ds/StringMap.h"/>
+   <depend name="include/haxe/xml/Parser.h"/>
+  </file>
+  <file name="src/Util.cpp" >
+   <depend name="include/Std.h"/>
+   <depend name="include/StringBuf.h"/>
+   <depend name="include/Util.h"/>
+   <depend name="include/unifill/CodePointIter.h"/>
+   <depend name="include/unifill/Exception.h"/>
+   <depend name="include/unifill/InvalidCodePoint.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/Type.cpp" >
+   <depend name="include/Reflect.h"/>
+   <depend name="include/Type.h"/>
+  </file>
+  <file name="src/Sys.cpp" >
+   <depend name="include/Sys.h"/>
+  </file>
+  <file name="src/StringTools.cpp" >
+   <depend name="include/StringTools.h"/>
+  </file>
+  <file name="src/StringBuf.cpp" >
+   <depend name="include/StringBuf.h"/>
+  </file>
+  <file name="src/Std.cpp" >
+   <depend name="include/Std.h"/>
+  </file>
+  <file name="src/ScriptParser.cpp" >
+   <depend name="include/Block.h"/>
+   <depend name="include/Document.h"/>
+   <depend name="include/Scene.h"/>
+   <depend name="include/ScriptParser.h"/>
+   <depend name="include/Std.h"/>
+   <depend name="include/Sys.h"/>
+   <depend name="include/Util.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+   <depend name="include/sys/FileSystem.h"/>
+   <depend name="include/sys/io/File.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/_SceneTrigger/SceneTrigger_Impl_.cpp" >
+   <depend name="include/_SceneTrigger/SceneTrigger_Impl_.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+  </file>
+  <file name="src/Scene.cpp" >
+   <depend name="include/Block.h"/>
+   <depend name="include/Scene.h"/>
+   <depend name="include/ScriptParser.h"/>
+   <depend name="include/Std.h"/>
+   <depend name="include/Util.h"/>
+   <depend name="include/haxe/Log.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/Reflect.cpp" >
+   <depend name="include/Reflect.h"/>
+  </file>
+  <file name="src/MetaParser.cpp" >
+   <depend name="include/MetaParser.h"/>
+   <depend name="include/StringTools.h"/>
+   <depend name="include/Sys.h"/>
+   <depend name="include/Xml.h"/>
+   <depend name="include/haxe/xml/Fast.h"/>
+   <depend name="include/haxe/xml/Printer.h"/>
+   <depend name="include/haxe/xml/_Fast/NodeAccess.h"/>
+   <depend name="include/sys/FileSystem.h"/>
+   <depend name="include/sys/io/File.h"/>
+  </file>
+  <file name="src/Main.cpp" >
+   <depend name="include/Main.h"/>
+   <depend name="include/MetaParser.h"/>
+   <depend name="include/ScriptParser.h"/>
+   <depend name="include/Sys.h"/>
+   <depend name="include/sys/FileSystem.h"/>
+  </file>
+  <file name="src/_Keyword/Keyword_Impl_.cpp" >
+   <depend name="include/_Keyword/Keyword_Impl_.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+  </file>
+  <file name="src/EReg.cpp" >
+   <depend name="include/EReg.h"/>
+   <depend name="include/Std.h"/>
+   <depend name="include/StringBuf.h"/>
+  </file>
+  <file name="src/DocumentError.cpp" >
+   <depend name="include/DocumentError.h"/>
+  </file>
+  <file name="src/Document.cpp" >
+   <depend name="include/Block.h"/>
+   <depend name="include/Document.h"/>
+   <depend name="include/DocumentError.h"/>
+   <depend name="include/Scene.h"/>
+   <depend name="include/ScriptParser.h"/>
+   <depend name="include/Util.h"/>
+  </file>
+  <file name="src/Block.cpp" >
+   <depend name="include/Block.h"/>
+   <depend name="include/DocumentError.h"/>
+   <depend name="include/Std.h"/>
+   <depend name="include/Util.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+   <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
+  </file>
+  <file name="src/__boot__.cpp" >
+   <depend name="include/haxe/io/Error.h"/>
+   <depend name="include/unifill/Unicode.h"/>
+   <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+   <depend name="include/haxe/xml/Parser.h"/>
+   <depend name="include/haxe/Log.h"/>
+   <depend name="include/Xml.h"/>
+   <depend name="include/_SceneTrigger/SceneTrigger_Impl_.h"/>
+   <depend name="include/_Keyword/Keyword_Impl_.h"/>
+  </file>
+  <file name="src/__files__.cpp" if='HXCPP_DEBUGGER'>
+  </file>
+   <file name="${HXCPP}/src/hx/NoFiles.cpp" unless="HXCPP_DEBUGGER" />
+  <file name="src/__resources__.cpp" >
+  </file>
+</files>
+<files id="__lib__">
+<compilerflag value="-Iinclude"/>
+  <file name="src/__lib__.cpp" >
+   <depend name="include/Main.h"/>
+  </file>
+</files>
+<files id="__main__">
+<compilerflag value="-Iinclude"/>
+  <file name="src/__main__.cpp" >
+   <depend name="include/Main.h"/>
+  </file>
+</files>
+<files id="__resources__">
+</files>
+<files id="__externs__">
+</files>
+<set name="HAXE_OUTPUT" value="Main" />
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+<include name="${HXCPP}/src/hx/libs/regexp/Build.xml"/>
+<include name="${HXCPP}/src/hx/libs/std/Build.xml"/>
+<include name="${HXCPP}/src/hx/libs/std/Build.xml"/>
+<include name="${HXCPP}/src/hx/libs/std/Build.xml"/>
+</xml>
