@@ -97,10 +97,10 @@ Emote annoyed
 I am annoyed
 ```
 
-    * You may provide parameters on the keyword line, or on their own lines with a matching sub-keyword name.
-        * If provided on the keyword line, *order always matters*.
-        * If provided as separate lines, *order does not matter*. 
-        * In examples 1-3 the values "Paris", “7”, and “equip” are matched to <Town>, <Pearl>, and <Section> parameters. The parser will first check to see if there are any parameters on the keyword line, and if it doesn’t find them there, will check for named parameter sub-lines.
+  * You may provide parameters on the keyword line, or on their own lines with a matching sub-keyword name.
+    * If provided on the keyword line, *order always matters*.
+    * If provided as separate lines, *order does not matter*. 
+    * In examples 1-3 the values "Paris", “7”, and “equip” are matched to `<Town>`, `<Pearl>`, and `<Section>` parameters. The parser will first check to see if there are any parameters on the keyword line, and if it doesn’t find them there, will check for named parameter sub-lines.
     * For speech lines where the speaker’s name includes spaces, parameters supplied on the keyword line will not be properly parsed unless you first define the name using the NAMES block at the beginning of the document.
 
 # Keywords
