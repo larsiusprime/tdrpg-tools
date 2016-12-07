@@ -130,7 +130,8 @@ Here is the complete documentation for each keyword and its parameters, with usa
 Starts a new scene. Expects an "End" block before the next “Begin” block. Any blocks that are not properly sandwiched between a “Begin” and “End” block will be ignored.
 
 **Usage:**
-```Begin
+```
+Begin
 <Title of the scene>
 ```
 
@@ -230,11 +231,13 @@ Dub <Character>
 
 **Example:**
 
-`Dub Ularishtim`
+```
+Dub Ularishtim
+```
 
 **Notes:**
 
-The <Character> parameter must *exactly* match one of the names registered in the NAMES block for this to function properly. The first line provided with this block will be displayed as blurb text in the YouGot screen.
+The `<Character>` parameter must *exactly* match one of the names registered in the NAMES block for this to function properly. The first line provided with this block will be displayed as blurb text in the YouGot screen.
 
 ## JOIN
 
@@ -242,7 +245,9 @@ Adds a character to the party instantly and silently, skipping the name screen a
 
 **Usage:**
 
-`Join <Character> ?<Name> ?<Class>`
+```
+Join <Character> ?<Name> ?<Class>
+```
 
 **Example:**
 
@@ -256,7 +261,7 @@ Class mcguffin
 
 * The purpose of this command is to add characters to the party before their name is known, or to bootstrap the party with characters that the engine needs to function (such as allies or the mcguffin) without interrupting the flow of the story.
 * If you don’t supply a name, the character will join with their default name.
-* If you don’t supply a class, the class is derived from the <Character> tag (lowercase, strips punctuation and spaces)
+* If you don’t supply a class, the class is derived from the `<Character>` tag (lowercase, strips punctuation and spaces)
 
 ## PLAINTEXT
 
@@ -366,7 +371,9 @@ Indicates current scene is to be played immediately as soon as a new game starts
 
 **Usage:**
 
-```Newgame```
+```
+Newgame
+```
 
 **Example:**
 
@@ -388,7 +395,7 @@ Indicates current scene is an intro to be played immediately before a battle
 
 **Usage:**
 
-Intro <Pearl>
+Intro `<Pearl>`
 
 **Example:**
 
@@ -410,7 +417,9 @@ Indicates current scene is to be played DURING a battle
 
 **Usage:**
 
-```Battle <Pearl>```
+```
+Battle <Pearl>
+```
 
 **Example:**
 
@@ -433,7 +442,9 @@ Indicates current scene is an outro to be played immediately after a battle
 
 **Usage:**
 
-```Outro <Pearl>```
+```
+Outro <Pearl>
+```
 
 **Example:**
 
@@ -592,14 +603,16 @@ Javir
 Look at all this loot!
 ```
 
-## <SPEECH>
+## `<SPEECH>`
 
 Starts a new speech line with a portrait. If no emote is supplied, uses the default portrait.
 
 **Usage:**
 
-```<Speaker> ?<Emote>
-<Text>```
+```
+<Speaker> ?<Emote>
+<Text>
+```
 
 **Example:**
 
@@ -619,15 +632,15 @@ groan...
 
 # Output
 
-## game_progression.xml
+## `game_progression.xml`
 
 This file will include a list of inferred triggers that can be copy-pasted into the main game_progression.xml file as a series of "plotline" triggers.
 
-## scenes/<locale>/<name>.xml
+## `scenes/<locale>/<name>.xml`
 
 Every scene gets its own file to contain its dialogue. The name is generated from the title by forcing to lowercase, removing punctuation, and replacing spaces with underscores. So, "Title of the Scene" will be saved as *scenes/title_of_the_scene.xml*. The file will be referenced in the game triggers by the same string id. The scene information will be stored in a locale-specific folder. All human-presented text will be replaced by automatically generated firetongue flags.
 
-## locales/en-US/scenes.tsv
+## `locales/en-US/scenes.tsv`
 
 All of the firetongue flags from the previous file will be indexed here along with their corresponding text content, in one big file.
 
