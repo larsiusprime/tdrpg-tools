@@ -64,10 +64,10 @@ Some more words!
     * Parameters are specific to the block -- see documentation below for details
     * Parameters can also be supplied as additional lines provided immediately after the keyword line, each beginning with a sub-keyword that matches the name of the parameter (case insensitive).
 
-**Example 1:
+**Example 1:**
 
-**Town
 ```
+Town
 Town Paris
 Pearl 7
 Section equip
