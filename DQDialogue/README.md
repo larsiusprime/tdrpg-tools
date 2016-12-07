@@ -121,7 +121,7 @@ The exhaustive list of keywords:
 * Overworld
 * Rewards
 * Party
-* <Speech>
+* `<Speech>`
 
 Here is the complete documentation for each keyword and its parameters, with usage directions and examples for each:
 
