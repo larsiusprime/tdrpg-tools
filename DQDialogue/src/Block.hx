@@ -34,16 +34,52 @@ class Block
 			case Keyword.BEGIN: getParameter_BEGIN(name);
 			case Keyword.SPEECH: getParameter_SPEECH(name);
 			case Keyword.TUTORIAL: getParameter_TUTORIAL(name);
+			case Keyword.DUB: getParameter_DUB(name);
+			case Keyword.JOIN: getParameter_JOIN(name);
 			default: getParameter_GENERIC( -1, name);
 		}
+	}
+	
+	private function getParameter_JOIN(name:String):String
+	{
+		var value = "";
+		switch(name)
+		{
+			case "character": value = getParameter_GENERIC(0, name);
+			case "name": value = getParameter_GENERIC(1, name);
+			case "class": value = getParameter_GENERIC(2, name);
+			default: value = "";
+		}
+		return value;
+	}
+	
+	private function getParameter_DUB(name:String):String
+	{
+		var value = "";
+		switch(name)
+		{
+			case "character": value = getParameter_GENERIC(0, name);
+			case "class": value = getParameter_GENERIC(1, name);
+			case "text": 
+				for (line in lines){
+					var lline = Utf8Ext.toLowerCase(line);
+					if (lline.uIndexOf("character") == 0 || lline.uIndexOf("class") == 0)
+					{
+						continue;
+					}
+					value = line;
+				}
+			default: value = ""; 
+		}
+		return value;
 	}
 	
 	private function getParameter_SPEECH(name:String):String
 	{
 		return switch(name)
 		{
-			case "speaker": getParameter_GENERIC(0);
-			case "emote": getParameter_GENERIC(1);
+			case "speaker": getParameter_GENERIC(0, name);
+			case "emote": getParameter_GENERIC(1, name);
 			default: "";
 		}
 	}
@@ -52,7 +88,7 @@ class Block
 	{
 		return switch(name)
 		{
-			case "title": getParameter_GENERIC(0);
+			case "title": getParameter_GENERIC(0, name);
 			default: "";
 		}
 	}
@@ -74,15 +110,15 @@ class Block
 		{
 			return parameters[i];
 		}
-		else if(name != "" && parameters != null)
+		else if(name != "" && lines != null)
 		{
+			name = Utf8Ext.toLowerCase(name).uCat(" ");
 			for (line in lines)
 			{
-				name = Utf8Ext.toLowerCase(name).uCat(" ");
 				var lowerline = Utf8Ext.toLowerCase(line);
 				if (lowerline.uIndexOf(name) == 0)
 				{
-					var value = lowerline.uReplace(name, "");
+					var value = lowerline.uReplaceStart(name, "", false);
 					if (value != null && value != "")
 					{
 						return value;

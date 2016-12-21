@@ -15,6 +15,7 @@ using Util;
 class Document
 {
 	public var scenes:Array<Scene>;
+	public var names:Array<String>;
 	
 	public function new(str:String)
 	{
@@ -28,7 +29,7 @@ class Document
 		
 		var blocks = [];
 		
-		var names = [];
+		names = [];
 		
 		var sceneBlocks = null;
 		

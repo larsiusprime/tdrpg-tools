@@ -14,6 +14,8 @@ class MetaParser
 
 	public function new(){}
 	
+	private var cutscenes:Array<String>;
+	
 	public function parse(inDir:String, outDir:String)
 	{
 		if (FileSystem.exists(outDir) == false)
@@ -21,19 +23,37 @@ class MetaParser
 			FileSystem.createDirectory(outDir);
 		}
 		
-		var file = inDir + "/meta.txt";
+		var str = "";
+		
+		var meta = inDir + "meta.txt";
+		if (FileSystem.exists(meta))
+		{
+			str = File.getContent(meta);
+			if (str == null) str = "";
+		}
+		
+		var file = outDir + "_temp/meta.txt";
 		if (FileSystem.exists(file))
 		{
-			var str = File.getContent(file);
+			var str2 = File.getContent(file);
+			
+			if (str2 == null) str2 = "";
+			
+			str = str2 + "\n\n" + str;
+			
+			trace("str = " + str);
+			
 			if (str != null && str != "")
 			{
-				var document = processScenes(str);
-				if (document != null)
-					File.saveContent(outDir+"xml/game_progression.xml", Printer.print(document, true));
+				cutscenes = [];
 				
-				document = processBattles(str);
-				if (document != null)
-					File.saveContent(outDir + "xml/scenes.xml", Printer.print(document, true));
+				var document = processScenes(str);
+				Util.saveXML(outDir + "xml/game_progression.xml", document);
+				
+				trace('cutscenes = ' + cutscenes);
+				
+				document = processIndex(str);
+				Util.saveXML(outDir + "xml/scenes.xml", document);
 				
 			}
 			else
@@ -65,12 +85,30 @@ class MetaParser
 	
 	private function processScenes(data:String)
 	{
-		return processData(data, "<plotlines></plotlines>", ["pearls","movies","heroes"]);
+		return processData(data, "<plotlines></plotlines>", ["heroes","movies","pearls"]);
 	}
 	
-	private function processBattles(data:String)
+	private function processIndex(data:String)
 	{
-		return processData(data, "<scenes></scenes>", ["battle_movies","reward_movies","overworld_movies","party_movies","town_movies"]);
+		var xml = processData(data, "<scenes></scenes>", ["battle_movies", "reward_movies", "overworld_movies", "party_movies", "town_movies"]);
+		if (cutscenes != null)
+		{
+			for (cutscene in cutscenes)
+			{
+				var node = Xml.parse('<progress scene="$cutscene"/>');
+				xml.addChild(node);
+			}
+		}
+		return xml;
+	}
+	
+	private function depadPearl(pearl:String):String
+	{
+		while (pearl.length > 1 && pearl.indexOf("0") == 0)
+		{
+			pearl = pearl.substr(1, pearl.length - 1);
+		}
+		return pearl;
 	}
 	
 	private function processData(data:String, header:String, match:Array<String>):Xml
@@ -87,6 +125,8 @@ class MetaParser
 				var plotline:String = entry[0];
 				var plottype:String = entry[1];
 				
+				trace(plotline + " " + plottype);
+				
 				var cells:Array<String> = entry[2].split(",");
 				
 				if (match.indexOf(plottype) != -1)
@@ -101,21 +141,23 @@ class MetaParser
 							for (cell in cells)
 							{
 								if (cell == null || cell == "") continue;
-								var xml = Xml.parse('<battle pearl="$cell" scene="'+cell+'_battle"/>');
+								var pearl = depadPearl(cell);
+								var xml = Xml.parse('<battle pearl="$pearl" scene="'+cell+'_battle"/>');
 								document.addChild(xml);
 							}
 						case "reward_movies":
 							for (cell in cells)
 							{
 								if (cell == null || cell == "") continue;
-								var xml = Xml.parse('<rewards pearl="$cell" scene="'+cell+'_rewards"/>');
+								var pearl = depadPearl(cell);
+								var xml = Xml.parse('<rewards pearl="$pearl" scene="'+cell+'_rewards"/>');
 								document.addChild(xml);
 							}
 						case "overworld_movies":
 							for (cell in cells)
 							{
 								if (cell == null || cell == "") continue;
-								var pearl = cell;
+								var pearl = depadPearl(cell);
 								if (cell.indexOf("_overworld") == -1)
 								{
 									cell = cell + "_overworld";
@@ -134,8 +176,11 @@ class MetaParser
 								var arr = splitCell(cell, "*");
 								cell = arr[0];
 								var section = arr[1];
-								var pearl = cell;
-								var xml = Xml.parse('<party pearl="$pearl" section="$section" scene="' + cell + '_party"/>');
+								var pearl = depadPearl(cell);
+								
+								cell = pearl + "_party_" + section;
+								
+								var xml = Xml.parse('<party pearl="$pearl" section="$section" scene="$cell"/>');
 								document.addChild(xml);
 							}
 						case "town_movies":
@@ -145,7 +190,7 @@ class MetaParser
 								var arr = splitCell(cell, "*");
 								var town = arr[0];
 								var section = arr[1];
-								var pearl = arr[2];
+								var pearl = depadPearl(arr[2]);
 								
 								if (town == null) town = "";
 								if (section == null) section = "";
@@ -299,13 +344,32 @@ class MetaParser
 					}
 					
 				case "heroes": 
-					el = addHero(el, i, cell);
+					
+					var cellSplit = splitCell(cell, "*");
+					cell = cellSplit[0];
+					var code = cellSplit[1];
+					
+					el = addHero(el, i, cell, code);
 					xml.addChild(el.x);
+					
+					var fixName = el.att.name;
+					var fixNext = el.att.next;
+					
+					fixName = StringTools.replace(fixName, "*p", "");
+					fixNext = StringTools.replace(fixNext, "*p", "");
+					
+					if (fixName.indexOf("?") != -1) fixName = splitCell(fixName, "?")[1];
+					if (fixName.indexOf("=") != -1) fixName = splitCell(fixName, "=")[1];
+					if (fixNext.indexOf("?") != -1) fixNext = splitCell(fixNext, "?")[1];
+					if (fixNext.indexOf("=") != -1) fixNext = splitCell(fixNext, "=")[1];
+					
+					el.x.set("name", fixName);
+					el.x.set("next", fixNext);
 			}
 			
 			if (i == cells.length - 1)
 			{
-				var dummy = Xml.parse('<element next="none" name="dummy"><requirements type="complete_pearl" value="impossible"></requirements><actions/></element>').firstChild();
+				var dummy = Xml.parse('<element next="none" name="dummy"><requirements><requirement type="complete_pearl" value="impossible"/></requirements><actions/></element>').firstChild();
 				xml.addChild(dummy);
 			}
 		}
@@ -342,7 +406,7 @@ class MetaParser
 			
 			if (i == cells.length - 1)
 			{
-				var dummy = Xml.parse('<element next="none" name="dummy"><requirements type="complete_pearl" value="impossible"></requirements><actions/></element>').firstChild();
+				var dummy = Xml.parse('<element next="none" name="dummy"><requirements><requirement type="complete_pearl" value="impossible"/></requirements><actions/></element>').firstChild();
 				xml.addChild(dummy);
 			}
 		}
@@ -365,6 +429,10 @@ class MetaParser
 		
 		var enable = Xml.parse('<action type="show_cutscene" value="$scene"/>').firstChild();
 		el.node.actions.x.addChild(enable);
+		
+		if(cutscenes.indexOf(scene) == -1){
+			cutscenes.push(scene);
+		}
 		
 		if (isRoot)
 		{
@@ -391,12 +459,14 @@ class MetaParser
 			
 			if (introOutro == -1 || introOutro == 0)
 			{
-				var requirement = Xml.parse('<requirement type="start_pearl" value="$theCell"/>').firstChild();
+				var pearl = depadPearl(theCell);
+				var requirement = Xml.parse('<requirement type="start_pearl" value="$pearl"/>').firstChild();
 				el.node.requirements.x.addChild(requirement);
 			}
 			else if(introOutro == 1)
 			{
-				var requirement = Xml.parse('<requirement type="complete_pearl" value="$theCell"/>').firstChild();
+				var pearl = depadPearl(theCell);
+				var requirement = Xml.parse('<requirement type="complete_pearl" value="$pearl"/>').firstChild();
 				el.node.requirements.x.addChild(requirement);
 			}
 		}
@@ -410,7 +480,7 @@ class MetaParser
 		return el;
 	}
 	
-	private function addHero(el:Fast, i:Int, cell:String):Fast
+	private function addHero(el:Fast, i:Int, cell:String, code:String=""):Fast
 	{
 		var data = cell.split("=");
 		if (data != null && data.length == 2)
@@ -429,15 +499,29 @@ class MetaParser
 			
 			if (scene != "-1")
 			{
-				var requirement = Xml.parse('<requirement type="watch_cutscene" value="$scene"/>').firstChild();
-				el.node.requirements.x.addChild(requirement);
+				if (code == "")
+				{
+					var requirement = Xml.parse('<requirement type="watch_cutscene" value="$scene"/>').firstChild();
+					el.node.requirements.x.addChild(requirement);
+				}
+				else if (code == "p")
+				{
+					var pearl = depadPearl(scene);
+					var requirement = Xml.parse('<requirement type="start_pearl" value="$pearl"/>').firstChild();
+					el.node.requirements.x.addChild(requirement);
+				}
 			}
+			
 		}
 		return el;
 	}
 	
 	private function addPearl(el:Fast, i:Int, cell:String, prevCell:String, nextCell:String):Fast
 	{
+		cell = depadPearl(cell);
+		prevCell = depadPearl(prevCell);
+		nextCell = depadPearl(nextCell);
+		
 		var enable = Xml.parse('<action type="enable_pearl" value="$cell"/>').firstChild();
 		el.node.actions.x.addChild(enable);
 		

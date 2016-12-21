@@ -10,6 +10,7 @@ import unifill.Unicode;
  */
 
 using unifill.Unifill;
+using Util;
 
 typedef MetaStruct = {
 	plotLine:String,
@@ -31,7 +32,9 @@ class ScriptParser
 	
 	private var tsvContent:String = "";
 	
+	private var alreadyJoined:Array<String> = [];
 	private var plotContent:Array<MetaStruct>;
+	private var namesContent:String = "";
 	
 	public function new(){}
 	
@@ -68,6 +71,10 @@ class ScriptParser
 		var tempFile = tempDir + "meta.txt";
 		var metaContent = processMeta();
 		
+		var nameDir = outDir + "/locales/"+Locale+"/";
+		if (!FileSystem.exists(nameDir)) FileSystem.createDirectory(nameDir);
+		File.saveContent(nameDir + "names.tsv", namesContent);
+		
 		File.saveContent(tempFile, metaContent);
 	}
 	
@@ -84,9 +91,28 @@ class ScriptParser
 		return null;
 	}
 	
+	private function sortMeta(a:MetaStruct, b:MetaStruct):Int
+	{
+		var aRank = metaRank(a);
+		var bRank = metaRank(b);
+		if (aRank < bRank) return -1;
+		if (aRank > bRank) return  1;
+		return 0;
+	}
+	
+	private function metaRank(a:MetaStruct):Int
+	{
+		if (a.plotType == "heroes") return -3;
+		if (a.plotType == "movies") return -2;
+		if (a.plotType == "pearls") return -1;
+		return 0;
+	}
+	
 	private function processMeta()
 	{
 		var metaContent = "";
+		
+		plotContent.sort(sortMeta);
 		
 		for (i in 0...plotContent.length)
 		{
@@ -136,6 +162,7 @@ class ScriptParser
 			processScene(scene, outDir, locale);
 		}
 		
+		alreadyJoined = [];
 		for (i in 0...document.scenes.length)
 		{
 			var scene = document.scenes[i];
@@ -162,6 +189,13 @@ class ScriptParser
 			
 			processPlot(scene, prev, next);
 		}
+		
+		namesContent = "flag\tcontent\n";
+		for (name in document.names)
+		{
+			var flag = ("$").uCat(Util.cleanString(name, ""));
+			namesContent = namesContent.uCat(flag).uCat("\t").uCat(name).uCat("\n");
+		}
 	}
 	
 	private function getMetaEntry(metaStruct:MetaStruct, name:String)
@@ -176,7 +210,7 @@ class ScriptParser
 		return null;
 	}
 	
-	private function getMetaStruct(plotLine:String)
+	private function getMetaStruct(plotLine:String, createIfNull:Bool=false)
 	{
 		for (plot in plotContent)
 		{
@@ -185,6 +219,7 @@ class ScriptParser
 				return plot;
 			}
 		}
+		
 		return null;
 	}
 	
@@ -277,6 +312,8 @@ class ScriptParser
 			entry = {name:theName, modifier:""};
 			plot.entries.push(entry);
 		}
+		
+		processPartyJoins(scene);
 	}
 	
 	private function processPlotMovies(plot:MetaStruct, scene:Scene)
@@ -316,6 +353,65 @@ class ScriptParser
 					}
 				}
 		}
+		
+		processPartyJoins(scene);
+	}
+	
+	private function processPartyJoins(scene:Scene)
+	{
+		for (block in scene.blocks)
+		{
+			if (block.keyword == Keyword.JOIN || block.keyword == Keyword.DUB)
+			{
+				trace("block = " + block.keyword + " " + scene.trigger);
+				switch(scene.trigger)
+				{
+					case SceneTrigger.NEWGAME, SceneTrigger.INTRO, SceneTrigger.OUTRO, SceneTrigger.BATTLE:
+						var plot:MetaStruct = getMetaStruct("default_heroes");
+						if (plot == null)
+						{
+							plot = {
+								plotLine: "default_heroes",
+								plotType: "heroes",
+								entries: []
+							}
+							plotContent.push(plot);
+						}
+						var sceneName = scene.name;
+						var mod = "";
+						if (scene.trigger == SceneTrigger.NEWGAME)
+						{
+							sceneName = "-1";
+						}
+						else
+						{
+							mod = "p";
+							sceneName = scene.pearlID;
+						}
+						
+						var className = block.getParameter("class");
+						if (className == "")
+						{
+							//className = block.getParameter("character");
+						}
+						className = Utf8Ext.toLowerCase(Util.cleanString(className));
+						
+						trace("className = " + className + "block = " + block);
+						
+						if (className != "" && alreadyJoined.indexOf(className) == -1)
+						{
+							alreadyJoined.push(className);
+							plot.entries.push({
+								name:sceneName+"=?"+className,
+								modifier:mod
+							});
+						}
+						
+						trace("plot entries = " + plot.entries);
+					default: //donothing
+				}
+			}
+		}
 	}
 	
 	public function processScene(scene:Scene, outDir:String, locale:String)
@@ -353,6 +449,8 @@ class ScriptParser
 					lineData = doBlock_Placeholder(scene, block, lineData);
 				case Keyword.TUTORIAL:
 					lineData = doBlock_Tutorial(scene, block, lineData);
+				case Keyword.DUB:
+					lineData = doBlock_Dub(scene, block, lineData);
 			}
 		}
 		
@@ -398,7 +496,7 @@ class ScriptParser
 		
 		if (sceneXML != "")
 		{
-			File.saveContent(scenesDir + scene.name + ".xml", sceneXML);
+			Util.saveXML(scenesDir + scene.name+".xml", null, sceneXML);
 		}
 	}
 	
@@ -407,7 +505,7 @@ class ScriptParser
 		return 
 '<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
 lineData +
-'\n</scene>';
+'</scene>';
 	}
 	
 	private function getTutMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
@@ -415,7 +513,7 @@ lineData +
 		return
 '<scene ' + att("name", scene.name) + att("title", titleFlag) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
 lineData +
-'\n</scene>';
+'</scene>';
 	}
 	
 	private function doBlock_Begin(block:Block):BeginSettings
@@ -488,7 +586,7 @@ lineData +
 			
 			lineData.tsv += flag + "\t" + content + "\n";
 			
-			lineData.xml += "\n    <tut " + att("title", "PLAINTEXT") + att("text", flag) + "/>";
+			lineData.xml += "<tut " + att("title", "PLAINTEXT") + att("text", flag) + "/>";
 		}
 		return lineData;
 	}
@@ -501,7 +599,7 @@ lineData +
 			var content = block.lines[i];
 			lineData.tsv += flag + "\t" + content + "\n";
 			
-			lineData.xml += "\n    <tut " + att("title", "TALK_$NARRATOR_NORMAL") + att("text", flag) +"/>";
+			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) +"/>";
 			
 			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
 		}
@@ -516,7 +614,7 @@ lineData +
 			var content = block.lines[i];
 			lineData.tsv += flag +"\t" + content + "\n";
 			
-			lineData.xml += "\n    <tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
+			lineData.xml += "<tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
 			
 			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
 		}
@@ -525,7 +623,7 @@ lineData +
 	
 	private function doBlock_Speech(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
-		var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_SPEAKER");
+		var flag = "";
 		var speaker = block.getParameter("speaker");
 		var emote = block.getParameter("emote");
 		if (emote == "")
@@ -533,17 +631,40 @@ lineData +
 			emote = "NORMAL";
 		}
 		speaker = Util.cleanString(speaker, "");
-		lineData.tsv += flag + "\t" + speaker + "\n";
+		
 		for (i in 0...block.lines.length)
 		{
 			flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			lineData.tsv += flag + "\t" + content + "\n";
 			
-			lineData.xml += "\n    <tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
+			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
 			
 			//lineData.xml += "\n    <line " + att("character", speaker) + att("text", flag) +"/>";
 		}
+		return lineData;
+	}
+	
+	private function doBlock_Dub(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
+	{
+		var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_DUB");
+		
+		var charClass = block.getParameter("class");
+		
+		if (charClass == "")
+		{
+			charClass = block.getParameter("character");
+		}
+		
+		var text = block.getParameter("text");
+		if (text == "") flag = "";
+		
+		if (flag != "")
+		{
+			lineData.tsv += flag + "\t" + text + "\n";
+		}
+		
+		lineData.xml += "<dub " + att("class", charClass) + att("text", flag) + "/>";
 		return lineData;
 	}
 	
@@ -560,7 +681,7 @@ lineData +
 				title = "TUTORIAL";
 			}
 			
-			lineData.xml += "\n    <tut " + att("title", title) + att("text", flag) + "/>";
+			lineData.xml += "<tut " + att("title", title) + att("text", flag) + "/>";
 			
 			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", content) +"/>";
 		}

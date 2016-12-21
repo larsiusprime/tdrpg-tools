@@ -1,5 +1,7 @@
 package;
+import haxe.xml.Printer;
 import org.zamedev.lib.Utf8Ext;
+import sys.io.File;
 import unifill.CodePoint;
 using unifill.Unifill;
 /**
@@ -20,6 +22,28 @@ class Util
 		s = Utf8Ext.toUpperCase(s);
 		s = uReplace(s, " ", replaceSpacesWith, true);
 		return s;
+	}
+	
+	public static function saveXML(fileName:String, xml:Xml, ?xmlString:String)
+	{
+		if (xmlString != null)
+		{
+			xml = Xml.parse(xmlString);
+		}
+		
+		if (xml == null) return;
+		
+		var wrap = Xml.parse("<data></data>").firstChild();
+		wrap.addChild(xml);
+		
+		var content:String = 
+		'<?xml version="1.0" encoding="utf-8" ?>\n' + 
+		'<!--\n' + 
+		'    THIS IS A GENERATED FILE, DO NOT EDIT IT DIRECTLY!\n' +
+		'-->\n' + 
+		Printer.print(wrap, true);
+		
+		File.saveContent(fileName, content);
 	}
 	
 	public static function stripStuff(s:String):String
@@ -103,6 +127,19 @@ class Util
 		}
 		
 		return str + Std.string(i);
+	}
+	
+	public static function uReplaceStart(s:String, substr:String, by:String, recursive:Bool = true, trace:Bool = false):String
+	{
+		var i = Unifill.uIndexOf(s, substr);
+		if (i == -1) return s;
+		
+		var ulen = Unifill.uLength(substr);
+		var slen = Unifill.uLength(s);
+		
+		var remainder = Unifill.uSubstr(s, ulen, slen - ulen);
+		
+		return remainder;
 	}
 	
 	public static function uReplace(s:String, substr:String, by:String, recursive:Bool=true):String

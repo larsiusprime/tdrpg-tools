@@ -9,6 +9,8 @@ abstract Keyword(String) from String to String
 	public static inline var BEGIN:String = "BEGIN";
 	public static inline var END:String = "END";
 	public static inline var NAMES:String = "NAMES";
+	public static inline var DUB:String = "DUB";
+	public static inline var JOIN:String = "JOIN";
 	public static inline var PLAINTEXT:String = "PLAINTEXT";
 	public static inline var NARRATOR:String = "NARRATOR";
 	public static inline var COMMENT:String = "COMMENT";
@@ -40,6 +42,8 @@ abstract Keyword(String) from String to String
 			case "BEGIN": BEGIN;
 			case "END": END;
 			case "NAMES": NAMES;
+			case "DUB": DUB;
+			case "JOIN": JOIN;
 			case "PLAINTEXT": PLAINTEXT;
 			case "NARRATOR": NARRATOR;
 			case "COMMENT": COMMENT;

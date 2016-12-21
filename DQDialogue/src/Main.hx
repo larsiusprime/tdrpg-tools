@@ -39,7 +39,6 @@ class Main
 			script.parse(inDir, outDir);
 			
 			var meta = new MetaParser();
-			inDir = outDir + "/_temp/";
 			meta.parse(inDir, outDir);
 		}
 		else
