@@ -12,7 +12,7 @@ Files supported:
 
 Topic documentation:
 
-[Dialogue](/DQDialogue/docs/00_DIALOGUE.md)
+* [Dialogue](/DQDialogue/docs/00_DIALOGUE.md)
 
 Usage:
 
