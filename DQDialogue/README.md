@@ -10,6 +10,13 @@ Files supported:
 * locales/\<locale\>/names.tsv
 * locales/\<locale\>/scenes.tsv
 
+Files I want to support:
+
+* xml/items.xml
+* xml/enemy.xml
+* xml/journal.xml
+* xml/spells.xml
+
 Topic documentation:
 
 * [Dialogue](/DQDialogue/docs/00_DIALOGUE.md)
