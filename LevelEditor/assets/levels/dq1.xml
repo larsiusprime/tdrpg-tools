@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<data>
+  <title id="1_1_where_am_i" value="Where am I?"/>
+  <music value="evil"/>
+  <victory>
+    <condition value="kill_all"/>
+  </victory>
+  <failure/>
+  <tiles>
+	<tile rgb="0x000000" tile_sheet="single" value="grey_dirt" layer="0"/>
+	<tile rgb="0xFFFFFF" doodad="0xDDDDDD" value="blue_sand" layer="1"/>
+    <tile rgb="0x777777" doodad="0x888888" value="blue_stone" layer="2"/>
+    <tile rgb="0x0000ff" doodad="0x000088" value="dark_cliff" layer="3"/>
+	<end rgb="0x00FFFF" id="a" y="6" x="4"/>
+	<start rgb="0xFF00FF" id="a" y="6" x="14"/>
+  </tiles>
+  <tutorial trigger="start">
+    <unlock id="select_slak"/>
+    <action plus="all" id="set_time" p1="pause"/>
+    <tut text="$1_1_WHERE_AM_I_00_TEXT" title="$1_1_WHERE_AM_I_00_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_10_TEXT" title="$1_1_WHERE_AM_I_10_TITLE">
+      <arrow target_type="defender" target_value="mcguffin_mcguffin"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_20_TEXT" title="$1_1_WHERE_AM_I_20_TITLE">
+      <arrow target_type="start" target_value="a"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_30_TEXT" plus="true" title="$1_1_WHERE_AM_I_30_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_40_TEXT" plus="true" title="$1_1_WHERE_AM_I_40_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_50_TEXT" title="$1_1_WHERE_AM_I_50_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_60_TEXT" title="$1_1_WHERE_AM_I_60_TITLE" kb_mouse="true">
+      <tut_arrow facing="right" target_type="class_tab" target_value="berserker"/>
+    </tut>
+	<tut text="$1_1_WHERE_AM_I_61_TEXT" title="$1_1_WHERE_AM_I_61_TITLE" gamepad="true">
+      <tut_arrow facing="right" target_type="class_tab" target_value="berserker"/>
+	  <gamepad menu="root" cursor="0,0" actions="defenders|up"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_70_TEXT" plus="true" title="$1_1_WHERE_AM_I_70_TITLE">
+	  <arrow target_type="class_tab" target_value="berserker" facing="right"/>
+    </tut>
+  </tutorial>
+  <tutorial trigger="select_class" id="select_slak">
+    <param type="class" value="berserker"/>
+    <locked value="true"/>
+    <unlock id="select_slak2"/>
+    <action plus="all" id="set_time" p1="pause"/>
+    <action plus="all" id="hide_tut_arrow"/>
+    <tut text="$1_1_WHERE_AM_I_80_TEXT" title="$1_1_WHERE_AM_I_80_TITLE" kb_mouse="true"/>
+    <tut text="$1_1_WHERE_AM_I_80_TEXT" title="$1_1_WHERE_AM_I_80_TITLE" gamepad="true">
+		<gamepad menu="defenders" cursor="0,0" actions="down,select"/>
+	</tut>
+    <tut text="$1_1_WHERE_AM_I_90_TEXT" title="$1_1_WHERE_AM_I_90_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_100_TEXT" title="$1_1_WHERE_AM_I_100_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_110_TEXT" title="$1_1_WHERE_AM_I_110_TITLE">
+      <arrow target_type="character_button" target_value="0"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_120_TEXT" title="$1_1_WHERE_AM_I_120_TITLE" kb_mouse="true">
+      <tut_arrow target_type="character_button" target_value="0" facing="right"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_121_TEXT" title="$1_1_WHERE_AM_I_121_TITLE" gamepad="true">
+      <tut_arrow target_type="character_button" target_value="0" facing="right"/>
+      <gamepad menu="defenders" cursor="0,0" actions="down,select"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_130_TEXT" plus="true" title="$1_1_WHERE_AM_I_130_TITLE">
+      <tut_arrow target_type="character_button" target_value="0" facing="right"/>
+    </tut>
+  </tutorial>
+  <tutorial trigger="select_character" id="select_slak2">
+    <locked value="true"/>
+    <unlock id="place_slak_1"/>
+    <action plus="all" id="set_time" p1="pause"/>
+    <action plus="all" id="hide_tut_arrow"/>
+	<action plus="all" for_close="true" id="gamepad_menu_back"/>
+    <param type="class" value="berserker"/>
+    <param type="handle" value="any"/>
+    <tut text="$1_1_WHERE_AM_I_140_TEXT" title="$1_1_WHERE_AM_I_140_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_150_TEXT" title="$1_1_WHERE_AM_I_150_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_160_TEXT" title="$1_1_WHERE_AM_I_160_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_170_TEXT" title="$1_1_WHERE_AM_I_170_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_180_TEXT" title="$1_1_WHERE_AM_I_180_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_190_TEXT" title="$1_1_WHERE_AM_I_190_TITLE" kb_mouse="true">
+      <tut_arrow target_type="square" target_value="11,6" facing="down"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_191_TEXT" title="$1_1_WHERE_AM_I_191_TITLE" gamepad="true">
+      <tut_arrow target_type="square" target_value="11,6" facing="down"/>
+      <gamepad actions="up|down|left|right|select|mouse" actions_repeat="true" close_event="place_defender"/>
+    </tut>
+  </tutorial>
+  <tutorial trigger="place_defender" id="place_slak_1">
+    <param type="class" value="berserker"/>
+    <param type="handle" value="any"/>
+    <action plus="all" id="hide_tut_arrow"/>
+    <locked value="true"/>
+    <unlock id="place_slak_2"/>
+    <action plus="all" id="set_time" p1="1"/>
+  </tutorial>
+  <tutorial trigger="summon_defender" id="place_slak_2">
+    <locked value="true"/>
+    <param type="class" value="berserker"/>
+    <param type="handle" value="slak"/>
+    <unlock id="unpause"/>
+    <action id="set_time" p1="pause"/>
+    <tut text="$1_1_WHERE_AM_I_200_TEXT" title="$1_1_WHERE_AM_I_200_TITLE" kb_mouse="true"/>
+    <tut text="$1_1_WHERE_AM_I_200_TEXT" title="$1_1_WHERE_AM_I_200_TITLE" gamepad="true">
+		<gamepad menu="root" cursor="0,0"/>
+	</tut>
+    <tut text="$1_1_WHERE_AM_I_210_TEXT" title="$1_1_WHERE_AM_I_210_TITLE">
+      <arrow target_type="mcguffin_menu_asset" target_value="psi"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_220_TEXT" title="$1_1_WHERE_AM_I_220_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_230_TEXT" title="$1_1_WHERE_AM_I_230_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_240_TEXT" title="$1_1_WHERE_AM_I_240_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_250_TEXT" title="$1_1_WHERE_AM_I_250_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_260_TEXT" title="$1_1_WHERE_AM_I_260_TITLE">
+      <arrow target_type="time_button" target_value="0.0"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_270_TEXT" title="$1_1_WHERE_AM_I_270_TITLE" kb_mouse="true">
+      <tut_arrow target_type="time_button" target_value="1.0" facing="down"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_271_TEXT" title="$1_1_WHERE_AM_I_271_TITLE" gamepad="true">
+      <tut_arrow target_type="pause_button" target_value="1.0" facing="down"/>
+      <gamepad actions="pause"/>
+    </tut>
+  </tutorial>
+  <tutorial trigger="time" id="unpause">
+    <param type="time" value="not_pause"/>
+    <action id="hide_tut_arrow"/>
+    <locked value="true"/>
+    <unlock id="killstuff"/>
+    <tut text="$1_1_WHERE_AM_I_280_TEXT" title="$1_1_WHERE_AM_I_280_TITLE"/>
+  </tutorial>
+  <tutorial trigger="kill" id="killstuff">
+    <param type="any" value="3"/>
+    <!--don't show if the number of berserkers summoned is less than or equal to 0 -->
+    <dont_show condition="have" value="defender_berserker:ls_eq:0"/>
+    <!--don't show if any berserker has a boost level is greater than or equal to 2 -->
+    <dont_show condition="have" value="defender-boost_berserker:gr_eq:2"/>
+    <locked value="true"/>
+    <unlock id="last_wave"/>
+    <unlock id="boost"/>
+    <action plus="false" id="select_defender" p1="berserker" p2="hero"/>
+    <tut text="$1_1_WHERE_AM_I_290_TEXT" plus="false" title="$1_1_WHERE_AM_I_290_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_300_TEXT" plus="false" title="$1_1_WHERE_AM_I_300_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_310_TEXT" plus="false" title="$1_1_WHERE_AM_I_310_TITLE"/>
+    <tut text="$1_1_WHERE_AM_I_320_TEXT" plus="false" title="$1_1_WHERE_AM_I_320_TITLE">
+      <arrow target_type="boost_button"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_330_TEXT" plus="false" title="$1_1_WHERE_AM_I_330_TITLE">
+      <arrow target_type="boost_button"/>
+	  <arrow target_type="defender_menu_asset" target_value="boost_bar_1"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_340_TEXT" plus="false" title="$1_1_WHERE_AM_I_340_TITLE" kb_mouse="true">
+      <tut_arrow target_type="boost_button" facing="right"/>
+    </tut>
+    <tut text="$1_1_WHERE_AM_I_341_TEXT" plus="false" title="$1_1_WHERE_AM_I_341_TITLE" gamepad="true">
+      <tut_arrow target_type="boost_button" facing="right"/>
+      <gamepad actions="select" layout="defenders_select_map" cursor="0,0"/>
+    </tut>
+  </tutorial>
+  <tutorial trigger="boost_defender" id="boost">
+    <action plus="false" id="hide_tut_arrow"/>
+    <param type="class" value="berserker"/>
+    <param type="handle" value="slak"/>
+    <tut text="$1_1_WHERE_AM_I_350_TEXT" plus="false" title="$1_1_WHERE_AM_I_350_TITLE"/>
+  </tutorial>
+  <waves first_wait="5" diff="easy">
+    <wave count="5" wait="5" type="normal_nomoney" level="1" rate="0.5" loc="a"/>
+    <wave count="7" wait="5" type="normal_nomoney" level="1" rate="0.75" loc="a"/>
+    <wave count="11" wait="5" type="normal_nomoney" level="2" rate="0.75" loc="a"/>
+  </waves>
+</data>

@@ -38,3 +38,5 @@ DQDialogue/bin/Options.txt
 DQDialogue/bin/
 CSVtoTSVserver/bin/
 TSVCompare/bin/
+SteamBuildVersionRename/bin/
+LevelEditor/export/
