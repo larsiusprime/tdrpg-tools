@@ -11,6 +11,7 @@ main series or as a mod.
 
 The exhaustive list of keywords:
 
+* Languages
 * Class
 * Item
 * Words
