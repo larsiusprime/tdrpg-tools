@@ -68,6 +68,11 @@ Item
 <id>
 <bonus>
 <cost>
+<language1> name <name>
+<language1> info <description>
+<language2> name <name>
+<language2> info <description>
+<etc>
 ```
 
 **Example:**
@@ -77,30 +82,10 @@ sword
 1
 3
 50
-```
-
-## WORDS
-
-Defines the name & description for a given item in every available language.
-
-**Usage:**
-```
-Words
-<type>
-<id>
-<language> name <name>
-<language> info <description>
-```
-
-**Example:**
-```
-Words
-sword
-1
 english name Stone Shiv
 english info A sharp rock affixed to a wood handle. Better than nothing.
 german name Steinmesser
-german info Ein scharfer Stein, der an einem hölzernen Griff angebracht wurde. Besser als nichts.	
+german info Ein scharfer Stein, der an einem hölzernen Griff angebracht wurde. Besser als nichts.
 ```
 
 ## SPECIAL
