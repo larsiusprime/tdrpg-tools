@@ -14,7 +14,6 @@ The exhaustive list of keywords:
 * Languages
 * Class
 * Item
-* Words
 * Special
 
 ## LANGUAGES
