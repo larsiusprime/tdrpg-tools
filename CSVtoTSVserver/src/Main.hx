@@ -12,6 +12,10 @@ import unifill.Unifill;
  */
 class Main 
 {
+	public static var escapeFormula:Bool = false;
+	public static var escapeQuotes:Bool = false;
+	public static var escapeCommas:Bool = false;
+	public static var escapeLeadingSpaces:Bool = false;
 	
 	static function main() 
 	{
@@ -23,6 +27,17 @@ class Main
 		var input = args[0];
 		var output = args[1];
 		var reverse = args.indexOf("-reverse") != -1;
+		Main.escapeFormula = (args.indexOf("-escapeformula") != -1);
+		Main.escapeCommas = (args.indexOf("-escapecommas") != -1);
+		Main.escapeQuotes = (args.indexOf("-escapequotes") != -1);
+		Main.escapeLeadingSpaces = (args.indexOf("-escapeleadingspaces") != -1);
+		
+		if (args.indexOf("-escapeallthethings") != -1){
+			escapeFormula = true;
+			escapeQuotes = true;
+			escapeCommas = true;
+			escapeLeadingSpaces = true;
+		}
 		
 		var file = "";
 		if (FileSystem.exists(input))
@@ -68,7 +83,19 @@ class Main
 			var row = grid[iy];
 			for (ix in 0...row.length){
 				var cell = row[ix];
+				if (escapeCommas){
+					cell = doEscapeCommas(cell);
+				}
+				if (escapeLeadingSpaces){
+					cell = doEscapeLeadingSpaces(cell);
+				}
 				var quoteStatus = needsQuotes(cell);
+				var formulaStatus = needsFormulaEscape(cell);
+				
+				if (formulaStatus)
+				{
+					cell = doEscapeFormula(cell);
+				}
 				
 				//If we need quotes, deal with that
 				if (quoteStatus > 0)
@@ -132,6 +159,83 @@ class Main
 		return buf.toString();
 	}
 	
+	static function doEscapeLeadingSpaces(str:String):String
+	{
+		var space = " ";
+		var firstChar = Unifill.uCharAt(str, 0);
+		var spaces = 0;
+		while (firstChar == " "){
+			spaces++;
+			str = Unifill.uSubstr(str, 1, Unifill.uLength(str) - 1);
+			firstChar = Unifill.uCharAt(str, 0);
+		}
+		var sb = new StringBuf();
+		for (i in 0...spaces){
+			sb.add("<SP>");
+		}
+		sb.add(str);
+		return sb.toString();
+	}
+	
+	static function doEscapeCommas(str:String):String
+	{
+		var comma = 0x2C;
+		var buf:StringBuf = new StringBuf();
+		Utf8.iter(str, function(char:Int){
+			if (char == comma)
+			{
+				buf.add("<C>");
+			}
+			else
+			{
+				buf.addChar(char);
+			}
+		});
+		return buf.toString();
+	}
+	
+	static function needsFormulaEscape(str:String):Bool
+	{
+		if (!Main.escapeFormula) return false;
+		
+		var firstChar = Unifill.uCharAt(str, 0);
+		
+		if (firstChar == "+" || firstChar == "'" || firstChar == "=")
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
+	static function doEscapeFormula(str:String):String
+	{
+		var plus = 0x2B;
+		var singleQuote = 0x27;
+		var equals = 0x3D;
+		var comma = 0x2C;
+		
+		var firstChar = Unifill.uCharCodeAt(str, 0);
+		
+		var baseStr = Unifill.uSubstr(str, 1, Unifill.uLength(str) - 1);
+		
+		var prefix = "";
+		if (firstChar == plus){
+			prefix = "<PLUS>";
+		}
+		else if (firstChar == singleQuote){
+			prefix = "<SQ>";
+		}
+		else if (firstChar == equals){
+			prefix = "<EQ>";
+		}
+		
+		var buf = new StringBuf();
+		buf.add(prefix);
+		buf.add(baseStr);
+		return buf.toString();
+	}
+	
 	static function needsQuotes(str:String):Int
 	{
 		var comma = 0x2C;
@@ -165,6 +269,9 @@ class Main
 			var row = grid[iy];
 			for (ix in 0...row.length){
 				var cell = row[ix];
+				if (needsFormulaEscape(cell)){
+					cell = doEscapeFormula(cell);
+				}
 				Utf8.iter(cell, function(char:Int){
 					buf.addChar(char);
 				});
@@ -413,7 +520,7 @@ class Main
 	
 	private static function usage()
 	{
-		Sys.println("usage: csv2tsv <input_file> <output_file>\nex: csv2tsv input.csv output.tsv"); 
+		Sys.println("usage: csv2tsv <input_file> <output_file>\nex: csv2tsv input.csv output.tsv\nflags:\n  -escapeformula: replace \"+\", \"'\", \"=\", with \"<PLUS>\", \"<SQ>\", \"<EQ>\", respectively\n  -escapecommas: replace \",\" with \"<C>\" when converting TSV to CSV\n  -escapequotes: replace \"'\" and \"\"\" with \"<SQ>\" and \"<Q>\", respectively, when converting TSV to CSV\n  -escapeleadingspaces: replace leading spaces with \"<SP>\" when converting from TSV to CSV\n  -escapeallthethings: enable all escape flags\n"); 
 	}
 	
 }

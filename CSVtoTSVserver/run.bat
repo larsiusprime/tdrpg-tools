@@ -5,6 +5,6 @@ if "%1"=="debug" (
   java -jar Main-Debug.jar input.csv output.tsv
 ) else (
   :: run release
-  java -jar Main.jar input.csv output.tsv
+  java -jar Main.jar input.tsv output.csv -reverse -escapeallthethings
 )
 pause
