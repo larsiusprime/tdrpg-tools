@@ -52,6 +52,12 @@ class MapLayer
 		
 		sigils = [];
 		sigilGroup = new FlxSpriteGroup();
+		while (sigils.length < 10){
+			sigils.push(new IntPt( -1, -1));
+			var spr = new FlxSprite();
+			spr.visible = false;
+			sigilGroup.add(spr);
+		}
 		
 		back = new FlxSprite();
 		if (FlxG.bitmap.checkCache("backgrid") == false){
@@ -124,12 +130,26 @@ class MapLayer
 		return true;
 	}
 	
-	public function onSigilPlace(i:Int):Bool{
+	public function forceSigil(i:Int, X:Int =-1, Y:Int =-1):Bool{
+		if (i == -1) return false;
+		
+		if (sigils[i].x == X && sigils[i].y == Y) return false;
+		
+		sigils[i].x = X;
+		sigils[i].y = Y;
+		
+		updateSigils();
+		
+		return true;
+	}
+	
+	public function onSigilPlace(i:Int, X:Int =-1, Y:Int =-1):Bool{
+		if (i == -1) return false;
+		
 		var m = getMouseDXY();
 		
-		while (i >= 0 && sigils.length-1 < i){
-			sigils.push(new IntPt( -1, -1));
-		}
+		if (X != -1) m.x = X;
+		if (Y != -1) m.y = Y;
 		
 		if (sigils[i].x == m.x && sigils[i].y == m.y) return false;
 		
@@ -144,17 +164,20 @@ class MapLayer
 	public function onSigilErase(i:Int):Bool{
 		var m = getMouseDXY();
 		
-		while (i >= 0 && sigils.length-1 < i){
-			sigils.push(new IntPt( -1, -1));
-		}
-		
 		var change = false;
 		
-		for (sigil in sigils){
+		for (j in 0...sigils.length){
+			var sigil = sigils[j];
 			if (m.x == sigil.x && m.y == sigil.y){
-				sigil.x = -1;
-				sigil.y = -1;
-				change = true;
+				if(canSigilBeDeleted(j)){
+					sigil.x = -1;
+					sigil.y = -1;
+					change = true;
+				}
+				else
+				{
+					SFX.play("clang");
+				}
 			}
 		}
 		
@@ -168,6 +191,31 @@ class MapLayer
 	
 	private var border:FlxSprite;
 	private var sigilGroup:FlxSpriteGroup;
+	
+	private function canSigilBeDeleted(j:Int){
+		
+		if (j <= MenuState.END_I - 2){
+			//it's a start index
+			var count = 0;
+			for (i in 0...MenuState.END_I-1){
+				if (sigils[i].x != -1 && sigils[i].y != -1){
+					count++;
+				}
+			}
+			
+			//Can't delete the only start location there is!
+			if (count <= 1){
+				return false;
+			}
+		}
+		else {
+			//it's an end index
+			
+			//Can't delete the default mcguffin position!
+			if (j == MenuState.END_I -1) return false;
+		}
+		return true;
+	}
 	
 	private function getMouseDXY():IntPt{
 		var dx:Float = FlxG.mouse.getScreenPosition().x - x;
@@ -209,12 +257,8 @@ class MapLayer
 		{
 			var sigil = sigils[i];
 			if (sigil.x != -1 && sigil.y != -1){
-				while (i >= 0 && sigilGroup.members.length-1 < i)
-				{
-					sigilGroup.add(new FlxSprite());
-				}
 				var sprite = sigilGroup.members[i];
-				sprite.loadGraphic("assets/gfx/_hd/tiles/sigils.png",true,64,64);
+				sprite.loadGraphic("assets/images/sigils.png",true,48,48);
 				sprite.animation.frameIndex = i;
 				var S = THE_SCALE / (sprite.graphic.height/2);
 				sprite.scale.set(S, S);

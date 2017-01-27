@@ -40,3 +40,4 @@ CSVtoTSVserver/bin/
 TSVCompare/bin/
 SteamBuildVersionRename/bin/
 LevelEditor/export/
+LevelEditor/dump/

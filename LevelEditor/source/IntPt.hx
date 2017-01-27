@@ -18,4 +18,8 @@ class IntPt
 	public function toString():String{
 		return "(" + x + "," + y + ")";
 	}
+	
+	public function copy():IntPt{
+		return new IntPt(x, y);
+	}
 }

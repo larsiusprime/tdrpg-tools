@@ -4,28 +4,32 @@ import flash.geom.Point;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
+import flixel.addons.ui.FlxUIButton;
+import flixel.addons.ui.FlxUIState;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.math.FlxMath;
 import flixel.util.FlxColor;
 
-class MenuState extends FlxState
+class MenuState extends FlxUIState
 {
 	public static var dq1:Settings;
 	public static var dq2:Settings;
 	
-	private static var LAYER_X:Int = 5;
-	private static var LAYER_Y:Int = 5;
-	
-	//public
+	private static inline var LAYER_X:Int = 5;
+	private static inline var LAYER_Y:Int = 5;
 	
 	public var sigil:Int = 0;
 	public var tool:Tool = Tool.Pencil;
 	public var toolFlows:Bool = true;
 	
+	public static inline var START_I:Int = 1;
+	public static inline var END_I:Int = 6;
+	
 	override public function create():Void
 	{
 		super.create();
+		FlxG.sound.muted = false;
 		makeBkg();
 		makeSettings();
 		load(dq1);
@@ -43,28 +47,32 @@ class MenuState extends FlxState
 		if (FlxG.keys.justPressed.Z && FlxG.keys.pressed.CONTROL){
 			undo();
 		}
+		else if (FlxG.keys.justPressed.Y && FlxG.keys.pressed.CONTROL){
+			redo();
+		}
 		
-		if (FlxG.keys.justPressed.A)     doSigil(1);
-		if (FlxG.keys.justPressed.B)     doSigil(2);
-		if (FlxG.keys.justPressed.C)     doSigil(3);
-		if (FlxG.keys.justPressed.D)     doSigil(4);
-		if (FlxG.keys.justPressed.E)     doSigil(5);
-		if (FlxG.keys.justPressed.ONE)   doSigil(6);
-		if (FlxG.keys.justPressed.TWO)   doSigil(7);
-		if (FlxG.keys.justPressed.THREE) doSigil(8);
-		if (FlxG.keys.justPressed.FOUR)  doSigil(9);
-		if (FlxG.keys.justPressed.FIVE)  doSigil(10);
+		if (FlxG.keys.justPressed.ONE)   doSigil(1);
+		if (FlxG.keys.justPressed.TWO)   doSigil(2);
+		if (FlxG.keys.justPressed.THREE) doSigil(3);
+		if (FlxG.keys.justPressed.FOUR)  doSigil(4);
+		if (FlxG.keys.justPressed.FIVE)  doSigil(5);
+		if (FlxG.keys.justPressed.A)     doSigil(6);
+		if (FlxG.keys.justPressed.B)     doSigil(7);
+		if (FlxG.keys.justPressed.C)     doSigil(8);
+		if (FlxG.keys.justPressed.D)     doSigil(9);
+		if (FlxG.keys.justPressed.E)     doSigil(10);
 		
 		super.update(elapsed);
 		updateInput(elapsed);
 	}
 	
-	//private
-	
+	private var hintText:FlxText;
 	private var sigilSprite:FlxSprite;
+	private var sigilHint:String;
 	private var layers:Array<MapLayer>;
 	private var data:Settings;
 	private var maxUndo:Int = 100;
+	private var undoPointer:Int = -1;
 	private var undoBuffer:Array<EditState>;
 	private var tempState:EditState;
 	
@@ -94,12 +102,27 @@ class MenuState extends FlxState
 	private function doSigil(i:Int){
 		sigil = i - 1;
 		sigilSprite.animation.frameIndex = sigil;
+		var changeHint:Bool = (hintText.text == sigilHint);
+		sigilHint = switch(i){
+			case 1, 2, 3, 4, 5:
+				"Enemy start loc " + (i);
+			case 6:
+				"Mcguffin end loc";
+			case 7, 8, 9, 10:
+				"Ally " + (i-END_I) + " end loc";
+			default:
+				"";
+		}
+		if (changeHint){
+			hintText.text = sigilHint;
+		}
 	}
 	
 	private function doInput(layer:MapLayer, rightClick:Bool = false, justPressed:Bool=false){
 		var change = false;
 		tempState.sync(layers);
 		
+		var skipTool = false;
 		if (!layer.editable)
 		{
 			if (layer.hasSigils){
@@ -110,34 +133,37 @@ class MenuState extends FlxState
 				else{
 					change = layer.onSigilErase(sigil);
 				}
+				skipTool = true;
 			}
-			return;
 		}
-		switch(tool){
-			case Pencil:
-				if(!rightClick){
-					change = layer.onPencil();
-				}
-				else{
-					change = layer.onEraser();
-				}
-			case Eraser:
-				change = layer.onEraser();
-			case Bucket:
-				if (justPressed)
-				{
+		
+		if(!skipTool){
+			switch(tool){
+				case Pencil:
 					if(!rightClick){
-						change = layer.onBucket();
+						change = layer.onPencil();
 					}
 					else{
+						change = layer.onEraser();
+					}
+				case Eraser:
+					change = layer.onEraser();
+				case Bucket:
+					if (justPressed)
+					{
+						if(!rightClick){
+							change = layer.onBucket();
+						}
+						else{
+							change = layer.onTurpentine();
+						}
+					}
+				case Turpentine:
+					if (justPressed)
+					{
 						change = layer.onTurpentine();
 					}
-				}
-			case Turpentine:
-				if (justPressed)
-				{
-					change = layer.onTurpentine();
-				}
+			}
 		}
 		composite();
 		
@@ -147,28 +173,80 @@ class MenuState extends FlxState
 		}
 	}
 	
-	private function undo(){
+	private function redo(){
 		if (undoBuffer == null || undoBuffer.length == 0) {
 			return;
 		}
 		
-		var state = undoBuffer.pop();
+		if (undoPointer == -1){
+			return;
+		}
+		
+		if (undoPointer < undoBuffer.length-1){
+			undoPointer++;
+		}
+		else {
+			return;
+		}
+		
+		restore();
+	}
+	
+	private function undo(){
+		
+		if (undoBuffer == null || undoBuffer.length == 0) {
+			return;
+		}
+		
+		if (undoPointer == -1){
+			undoPointer = undoBuffer.length - 1;
+			undoBuffer.push(tempState);
+		}
+		else {
+			undoPointer--;
+			if (undoPointer <= 0)
+			{ 
+				undoPointer = 0;
+			}
+		}
+		
+		restore();
+	}
+	
+	private function restore(){
+		
+		var state = undoBuffer[undoPointer];
 		var zpt = new Point();
 		for (i in 0...layers.length){
 			layers[i].sprite.graphic.bitmap.copyPixels(state.layers[i], state.layers[i].rect, zpt);
 		}
+		for (i in 0...layers[0].sigils.length){
+			layers[0].forceSigil(i, state.sigils[i].x, state.sigils[i].y);
+		}
+	}
+	
+	private function killRedos(){
+		if (undoPointer != -1){
+			while (undoBuffer.length - 1 > undoPointer){
+				var state = undoBuffer.pop();
+				state.destroy();
+			}
+		}
 	}
 	
 	private function pushUndo(state:EditState){
+		
+		killRedos();
+		
 		if (undoBuffer.length >= maxUndo){
-			undoBuffer.shift();
+			var state = undoBuffer.shift();
+			state.destroy();
 		}
 		
 		undoBuffer.push(state);
+		undoPointer = -1;
 		
-		for (i in 0...state.layers.length){
-			FlxG.bitmapLog.add(state.layers[i], Std.string(i));
-		}
+		trace("pushUndo pointer = " + undoPointer + " / " + (undoBuffer.length - 1));
 	}
 	
 	private function composite(){
@@ -183,6 +261,14 @@ class MenuState extends FlxState
 			var layer = layers[i];
 			var lbmp = layer.sprite.graphic.bitmap;
 			bmp.copyPixels(lbmp, lbmp.rect, zpt, null, null, true);
+			switch(layer.value){
+				case "legal","illegal":
+					for (sigil in layers[0].sigils){
+						if (sigil.x != -1 && sigil.y != -1){
+							bmp.setPixel32(sigil.x, sigil.y, FlxColor.BLACK);
+						}
+					}
+			}
 		}
 	}
 	
@@ -200,12 +286,92 @@ class MenuState extends FlxState
 		layers[0].hasSigils = true;
 		
 		sigilSprite = new FlxSprite();
-		sigilSprite.loadGraphic("assets/gfx/_hd/tiles/sigils.png", true, 64, 64);
-		sigilSprite.x = FlxG.width - sigilSprite.width;
-		sigilSprite.y = FlxG.height - sigilSprite.height;
+		sigilSprite.loadGraphic("assets/images/sigils.png", true, 48, 48);
 		add(sigilSprite);
 		
+		hintText = new FlxText(0, 0, layers[0].sprite.width, "Testing");
+		hintText.alignment = FlxTextAlign.CENTER;
+		hintText.text = "Testing";
+		hintText.font = "assets/fonts/verdana.ttf";
+		hintText.size = 14;
+		hintText.color = FlxColor.BLACK;
+		hintText.x = FlxG.width - (hintText.width + 5);
+		hintText.y = FlxG.height - hintText.height * 2;
+		add(hintText);
+		
+		sigilSprite.x = Std.int(hintText.x + (hintText.width - sigilSprite.width) / 2);
+		sigilSprite.y = hintText.y - sigilSprite.height - 5;
+		
+		doSigil(1);
+		
+		sigilSprite.visible = false;
+		hintText.visible = false;
+		
 		tempState = new EditState(layers);
+		
+		layers[0].onSigilPlace(START_I-1, 0, Std.int(layers[0].height / 2));
+		layers[0].onSigilPlace(END_I - 1, layers[0].width - 1, Std.int(layers[0].height / 2));
+		
+		for (i in 0...layers.length){
+			layers[i].button.onOver.callback = function(){
+				showLayer(i, true);
+			}
+			layers[i].button.onOut.callback = function(){
+				showLayer(i, false);
+			}
+		}
+		
+		composite();
+		
+		var button = new FlxUIButton(0, 0, "Export", onExport);
+		button.label.font = "assets/fonts/verdana.ttf";
+		button.label.size = 14;
+		button.label.color = FlxColor.BLACK;
+		button.resize(100, 32);
+		button.x = FlxG.width - button.width - 5;
+		button.y = 5;
+		add(button);
+	}
+	
+	private function onExport(){
+		
+	}
+	
+	private function showLayer(i:Int, b:Bool){
+		
+		if (i > 0)
+		{
+			if(b){
+				hintText.text = layers[i].value;
+				hintText.visible = true;
+				sigilSprite.visible = false;
+				hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
+				hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
+			}
+			else{
+				if(hintText.text == layers[i].value){
+					hintText.visible = false;
+				}
+			}
+		}
+		else{
+			if (b){
+				sigilSprite.visible = true;
+				hintText.visible = true;
+				hintText.text = sigilHint;
+				hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
+				hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
+			}
+			else{
+				if (hintText.text == sigilHint){
+					sigilSprite.visible = false;
+					hintText.visible = false;
+				}
+			}
+		}
+		
+		sigilSprite.x = Std.int(hintText.x + (hintText.width - sigilSprite.width) / 2);
+		sigilSprite.y = hintText.y + hintText.height;
 	}
 	
 	private function makeLayer(color:FlxColor, layer:Int, value:String, editable:Bool=true)
