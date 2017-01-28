@@ -1,6 +1,10 @@
 package;
 
+import flash.display.BitmapData;
 import flash.geom.Point;
+import flash.geom.Rectangle;
+import flash.net.FileFilter;
+import flash.net.FileReference;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
@@ -10,6 +14,17 @@ import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.math.FlxMath;
 import flixel.util.FlxColor;
+import haxe.xml.Fast;
+import haxe.xml.Printer;
+import lime.ui.FileDialog;
+import lime.ui.FileDialogType;
+import openfl.display.PNGEncoderOptions;
+import openfl.events.Event;
+import openfl.utils.ByteArray;
+import sys.FileSystem;
+import sys.io.File;
+import unifill.Unifill;
+import WaveWidget.WaveInfo;
 
 class MenuState extends FlxUIState
 {
@@ -18,6 +33,9 @@ class MenuState extends FlxUIState
 	
 	private static inline var LAYER_X:Int = 5;
 	private static inline var LAYER_Y:Int = 5;
+	
+	private static inline var WAVE_X:Int = 610;
+	private static inline var WAVE_Y:Int = 345;
 	
 	public var sigil:Int = 0;
 	public var tool:Tool = Tool.Pencil;
@@ -66,6 +84,8 @@ class MenuState extends FlxUIState
 		updateInput(elapsed);
 	}
 	
+	private var waves:Array<WaveInfo>;
+	private var waveWidgets:Array<WaveWidget>;
 	private var hintText:FlxText;
 	private var sigilSprite:FlxSprite;
 	private var sigilHint:String;
@@ -80,6 +100,7 @@ class MenuState extends FlxUIState
 		
 		for (i in 0...layers.length){
 			var layer = layers[i];
+			layer.update();
 			if (toolFlows && (tool != Bucket && tool != Turpentine)){
 				if (layer.button.pressed){
 					doInput(layer);
@@ -97,6 +118,7 @@ class MenuState extends FlxUIState
 				}
 			}
 		}
+		
 	}
 	
 	private function doSigil(i:Int){
@@ -215,7 +237,14 @@ class MenuState extends FlxUIState
 	
 	private function restore(){
 		
+		if (undoPointer == -1) return;
+		
 		var state = undoBuffer[undoPointer];
+		
+		if (state == null) return;
+		if (state.layers == null) return;
+		if (state.sigils == null) return;
+		
 		var zpt = new Point();
 		for (i in 0...layers.length){
 			layers[i].sprite.graphic.bitmap.copyPixels(state.layers[i], state.layers[i].rect, zpt);
@@ -245,8 +274,6 @@ class MenuState extends FlxUIState
 		
 		undoBuffer.push(state);
 		undoPointer = -1;
-		
-		trace("pushUndo pointer = " + undoPointer + " / " + (undoBuffer.length - 1));
 	}
 	
 	private function composite(){
@@ -331,14 +358,203 @@ class MenuState extends FlxUIState
 		button.x = FlxG.width - button.width - 5;
 		button.y = 5;
 		add(button);
+		
+		waves = [];
+		waveWidgets = [];
+		waves.push(
+		{
+			type:"normal",
+			count:1,
+			wait:1.0,
+			level:1,
+			rate:1.0,
+			starts:[true,false,false,false,false],
+			ends:[true,false,false,false,false]
+		});
+		refreshWaves();
+	}
+	
+	private function refreshWaves()
+	{
+		while (waveWidgets.length < waves.length){
+			var widget = new WaveWidget();
+			waveWidgets.push(widget);
+			add(widget);
+		}
+		while (waveWidgets.length > waves.length){
+			var widget = waveWidgets.pop();
+			remove(widget, true);
+			widget.destroy();
+		}
+		
+		var X = WAVE_X;
+		var Y = WAVE_Y;
+		for (i in 0...waves.length){
+			waveWidgets[i].x = X;
+			waveWidgets[i].y = Y;
+			Y += Std.int(waveWidgets[i].height);
+			waveWidgets[i].sync(waves[i]);
+		}
 	}
 	
 	private function onExport(){
 		
+		promptPath();
 	}
 	
-	private function showLayer(i:Int, b:Bool){
+	private function exportData(path:String){
+		if (FileSystem.isDirectory(path)){
+			SFX.play("clang");
+			return;
+		}
 		
+		var W = Std.int(layers[0].sprite.graphic.bitmap.width);
+		var H = Std.int(layers[0].sprite.graphic.bitmap.height);
+		
+		var img:BitmapData = new BitmapData(Std.int(W*layers.length+1), H, true, 0xFF000000);
+		
+		var pt = new Point();
+		
+		var bmp = layers[0].sprite.graphic.bitmap;
+		img.copyPixels(bmp, bmp.rect, pt, null, null, true);
+		
+		//skip the composite image, leave one entire field blank for "path" layer
+		pt.x += W * 2;
+		
+		path = stripExtension(path);
+		
+		for (i in 1...layers.length){
+			var bmp = layers[i].sprite.graphic.bitmap;
+			img.copyPixels(bmp, bmp.rect, pt, null, null, true);
+			pt.x += bmp.width;
+		}
+		
+		var bytes = img.encode(img.rect, new PNGEncoderOptions());
+		
+		File.saveBytes(path + ".png", bytes);
+		File.saveContent(path + ".xml", getXMLString());
+	}
+	
+	private function tab(i:Int):String
+	{
+		var tab = "    ";
+		var str = "";
+		for (j in 0...i){
+			str += tab;
+		}
+		return tab;
+	}
+	
+	private function getXMLString():String{
+		
+		var save_xml:Xml = Xml.parse("<data></data>");
+		save_xml = save_xml.firstElement();
+		
+		var fast:Fast= new Fast(save_xml);
+		
+		var tileStr = tab(1)+'<tiles>';
+		for (i in 0...layers.length){
+			var color:FlxColor = layers[i].color;
+			var value = switch(layers[i].value){
+				case "legal": "grass";
+				case "illegal": "dark_cliff";
+				case "water": "water";
+				default: layers[i].value;
+			}
+			if (i == 0){
+				tileStr += '<tile rgb="0x000000" tile_sheet="single" value="grey_dirt" layer="0"/>';
+			}
+			else {
+				tileStr += '<tile rgb="' + color.toHexString(false, true) + '" value="$value" layer="$i"/>';
+			}
+		}
+		var ids = ["a", "b", "c", "d", "e"];
+		for (i in 0...10){
+			var sigil = layers[0].sigils[i];
+			if (sigil.x != -1 && sigil.y != -1){
+				var id = "";
+				var nodeName = "";
+				if (i < END_I - 1){
+					id = ids[i];
+					nodeName = "start";
+				}
+				else {
+					id = ids[i - (END_I - 1)];
+					nodeName = "end";
+				}
+				var X = sigil.x;
+				var Y = sigil.y;
+				tileStr += '<$nodeName id="$id" x="$X" y="$Y"/>';
+			}
+		}
+		tileStr += '</tiles>';
+		
+		var waveStr = 
+		'<waves first_wait="1" diff="easy">' +
+			'<wave count="1" wait="1" type="normal" level="1" rate="1" loc="a"/>' +
+		'</waves>';
+		
+		save_xml.addChild(xmlify('<title id="" value=""/>'));
+		save_xml.addChild(xmlify('<music value="battle"/>'));
+		save_xml.addChild(xmlify('<victory><condition value="kill_all"/></victory>'));
+		save_xml.addChild(xmlify('<failure/>'));
+		save_xml.addChild(xmlify(tileStr));
+		save_xml.addChild(xmlify(waveStr));
+		
+		var outputstr = Printer.print(save_xml,true);
+		
+		var outputstr = '<?xml version="1.0" encoding="utf-8" ?>\n' + outputstr;
+		return outputstr;
+	}
+	
+	private function xmlify(str:String){
+		return Xml.parse(str).firstElement();
+	}
+	
+	private function stripExtension(path:String):String
+	{
+		if (Unifill.uIndexOf(path, ".") == -1) return path;
+		
+		var arr = Unifill.uSplit(path, ".");
+		var sb:StringBuf = new StringBuf();
+		for (i in 0...arr.length){
+			if (i == arr.length - 1) continue;
+			sb.add(arr[i]);
+			if (i != arr.length - 2){
+				sb.add(".");
+			}
+		}
+		return sb.toString();
+	}
+	
+	private function promptPath(){
+		#if sys
+			var openFileDialog = new FileDialog();
+			/*openFileDialog.onCancel.add(function(){
+				
+			});*/
+			openFileDialog.onSelect.add(onSelectPath);
+			
+			try
+			{
+				openFileDialog.browse(FileDialogType.SAVE,"");
+			}
+			catch (e:Dynamic)
+			{
+				trace("error : " + e);
+			}
+		#end
+	}
+	
+	private function onSelectPath(value:String){
+		var path = Std.string(value);
+		
+		exportData(path);
+		
+	}
+	
+	private function showLayer(i:Int, b:Bool)
+	{
 		if (i > 0)
 		{
 			if(b){

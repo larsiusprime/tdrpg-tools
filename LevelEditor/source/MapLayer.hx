@@ -3,6 +3,7 @@ import flash.display.BitmapData;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.ui.FlxClickArea;
+import flixel.addons.ui.FlxUILine;
 import flixel.group.FlxGroup;
 import flixel.group.FlxSpriteGroup;
 import flixel.input.mouse.FlxMouseButton;
@@ -35,6 +36,7 @@ class MapLayer
 	public var hasSigils:Bool = false;
 	
 	public var sigils:Array<IntPt>;
+	public var box:FlxSpriteGroup;
 	
 	public static inline var THE_SCALE:Int = 12;
 	
@@ -88,6 +90,24 @@ class MapLayer
 		
 		border = new FlxSprite();
 		border.makeGraphic(Std.int(sprite.width + 2), Std.int(sprite.height + 2), FlxColor.BLACK);
+		
+		var boxColor = color.getInverted();
+		if (boxColor == 0xFF000000){
+			boxColor = 0xFF808080;
+		}
+		box = makeBox(theScale+4, theScale+4, boxColor, 2);
+		box.visible = false;
+	}
+	
+	public function update(){
+		if (FlxG.mouse.overlaps(button)){
+			var m = getMouseDXY();
+			box.x = button.x + m.x * THE_SCALE-2;
+			box.y = button.y + m.y * THE_SCALE-2;
+			box.visible = true;
+		}else{
+			box.visible = false;
+		}
 	}
 	
 	public function addTo(group:FlxGroup){
@@ -97,6 +117,7 @@ class MapLayer
 		group.add(rightButton);
 		group.add(sprite);
 		group.add(sigilGroup);
+		group.add(box);
 	}
 	
 	public function onPencil():Bool{
@@ -291,4 +312,16 @@ class MapLayer
 		return bmp;
 	}
 	
+	private function makeBox(W:Int, H:Int, col:FlxColor, thick:Int):FlxSpriteGroup{
+		var top    = new FlxUILine(0, 0,     LineAxis.HORIZONTAL, W, thick, col);
+		var left   = new FlxUILine(0, 0,     LineAxis.VERTICAL  , H, thick, col);
+		var bottom = new FlxUILine(0, H - thick, LineAxis.HORIZONTAL, W, thick, col);
+		var right  = new FlxUILine(W - thick, 0, LineAxis.VERTICAL  , H, thick, col);
+		var fs = new FlxSpriteGroup();
+		fs.add(top);
+		fs.add(left);
+		fs.add(right);
+		fs.add(bottom);
+		return fs;
+	}
 }

@@ -18,8 +18,11 @@ class EditState
 	}
 	
 	public function destroy(){
+		if (layers == null) return;
 		for (layer in layers){
-			layer.dispose();
+			if(layer != null){
+				layer.dispose();
+			}
 		}
 		FlxArrayUtil.clearArray(layers);
 		FlxArrayUtil.clearArray(sigils);
