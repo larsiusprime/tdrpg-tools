@@ -1,6 +1,7 @@
 package;
 import flixel.FlxSprite;
 import flixel.addons.ui.FlxClickArea;
+import flixel.addons.ui.FlxUI;
 import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUISprite;
@@ -15,12 +16,12 @@ import WaveWidget.WaveInfo;
 class SigilWidget extends FlxUIGroup
 {
 
-	private var starts:Array<Bool> = [true,false,false,false,false];
-	private var ends:Array<Bool> = [true,false,false,false,false];
+	public var starts:Array<Bool> = [true,false,false,false,false];
+	public var ends:Array<Bool> = [true,false,false,false,false];
 	
 	public function new(xx:Int,yy:Int,H:Float) 
 	{
-		super(xx,yy);
+		super(xx, yy);
 		var X = 0;
 		var Y = 0;
 		for (i in 0...5){
@@ -74,6 +75,7 @@ class SigilWidget extends FlxUIGroup
 					starts[i] = b;
 				}
 				spr.alpha = starts[i] ? 1.0 : 0.25;
+				FlxUI.event("sigil_change", this, null, ["wave_widget"]);
 				return;
 			}
 		}
@@ -90,6 +92,8 @@ class SigilWidget extends FlxUIGroup
 					ends[i] = b;
 				}
 				spr.alpha = ends[i] ? 1.0 : 0.25;
+				FlxUI.event("sigil_change", this, null, ["wave_widget"]);
+				return;
 			}
 		}
 	}

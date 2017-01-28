@@ -9,7 +9,11 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.addons.ui.FlxUIButton;
+import flixel.addons.ui.FlxUIList;
+import flixel.addons.ui.FlxUINumericStepper;
 import flixel.addons.ui.FlxUIState;
+import flixel.addons.ui.FlxUITypedButton;
+import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.math.FlxMath;
@@ -34,8 +38,8 @@ class MenuState extends FlxUIState
 	private static inline var LAYER_X:Int = 5;
 	private static inline var LAYER_Y:Int = 5;
 	
-	private static inline var WAVE_X:Int = 610;
-	private static inline var WAVE_Y:Int = 345;
+	private static inline var WAVE_X:Int = 550;
+	private static inline var WAVE_Y:Int = 250;
 	
 	public var sigil:Int = 0;
 	public var tool:Tool = Tool.Pencil;
@@ -84,6 +88,27 @@ class MenuState extends FlxUIState
 		updateInput(elapsed);
 	}
 	
+	override public function getEvent(id:String, sender:Dynamic, data:Dynamic, ?params:Array<Dynamic>):Void 
+	{
+		super.getEvent(id, sender, data, params);
+		switch(id){
+			case "delete_wave":
+				var i:Int = cast data;
+				waves.splice(i, 1);
+				refreshWaves();
+			case "add_wave":
+				waves.push(getWave());
+				refreshWaves();
+			case FlxUINumericStepper.CHANGE_EVENT,"sigil_change":
+				if (params != null && params.indexOf("wave_widget") != -1){
+					var widget = cast(sender, IFlxUIWidget);
+					resolveWidgetChange(widget, params);
+				}
+		}
+	}
+	
+	//PRIVATE
+	
 	private var waves:Array<WaveInfo>;
 	private var waveWidgets:Array<WaveWidget>;
 	private var hintText:FlxText;
@@ -95,6 +120,20 @@ class MenuState extends FlxUIState
 	private var undoPointer:Int = -1;
 	private var undoBuffer:Array<EditState>;
 	private var tempState:EditState;
+	private var waveList:FlxUIList;
+	
+	private function resolveWidgetChange(widget:IFlxUIWidget, params:Array<Dynamic>){
+		
+		var i:Int = 0;
+		for (waveWidget in waveWidgets){
+			if (waveWidget.owns(widget)){
+				trace("write wave info (" + i + ")!");
+				waveWidget.write(waves[i]);
+			}
+			i++;
+		}
+		
+	}
 	
 	private function updateInput(elapsed:Float){
 		
@@ -361,7 +400,12 @@ class MenuState extends FlxUIState
 		
 		waves = [];
 		waveWidgets = [];
-		waves.push(
+		waves.push(getWave());
+		refreshWaves();
+	}
+	
+	private function getWave():WaveInfo{
+		return
 		{
 			type:"normal",
 			count:1,
@@ -370,31 +414,47 @@ class MenuState extends FlxUIState
 			rate:1.0,
 			starts:[true,false,false,false,false],
 			ends:[true,false,false,false,false]
-		});
-		refreshWaves();
+		};
 	}
 	
 	private function refreshWaves()
 	{
+		if (waveList == null){
+			waveList = new FlxUIList(WAVE_X, WAVE_Y, null, WaveWidget.W, WaveWidget.H * 6);
+			add(waveList);
+		}
+		
 		while (waveWidgets.length < waves.length){
 			var widget = new WaveWidget();
 			waveWidgets.push(widget);
-			add(widget);
+			waveList.add(widget);
 		}
 		while (waveWidgets.length > waves.length){
 			var widget = waveWidgets.pop();
-			remove(widget, true);
+			waveList.remove(widget, true);
 			widget.destroy();
 		}
 		
-		var X = WAVE_X;
-		var Y = WAVE_Y;
-		for (i in 0...waves.length){
-			waveWidgets[i].x = X;
-			waveWidgets[i].y = Y;
-			Y += Std.int(waveWidgets[i].height);
-			waveWidgets[i].sync(waves[i]);
+		var l = waveList.members.length;
+		for (i in 0...l){
+			if (Std.is(waveList.members[0], WaveWidget)){
+				waveList.remove(waveList.members[0], true);
+			}
 		}
+		
+		var X = 0;
+		var Y = 0;
+		for (i in 0...waves.length){
+			waveWidgets[i].ID = i;
+			waveWidgets[i].empty = false;
+			waveWidgets[i].sync(waves[i]);
+			waveList.add(waveWidgets[i]);
+		}
+		
+		var lastWave = new WaveWidget();
+		lastWave.ID = waveWidgets.length - 1;
+		lastWave.empty = true;
+		waveList.add(lastWave);
 	}
 	
 	private function onExport(){
@@ -489,10 +549,36 @@ class MenuState extends FlxUIState
 		}
 		tileStr += '</tiles>';
 		
-		var waveStr = 
-		'<waves first_wait="1" diff="easy">' +
-			'<wave count="1" wait="1" type="normal" level="1" rate="1" loc="a"/>' +
-		'</waves>';
+		var waveStr = '<waves first_wait="1" diff="easy">';
+		for (wave in waves){
+			var locStr = "";
+			var endStr = "";
+			for (i in 0...wave.starts.length){
+				if (wave.starts[i]){
+					if (locStr != ""){
+						locStr += ",";
+					}
+					locStr += ids[i];
+				}
+			}
+			for (i in 0...wave.ends.length){
+				if (wave.ends[i]){
+					if (endStr != ""){
+						endStr += ",";
+					}
+					endStr += ids[i];
+				}
+			}
+			//TODO: add ally injection here
+			var endValue = endStr != "" ? "" : "";
+			var wc = wave.count;
+			var ww = wave.wait;
+			var wt = wave.type;
+			var wl = wave.level;
+			var wr = wave.rate;
+			waveStr += '<wave count="$wc" wait="$ww" type="$wt" level="$wl" rate="$wr" loc="$locStr" $endValue/>';
+		}
+		waveStr += '</waves>';
 		
 		save_xml.addChild(xmlify('<title id="" value=""/>'));
 		save_xml.addChild(xmlify('<music value="battle"/>'));

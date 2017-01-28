@@ -1,7 +1,10 @@
 package;
+import flixel.addons.ui.FlxUI;
+import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUILine;
 import flixel.addons.ui.FlxUISprite;
+import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.util.FlxColor;
 
 /**
@@ -10,7 +13,7 @@ import flixel.util.FlxColor;
  */
 class WaveWidget extends FlxUIGroup
 {
-	public static inline var W:Int = 660;
+	public static inline var W:Int = 700;
 	public static inline var H:Int = 72;
 	
 	public var sigils:SigilWidget;
@@ -19,6 +22,10 @@ class WaveWidget extends FlxUIGroup
 	public var level:NumberWidget;
 	public var rate:NumberWidget;
 	public var type:ButtonWidget;
+	public var plusMinus:FlxUIButton;
+	public var box:FlxUIGroup;
+	
+	public var empty(default, set):Bool = false;
 	
 	public function new(X:Float=0,Y:Float=0) 
 	{
@@ -28,6 +35,36 @@ class WaveWidget extends FlxUIGroup
 	
 	public function sync(info:WaveInfo){
 		sigils.sync(info);
+		count.stepper.value = info.count;
+		wait.stepper.value = info.wait;
+		level.stepper.value = info.level;
+		rate.stepper.value = info.rate;
+		type.button.label.text = info.type;
+	}
+	
+	public function owns(widget:IFlxUIWidget){
+		var fast = members.indexOf(cast widget) != -1;
+		if (!fast){
+			for (member in members){
+				if (Std.is(member, FlxUIGroup)){
+					var g:FlxUIGroup = cast member;
+					if (g.members.indexOf(cast widget) != -1){
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	public function write(info:WaveInfo){
+		info.count = Std.int(count.stepper.value);
+		info.wait = wait.stepper.value;
+		info.level = Std.int(level.stepper.value);
+		info.rate = rate.stepper.value;
+		info.type = type.button.label.text;
+		info.starts = sigils.starts.copy();
+		info.ends = sigils.ends.copy();
 	}
 	
 	private function init()
@@ -37,7 +74,8 @@ class WaveWidget extends FlxUIGroup
 		chrome.scale.set(W, H);
 		chrome.updateHitbox();
 		add(chrome);
-		makeBox(W, H);
+		box = makeBox(W, H);
+		add(box);
 		
 		sigils = new SigilWidget(4,Std.int(H/4),H/2);
 		add(sigils);
@@ -47,7 +85,7 @@ class WaveWidget extends FlxUIGroup
 		var ww = Std.int(H*0.8);
 		var dx = ww + 38;
 		
-		type = new ButtonWidget(X, Y-8, H * 2, H, "type", "normal");
+		type = new ButtonWidget(X, Y - 8, H * 2, H, "type", "normal");
 		add(type);
 		X += ww*2 + 38;
 		
@@ -66,17 +104,68 @@ class WaveWidget extends FlxUIGroup
 		rate = new NumberWidget(X, Y, ww, "rate", 0.1, 1, 0.1, 99, 1);
 		add(rate);
 		X += dx;
+		
+		plusMinus = new FlxUIButton(X, Std.int((H-ww)/2), "X", onPlusMinus);
+		plusMinus.resize(ww, ww);
+		plusMinus.label.font = "assets/fonts/verdanab.ttf";
+		plusMinus.label.color = FlxColor.BLACK;
+		plusMinus.label.size = 24;
+		plusMinus.label.bold = true;
+		plusMinus.autoCenterLabel();
+		add(plusMinus);
 	}
 	
-	private function makeBox(W:Int, H:Int):Void{
+	override function set_visible(Value:Bool):Bool 
+	{
+		var vis = super.set_visible(Value);
+		set_empty(empty);
+		return vis;
+	}
+	
+	private function set_empty(b:Bool){
+		empty = b;
+		if (empty){
+			box.visible = false;
+			type.visible = false;
+			count.visible = false;
+			wait.visible = false;
+			level.visible = false;
+			rate.visible = false;
+			plusMinus.label.text = "+";
+			sigils.visible = false;
+		}
+		else{
+			box.visible = true;
+			type.visible = true;
+			count.visible = true;
+			wait.visible = true;
+			level.visible = true;
+			rate.visible = true;
+			plusMinus.label.text = "X";
+			sigils.visible = true;
+		}
+		return empty;
+	}
+	
+	private function onPlusMinus(){
+		if(empty){
+			FlxUI.event("add_wave", this, ID);
+		}else{
+			FlxUI.event("delete_wave", this, ID);
+		}
+	}
+	
+	private function makeBox(W:Int, H:Int):FlxUIGroup{
 		var top    = new FlxUILine(0, 0,     LineAxis.HORIZONTAL, W, 2, FlxColor.BLACK);
 		var left   = new FlxUILine(0, 0,     LineAxis.VERTICAL  , H, 2, FlxColor.BLACK);
 		var bottom = new FlxUILine(0, H - 2, LineAxis.HORIZONTAL, W, 2, FlxColor.BLACK);
 		var right  = new FlxUILine(W - 2, 0, LineAxis.VERTICAL  , H, 2, FlxColor.BLACK);
-		add(top);
-		add(left);
-		add(right);
-		add(bottom);
+		var g = new FlxUIGroup();
+		g.add(top);
+		g.add(left);
+		g.add(right);
+		g.add(bottom);
+		return g;
 	}
 }
 

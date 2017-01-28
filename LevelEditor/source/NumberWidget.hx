@@ -25,7 +25,6 @@ class NumberWidget extends FlxUIGroup
 		var field = new FlxUIInputText(0, 0, Std.int(W*0.75), "", 12);
 		field.font = "assets/fonts/verdana.ttf";
 		field.color = FlxColor.BLACK;
-		//field.alignment = FlxTextAlign.RIGHT;
 		
 		stepper = new FlxUINumericStepper(0, 0, StepSize, DefaultValue, Min, Max, Decimals, FlxUINumericStepper.STACK_HORIZONTAL, field, null, null, false);
 		add(stepper);
@@ -35,5 +34,7 @@ class NumberWidget extends FlxUIGroup
 		label.alignment = FlxTextAlign.CENTER;
 		label.y = stepper.y;
 		add(label);
+		
+		stepper.params = ["wave_widget"];
 	}
 }
