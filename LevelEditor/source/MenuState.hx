@@ -1,5 +1,10 @@
 package;
 
+#if tdrpg_haxe
+import com.leveluplabs.tdrpg.BattleFieldUtility;
+import com.leveluplabs.tdrpg.IndexData;
+import com.leveluplabs.tdrpg.enums.TerrainType;
+#end
 import flash.display.BitmapData;
 import flash.geom.Point;
 import flash.geom.Rectangle;
@@ -8,10 +13,13 @@ import flash.net.FileReference;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
+import flixel.addons.ui.FlxUI;
 import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUIList;
 import flixel.addons.ui.FlxUINumericStepper;
+import flixel.addons.ui.FlxUIPopup;
 import flixel.addons.ui.FlxUIState;
+import flixel.addons.ui.FlxUIText;
 import flixel.addons.ui.FlxUITypedButton;
 import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.text.FlxText;
@@ -24,22 +32,27 @@ import lime.ui.FileDialog;
 import lime.ui.FileDialogType;
 import openfl.display.PNGEncoderOptions;
 import openfl.events.Event;
+import openfl.Assets.AssetType;
 import openfl.utils.ByteArray;
 import sys.FileSystem;
 import sys.io.File;
 import unifill.Unifill;
 import WaveWidget.WaveInfo;
+import DataFetcher.DataFetchCode;
+import MetaWidget.MetaInfo;
+import MetaWidget.MetaEntry;
 
 class MenuState extends FlxUIState
 {
 	public static var dq1:Settings;
 	public static var dq2:Settings;
 	
-	private static inline var LAYER_X:Int = 5;
-	private static inline var LAYER_Y:Int = 5;
+	private static inline var LAYER_X:Int = 10;
+	private static inline var LAYER_Y:Int = 50;
+	private static inline var LAYER_W:Int = 650;
 	
 	private static inline var WAVE_X:Int = 550;
-	private static inline var WAVE_Y:Int = 250;
+	private static inline var WAVE_Y:Int = 240;
 	
 	public var sigil:Int = 0;
 	public var tool:Tool = Tool.Pencil;
@@ -51,6 +64,9 @@ class MenuState extends FlxUIState
 	override public function create():Void
 	{
 		super.create();
+		saveData = new SaveData();
+		dataFetcher = new DataFetcher(saveData);
+		
 		FlxG.sound.muted = false;
 		makeBkg();
 		makeSettings();
@@ -94,23 +110,59 @@ class MenuState extends FlxUIState
 		switch(id){
 			case "delete_wave":
 				var i:Int = cast data;
-				waves.splice(i, 1);
+				waves[diffI()].splice(i,1);
 				refreshWaves();
 			case "add_wave":
-				waves.push(getWave());
+				waves[diffI()].push(getWave());
 				refreshWaves();
-			case FlxUINumericStepper.CHANGE_EVENT,"sigil_change":
+			case "wave_change":
+				refreshWaves();
+			case FlxUINumericStepper.CHANGE_EVENT, "sigil_change":
 				if (params != null && params.indexOf("wave_widget") != -1){
 					var widget = cast(sender, IFlxUIWidget);
 					resolveWidgetChange(widget, params);
 				}
+			case FlxUIPopup.CLICK_EVENT:
+				if (params != null && params.indexOf("setPath") != -1){
+					onSetPath();
+				}
+			case "select_type":
+				var waveWidget:WaveWidget = cast sender;
+				var types = dataFetcher.getEnemyTypes();
+				if (types == null){
+					alert("No game data!", "The Level editor doesn't know what enemy types exist.\n\nYou must set a path to :\n\n  - a mod's root directory\n  - the 'asset' folder in the game's install directory\n  - the 'asset' folder in the game's source code directory\n\nTo do this, select the 'Set Path' button and select one of these.\n\nNOTE: If you select a mod path, you will afterwards need to supply one of the other two.");
+				}else{
+					var popup = new TypePopup(types, waveWidget);
+					openSubState(popup);
+				}
+			case "preview_available":
+				var value:Bool = cast data;
+				previewAvailable = value;
+				updatePreview();
 		}
 	}
 	
 	//PRIVATE
 	
-	private var waves:Array<WaveInfo>;
+	private var previewAvailable:Bool = false;
+	private var preview:MapPreview;
+	
+	private var pathTxt:FlxUIText;
+	private var setpath:FlxUIButton;
+	private var clearpath:FlxUIButton;
+	private var export:FlxUIButton;
+	private var save:FlxUIButton;
+	
+	private var saveData:SaveData;
+	private var dataFetcher:DataFetcher;
+	private var lastSavePath:String = "";
+	
+	private var waves:Array<Array<WaveInfo>>;
 	private var waveWidgets:Array<WaveWidget>;
+	
+	private var meta:MetaEntry;
+	private var metaWidget:MetaWidget;
+	
 	private var hintText:FlxText;
 	private var sigilSprite:FlxSprite;
 	private var sigilHint:String;
@@ -121,18 +173,34 @@ class MenuState extends FlxUIState
 	private var undoBuffer:Array<EditState>;
 	private var tempState:EditState;
 	private var waveList:FlxUIList;
+	private var layerList:FlxUIList;
 	
 	private function resolveWidgetChange(widget:IFlxUIWidget, params:Array<Dynamic>){
 		
 		var i:Int = 0;
 		for (waveWidget in waveWidgets){
 			if (waveWidget.owns(widget)){
-				trace("write wave info (" + i + ")!");
-				waveWidget.write(waves[i]);
+				waveWidget.write(waves[diffI()][i]);
 			}
 			i++;
 		}
-		
+		if (metaWidget.owns(widget)){
+			metaWidget.write(meta);
+		}
+	}
+	
+	private function diffI():Int{
+		return diffToI(meta.difficulty);
+	}
+	
+	private function diffToI(str:String){
+		return switch(str){
+			case "easy": 0;
+			case "normal": 1;
+			case "hard": 2;
+			default: 0;
+		}
+		return 0;
 	}
 	
 	private function updateInput(elapsed:Float){
@@ -158,6 +226,21 @@ class MenuState extends FlxUIState
 			}
 		}
 		
+	}
+	
+	private function updatePreview()
+	{
+		if (previewAvailable)
+		{
+			#if tdrpg_haxe
+			setBattleFieldUtilityCallbacks();
+			#end
+			
+			preview.updatePreview(true, getMapBitmap(), getMapXML());
+		}
+		else{
+			preview.updatePreview(false);
+		}
 	}
 	
 	private function doSigil(i:Int){
@@ -336,6 +419,11 @@ class MenuState extends FlxUIState
 					}
 			}
 		}
+		
+		if (preview != null)
+		{
+			updatePreview();
+		}
 	}
 	
 	private function load(settings:Settings){
@@ -352,7 +440,7 @@ class MenuState extends FlxUIState
 		layers[0].hasSigils = true;
 		
 		sigilSprite = new FlxSprite();
-		sigilSprite.loadGraphic("assets/images/sigils.png", true, 48, 48);
+		sigilSprite.loadGraphic("*assets/images/sigils.png", true, 48, 48);
 		add(sigilSprite);
 		
 		hintText = new FlxText(0, 0, layers[0].sprite.width, "Testing");
@@ -389,19 +477,74 @@ class MenuState extends FlxUIState
 		
 		composite();
 		
-		var button = new FlxUIButton(0, 0, "Export", onExport);
-		button.label.font = "assets/fonts/verdana.ttf";
-		button.label.size = 14;
-		button.label.color = FlxColor.BLACK;
-		button.resize(100, 32);
-		button.x = FlxG.width - button.width - 5;
-		button.y = 5;
-		add(button);
+		var previewParams = {
+			X:Std.int(layers[0].x+10),
+			Y:Std.int(WAVE_Y+45),
+			name:"",
+			diff:"easy",
+			tileHeight:14,
+			widthInSquares:settings.squaresWide,
+			heightInSquares:settings.squaresTall,
+			tilesetStyle:settings.tilesetStyle,
+			tilesPerSquare:settings.tilesPerSquare,
+			png:getMapBitmap(),
+			xml:getMapXML(),
+			levelEdit:true
+		}
 		
-		waves = [];
+		preview = new MapPreview(previewParams);
+		add(preview);
+		
+		export = addBtn(0, 5, "Save As", onExport);
+		export.x = FlxG.width - export.width - 5;
+		
+		save      = addBtn(export.x, export.y + export.height + 5, "Save", onSave);
+		setpath   = addBtn(export.x, save.y + save.height + 5, "Set Path", onSetPath);
+		clearpath = addBtn(export.x, setpath.y + setpath.height + 5, "Clear Paths", onClearPaths);
+		
+		pathTxt = new FlxUIText(0, 0, FlxG.width - (setpath.width+5), dataFetcher.getPathText(), 12);
+		pathTxt.font = "assets/fonts/verdana.ttf";
+		pathTxt.color = FlxColor.BLACK;
+		pathTxt.x = setpath.x - pathTxt.width;
+		pathTxt.y = 0;
+		pathTxt.alignment = FlxTextAlign.LEFT;
+		add(pathTxt);
+		
+		tooltips.add(setpath, {title:"No path set",body:""});
+		
+		meta = {
+			difficulty:"easy",
+			infos:[getMeta("easy"), getMeta("normal"), getMeta("hard")]
+		};
+		metaWidget = new MetaWidget(WAVE_X, WAVE_Y);
+		add(metaWidget);
+		metaWidget.sync(meta);
+		
+		waves = [[],[],[]];
 		waveWidgets = [];
-		waves.push(getWave());
+		waves[0].push(getWave());
+		waves[1].push(getWave());
+		waves[2].push(getWave());
 		refreshWaves();
+		
+		refreshSavePath();
+		refreshPreview();
+	}
+	
+	private function getMeta(diff:String):MetaInfo{
+		return {
+			difficulty:diff,
+			firstWait:1.0,
+			endlessLevelup:1,
+			isEndless:false,
+			isBonus:false
+		}
+	}
+	
+	private function addBtn(X:Float, Y:Float, label:String, callback:Void->Void):FlxUIButton{
+		var btn = Util.makeBtn(Std.int(X), Std.int(Y), label, callback);
+		add(btn);
+		return btn;
 	}
 	
 	private function getWave():WaveInfo{
@@ -420,16 +563,18 @@ class MenuState extends FlxUIState
 	private function refreshWaves()
 	{
 		if (waveList == null){
-			waveList = new FlxUIList(WAVE_X, WAVE_Y, null, WaveWidget.W, WaveWidget.H * 6);
+			waveList = new FlxUIList(WAVE_X, WAVE_Y+metaWidget.height+20, null, WaveWidget.W, WaveWidget.H * 5);
 			add(waveList);
 		}
 		
-		while (waveWidgets.length < waves.length){
+		var ws = waves[diffI()];
+		
+		while (waveWidgets.length < ws.length){
 			var widget = new WaveWidget();
 			waveWidgets.push(widget);
 			waveList.add(widget);
 		}
-		while (waveWidgets.length > waves.length){
+		while (waveWidgets.length > ws.length){
 			var widget = waveWidgets.pop();
 			waveList.remove(widget, true);
 			widget.destroy();
@@ -444,10 +589,10 @@ class MenuState extends FlxUIState
 		
 		var X = 0;
 		var Y = 0;
-		for (i in 0...waves.length){
+		for (i in 0...ws.length){
 			waveWidgets[i].ID = i;
 			waveWidgets[i].empty = false;
-			waveWidgets[i].sync(waves[i]);
+			waveWidgets[i].sync(ws[i]);
 			waveList.add(waveWidgets[i]);
 		}
 		
@@ -457,21 +602,124 @@ class MenuState extends FlxUIState
 		waveList.add(lastWave);
 	}
 	
-	private function onExport(){
-		
-		promptPath();
+	private function onSave(){
+		if (lastSavePath != ""){
+			exportData(lastSavePath);
+		}
 	}
 	
-	private function exportData(path:String){
-		if (FileSystem.isDirectory(path)){
-			SFX.play("clang");
-			return;
+	private function onClearPaths(){
+		dataFetcher.clearPaths();
+		saveData.clear();
+		pathTxt.text = dataFetcher.getPathText();
+	}
+	
+	private function onSetPath(){
+		promptPath(setDataPath, FileDialogType.OPEN_DIRECTORY);
+	}
+	
+	private function refreshSavePath(){
+		save.update(0);
+		if (lastSavePath != ""){
+			save.active = true;
+			save.alpha = 1.0;
+		}
+		else{
+			save.active = false;
+			save.alpha = 0.25;
+		}
+		refreshPreview();
+	}
+	
+	private function refreshPreview(){
+		if (dataFetcher.fetchCode == OK){
+			previewAvailable = true;
+		}else{
+			previewAvailable = false;
+		}
+		updatePreview();
+	}
+	
+	private function setDataPath(path:String){
+		var title = "";
+		var body = "";
+		var tt = "No path set";
+		
+		dataFetcher.setPath(path);
+		
+		switch(dataFetcher.fetchCode){
+			case DataFetchCode.OK:
+				//FlxUI
+			case DataFetchCode.HAS_DEV_NEED_MORE:
+				title = "Base path required";
+				body = dataFetcher.error;
+				alert(title, body, "setPath");
+			case DataFetchCode.HAS_MOD_NEED_BASE:
+				title = "Base path required";
+				body = dataFetcher.error;
+				alert(title, body, "setPath");
+			case DataFetchCode.HAS_NOTHING:
+				title = "Error!";
+				body = dataFetcher.error;
+				tt = "No path set";
+				alert(title, body);
+				tooltips.add(setpath, {
+					title:tt,
+					body:"",
+					style:{
+						titleWidth:200,
+						bodyWidth:200
+					}
+				});
+			case DataFetchCode.NEEDS_ASSETS:
+				title = "Error!";
+				body = dataFetcher.error;
+				tt = "No path set";
+				alert(title, body);
+				tooltips.add(setpath, {
+					title:tt,
+					body:"",
+					style:{
+						titleWidth:200,
+						bodyWidth:200
+					}
+				});
 		}
 		
+		pathTxt.text = dataFetcher.getPathText();
+		
+		dataFetcher.sync(saveData);
+		saveData.save();
+	}
+	
+	private function onExport()
+	{
+		promptPath(exportData);
+	}
+	
+	private var _mapBmp:BitmapData = null;
+	private function getMapBitmap():BitmapData{
 		var W = Std.int(layers[0].sprite.graphic.bitmap.width);
 		var H = Std.int(layers[0].sprite.graphic.bitmap.height);
 		
-		var img:BitmapData = new BitmapData(Std.int(W*layers.length+1), H, true, 0xFF000000);
+		var pw = Std.int(W * (layers.length + 1));
+		var ph = H;
+		
+		if (_mapBmp != null){
+			if (pw != _mapBmp.width || ph != _mapBmp.height){
+				_mapBmp.dispose();
+				_mapBmp = null;
+			}
+		}
+		
+		if (_mapBmp == null){
+			_mapBmp = new BitmapData(pw, ph, true, 0xFF000000);
+		}
+		else{
+			_mapBmp.fillRect(_mapBmp.rect, 0xFF000000);
+		}
+		
+		var img = _mapBmp;
 		
 		var pt = new Point();
 		
@@ -481,18 +729,34 @@ class MenuState extends FlxUIState
 		//skip the composite image, leave one entire field blank for "path" layer
 		pt.x += W * 2;
 		
-		path = stripExtension(path);
-		
 		for (i in 1...layers.length){
 			var bmp = layers[i].sprite.graphic.bitmap;
 			img.copyPixels(bmp, bmp.rect, pt, null, null, true);
 			pt.x += bmp.width;
 		}
 		
+		return img;
+	}
+	
+	private function exportData(path:String){
+		lastSavePath = "";
+		
+		if (FileSystem.isDirectory(path)){
+			SFX.play("clang");
+			return;
+		}
+		
+		lastSavePath = path;
+		
+		var img = getMapBitmap();
 		var bytes = img.encode(img.rect, new PNGEncoderOptions());
+		
+		path = Util.stripExtension(path);
 		
 		File.saveBytes(path + ".png", bytes);
 		File.saveContent(path + ".xml", getXMLString());
+		
+		refreshSavePath();
 	}
 	
 	private function tab(i:Int):String
@@ -503,6 +767,11 @@ class MenuState extends FlxUIState
 			str += tab;
 		}
 		return tab;
+	}
+	
+	private function getMapXML():Fast
+	{
+		return new Fast(Util.xmlify(getXMLString()));
 	}
 	
 	private function getXMLString():String{
@@ -549,43 +818,72 @@ class MenuState extends FlxUIState
 		}
 		tileStr += '</tiles>';
 		
-		var waveStr = '<waves first_wait="1" diff="easy">';
-		for (wave in waves){
-			var locStr = "";
-			var endStr = "";
-			for (i in 0...wave.starts.length){
-				if (wave.starts[i]){
-					if (locStr != ""){
-						locStr += ",";
-					}
-					locStr += ids[i];
-				}
-			}
-			for (i in 0...wave.ends.length){
-				if (wave.ends[i]){
-					if (endStr != ""){
-						endStr += ",";
-					}
-					endStr += ids[i];
-				}
-			}
-			//TODO: add ally injection here
-			var endValue = endStr != "" ? "" : "";
-			var wc = wave.count;
-			var ww = wave.wait;
-			var wt = wave.type;
-			var wl = wave.level;
-			var wr = wave.rate;
-			waveStr += '<wave count="$wc" wait="$ww" type="$wt" level="$wl" rate="$wr" loc="$locStr" $endValue/>';
-		}
-		waveStr += '</waves>';
+		var waveArr:Array<String> = [];
+		var waveStr = "";
 		
-		save_xml.addChild(xmlify('<title id="" value=""/>'));
-		save_xml.addChild(xmlify('<music value="battle"/>'));
-		save_xml.addChild(xmlify('<victory><condition value="kill_all"/></victory>'));
-		save_xml.addChild(xmlify('<failure/>'));
-		save_xml.addChild(xmlify(tileStr));
-		save_xml.addChild(xmlify(waveStr));
+		var i = 0;
+		
+		if(waves != null){
+			for (ws in waves){
+				
+				var wdiff = switch(i){
+					case 0:"easy";
+					case 1:"normal";
+					case 2:"hard";
+					default:"easy";
+				}
+				
+				if (meta.infos[i].isBonus && wdiff != "easy"){
+					continue;
+				}
+				
+				var wfirstwait = meta.infos[i].firstWait;
+				waveStr = '<waves first_wait="$wfirstwait" diff="$wdiff">';
+				
+				for (wave in ws){
+					var locStr = "";
+					var endStr = "";
+					for (i in 0...wave.starts.length){
+						if (wave.starts[i]){
+							if (locStr != ""){
+								locStr += ",";
+							}
+							locStr += ids[i];
+						}
+					}
+					for (i in 0...wave.ends.length){
+						if (wave.ends[i]){
+							if (endStr != ""){
+								endStr += ",";
+							}
+							endStr += ids[i];
+						}
+					}
+					//TODO: add ally injection here
+					var endValue = endStr != "" ? "" : "";
+					var wc = wave.count;
+					var ww = wave.wait;
+					var wt = wave.type;
+					var wl = wave.level;
+					var wr = wave.rate;
+					waveStr += '<wave count="$wc" wait="$ww" type="$wt" level="$wl" rate="$wr" loc="$locStr" $endValue/>';
+				}
+				waveStr += '</waves>';
+				waveArr.push(waveStr);
+				
+				i++;
+			}
+		}
+		
+		save_xml.addChild(Util.xmlify('<title id="" value=""/>'));
+		save_xml.addChild(Util.xmlify('<music value="battle"/>'));
+		save_xml.addChild(Util.xmlify('<victory><condition value="kill_all"/></victory>'));
+		save_xml.addChild(Util.xmlify('<failure/>'));
+		save_xml.addChild(Util.xmlify(tileStr));
+		
+		for(waveStr in waveArr){
+			save_xml.addChild(Util.xmlify(waveStr));
+		}
 		
 		var outputstr = Printer.print(save_xml,true);
 		
@@ -593,50 +891,28 @@ class MenuState extends FlxUIState
 		return outputstr;
 	}
 	
-	private function xmlify(str:String){
-		return Xml.parse(str).firstElement();
+	private function alert(title:String, message:String, closeParam:String=""){
+		var popup = new Popup(title,message,closeParam);
+		openSubState(popup);
 	}
 	
-	private function stripExtension(path:String):String
-	{
-		if (Unifill.uIndexOf(path, ".") == -1) return path;
-		
-		var arr = Unifill.uSplit(path, ".");
-		var sb:StringBuf = new StringBuf();
-		for (i in 0...arr.length){
-			if (i == arr.length - 1) continue;
-			sb.add(arr[i]);
-			if (i != arr.length - 2){
-				sb.add(".");
-			}
-		}
-		return sb.toString();
-	}
-	
-	private function promptPath(){
+	private function promptPath(callback:String->Void, type:FileDialogType = null){
 		#if sys
+			if (type == null){
+				type = FileDialogType.SAVE;
+			}
 			var openFileDialog = new FileDialog();
-			/*openFileDialog.onCancel.add(function(){
-				
-			});*/
-			openFileDialog.onSelect.add(onSelectPath);
+			openFileDialog.onSelect.add(callback);
 			
 			try
 			{
-				openFileDialog.browse(FileDialogType.SAVE,"");
+				openFileDialog.browse(type,"");
 			}
 			catch (e:Dynamic)
 			{
 				trace("error : " + e);
 			}
 		#end
-	}
-	
-	private function onSelectPath(value:String){
-		var path = Std.string(value);
-		
-		exportData(path);
-		
 	}
 	
 	private function showLayer(i:Int, b:Bool)
@@ -708,6 +984,84 @@ class MenuState extends FlxUIState
 		bkg.updateHitbox();
 		add(bkg);
 	}
+	
+	/*********comaptibiliy callbacks************/
+	
+	#if tdrpg_haxe
+	private function hasIndex():Bool{
+		return dataFetcher != null && dataFetcher.index != null;
+		return false;
+	}
+	
+	private function hasGraphics():Bool{
+		return dataFetcher != null && dataFetcher.graphics != null;
+		return false;
+	}
+	
+	private function isTileLegal(str:String):Bool
+	{
+		if (hasIndex()) return dataFetcher.index.isTileLegal(str);
+		return false;
+	}
+	
+	private function getTileType(tileId:String, defaultType:TerrainType = TerrainType.WALL):String
+	{
+		if (hasIndex()) return dataFetcher.index.getTileType(tileId, defaultType);
+		return TerrainType.WALL;
+	}
+	
+	private function getListClasses():Array<String>
+	{
+		return ["mcguffin"];
+	}
+	
+	private function checkClassPlusDisabled(str:String):Bool
+	{
+		return false;
+	}
+	
+	private function getCharacter(class_str:String, ?handle:String, ?index:Int)
+	{
+		#if tdrpg_haxe
+		return null;
+		#else
+		return null;
+		#end
+	}
+	
+	private function isSpriteModeHD():Bool{
+		return true;
+	}
+	
+	private function getGraphicsHeight(str:String):Int{
+		if (hasGraphics()) return dataFetcher.graphics.getHeight(str);
+		if (str == "tile") return 20;
+		if (str == "tile_hd") return 40;
+		return 0;
+	}
+	
+	private function getBitmapData(str:String):BitmapData{
+		return dataFetcher.getBitmapData(str);
+	}
+	
+	private function assetExists(str:String, type:AssetType):Bool{
+		return dataFetcher.assetExists(str, type);
+	}
+	
+	private function setBattleFieldUtilityCallbacks(){
+		BattleFieldUtility.setCallbacks(
+			isTileLegal,
+			getTileType,
+			getListClasses,
+			checkClassPlusDisabled,
+			getCharacter,
+			isSpriteModeHD,
+			getGraphicsHeight,
+			getBitmapData,
+			assetExists
+		);
+	}
+	#end
 }
 
 @:enum abstract Tool(Int){

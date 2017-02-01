@@ -65,17 +65,18 @@ class SigilWidget extends FlxUIGroup
 	}
 	
 	private function toggleStart(i:Int, ?b:Bool){
+		trace("toggleStart(" + i + "," + b + ")");
 		for (j in 0...members.length){
 			var member = members[j];
 			if (member.ID == i){
 				var spr:FlxUISprite = cast member;
 				if(b == null){
 					starts[i] = !starts[i];
+					FlxUI.event("sigil_change", this, null, ["wave_widget"]);
 				}else{
 					starts[i] = b;
 				}
 				spr.alpha = starts[i] ? 1.0 : 0.25;
-				FlxUI.event("sigil_change", this, null, ["wave_widget"]);
 				return;
 			}
 		}
@@ -88,11 +89,11 @@ class SigilWidget extends FlxUIGroup
 				var spr:FlxUISprite = cast member;
 				if(b == null){
 					ends[i] = !ends[i];
+					FlxUI.event("sigil_change", this, null, ["wave_widget"]);
 				}else{
 					ends[i] = b;
 				}
 				spr.alpha = ends[i] ? 1.0 : 0.25;
-				FlxUI.event("sigil_change", this, null, ["wave_widget"]);
 				return;
 			}
 		}
@@ -101,7 +102,7 @@ class SigilWidget extends FlxUIGroup
 	private function makeSigil(i:Int,H:Float):FlxUISprite
 	{
 		var spr = new FlxUISprite();
-		spr.loadGraphic("assets/images/sigils.png", true, 48, 48);
+		spr.loadGraphic("*assets/images/sigils.png", true, 48, 48);
 		spr.scale.set(H / spr.graphic.bitmap.height, H / spr.graphic.bitmap.height);
 		spr.updateHitbox();
 		spr.antialiasing = true;

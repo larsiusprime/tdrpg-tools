@@ -3,7 +3,9 @@ import flash.display.BitmapData;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.ui.FlxClickArea;
+import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUILine;
+import flixel.addons.ui.FlxUIList;
 import flixel.group.FlxGroup;
 import flixel.group.FlxSpriteGroup;
 import flixel.input.mouse.FlxMouseButton;
@@ -38,7 +40,7 @@ class MapLayer
 	public var sigils:Array<IntPt>;
 	public var box:FlxSpriteGroup;
 	
-	public static inline var THE_SCALE:Int = 12;
+	public static inline var THE_SCALE:Int = 10;
 	
 	public function new(W:Int,H:Int,Color:FlxColor,Layer:Int,Value:String,Editable:Bool)
 	{
@@ -108,6 +110,18 @@ class MapLayer
 		}else{
 			box.visible = false;
 		}
+	}
+	
+	public function groupify():FlxUIGroup{
+		var fsg:FlxUIGroup = new FlxUIGroup();
+		fsg.add(border);
+		fsg.add(back);
+		fsg.add(button);
+		fsg.add(rightButton);
+		fsg.add(sprite);
+		fsg.add(sigilGroup);
+		fsg.add(box);
+		return fsg;
 	}
 	
 	public function addTo(group:FlxGroup){
@@ -279,15 +293,17 @@ class MapLayer
 			var sigil = sigils[i];
 			if (sigil.x != -1 && sigil.y != -1){
 				var sprite = sigilGroup.members[i];
-				sprite.loadGraphic("assets/images/sigils.png",true,48,48);
+				sprite.loadGraphic("*assets/images/sigils.png",true,48,48);
 				sprite.animation.frameIndex = i;
-				var S = THE_SCALE / (sprite.graphic.height/2);
-				sprite.scale.set(S, S);
-				sprite.updateHitbox();
-				sprite.antialiasing = true;
-				sprite.x = sigilGroup.x + sigils[i].x * sprite.width;
-				sprite.y = sigilGroup.y + sigils[i].y * sprite.height;
-				sprite.visible = true;
+				if(sprite.graphic != null){
+					var S = THE_SCALE / (sprite.graphic.height/2);
+					sprite.scale.set(S, S);
+					sprite.updateHitbox();
+					sprite.antialiasing = true;
+					sprite.x = sigilGroup.x + sigils[i].x * sprite.width;
+					sprite.y = sigilGroup.y + sigils[i].y * sprite.height;
+					sprite.visible = true;
+				}
 			}
 		}
 	}

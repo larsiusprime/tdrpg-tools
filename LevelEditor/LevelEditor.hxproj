@@ -15,23 +15,22 @@
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\git\unifill" />
-    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,7" />
-    <class path="T:\git\tdrpg-haxe\code" />
-    <class path="C:\HaxeToolkit\haxe\lib\actuate\1,8,6" />
-    <class path="T:\git\firetongue" />
     <class path="T:\git\flixel" />
-    <class path="T:\git\lime" />
     <class path="T:\git\openfl" />
+    <class path="T:\git\unifill" />
+    <class path="T:\git\lime" />
+    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,7" />
+    <class path="T:\git\zame-haxe-stringutils" />
     <class path="T:\git\flixel-addons" />
     <class path="T:\git\flixel-ui" />
+    <class path="T:\git\flixel-editors" />
     <class path="source" />
     <class path="T:\git\openfl\extern" />
     <class path="export\windows\neko\debug\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="unifill=0.4.1&#xA;hscript=2.0.7&#xA;tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;firetongue=2.0.0&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;HXCPP_QUIET&#xA;openfl-next&#xA;tools=2.9.9&#xA;NAPE_NO_INLINE&#xA;no-compilation&#xA;native&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="flixel=4.1.1&#xA;openfl=3.6.1&#xA;unifill=0.4.1&#xA;lime=2.9.9&#xA;hscript=2.0.7&#xA;zame-haxe-stringutils=0.0.0&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;flixel-editors=0.0.0&#xA;HXCPP_QUIET&#xA;openfl-next&#xA;tools=2.9.9&#xA;NAPE_NO_INLINE&#xA;SHOW_FPS&#xA;QUICK_BATTLE_TEST&#xA;no-compilation&#xA;native&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;openfl-native&#xA;DEFQ_EDIT&#xA;FLX_NO_SOUND_TRAY&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

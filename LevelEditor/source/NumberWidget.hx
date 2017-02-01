@@ -27,6 +27,7 @@ class NumberWidget extends FlxUIGroup
 		field.color = FlxColor.BLACK;
 		
 		stepper = new FlxUINumericStepper(0, 0, StepSize, DefaultValue, Min, Max, Decimals, FlxUINumericStepper.STACK_HORIZONTAL, field, null, null, false);
+		
 		add(stepper);
 		label = new FlxUIText(0, 0, stepper.width, Label, 12);
 		label.font = "assets/fonts/verdana.ttf";

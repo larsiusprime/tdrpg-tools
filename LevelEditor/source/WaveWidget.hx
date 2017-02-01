@@ -24,6 +24,7 @@ class WaveWidget extends FlxUIGroup
 	public var type:ButtonWidget;
 	public var plusMinus:FlxUIButton;
 	public var box:FlxUIGroup;
+	public var info:WaveInfo;
 	
 	public var empty(default, set):Bool = false;
 	
@@ -33,7 +34,8 @@ class WaveWidget extends FlxUIGroup
 		init();
 	}
 	
-	public function sync(info:WaveInfo){
+	public function sync(Info:WaveInfo){
+		info = Info;
 		sigils.sync(info);
 		count.stepper.value = info.count;
 		wait.stepper.value = info.wait;
@@ -42,15 +44,28 @@ class WaveWidget extends FlxUIGroup
 		type.button.label.text = info.type;
 	}
 	
+	override public function destroy():Void 
+	{
+		info = null;
+		sigils = null;
+		count = null;
+		wait = null;
+		level = null;
+		rate = null;
+		type = null;
+		plusMinus = null;
+		box = null;
+		super.destroy();
+	}
+	
 	public function owns(widget:IFlxUIWidget){
 		var fast = members.indexOf(cast widget) != -1;
-		if (!fast){
-			for (member in members){
-				if (Std.is(member, FlxUIGroup)){
-					var g:FlxUIGroup = cast member;
-					if (g.members.indexOf(cast widget) != -1){
-						return true;
-					}
+		if (fast) return true;
+		for (member in members){
+			if (Std.is(member, FlxUIGroup)){
+				var g:FlxUIGroup = cast member;
+				if (g.members.indexOf(cast widget) != -1){
+					return true;
 				}
 			}
 		}
@@ -58,6 +73,7 @@ class WaveWidget extends FlxUIGroup
 	}
 	
 	public function write(info:WaveInfo){
+		trace("write before info.starts = " + info.starts);
 		info.count = Std.int(count.stepper.value);
 		info.wait = wait.stepper.value;
 		info.level = Std.int(level.stepper.value);
@@ -65,6 +81,16 @@ class WaveWidget extends FlxUIGroup
 		info.type = type.button.label.text;
 		info.starts = sigils.starts.copy();
 		info.ends = sigils.ends.copy();
+		trace("write after info.starts = " + info.starts);
+	}
+	
+	public function setType(typeStr:String){
+		trace("setType(" + typeStr + ")");
+		type.button.label.text = typeStr;
+		type.button.autoCenterLabel();
+		if (info != null){
+			info.type = typeStr;
+		}
 	}
 	
 	private function init()
@@ -85,7 +111,7 @@ class WaveWidget extends FlxUIGroup
 		var ww = Std.int(H*0.8);
 		var dx = ww + 38;
 		
-		type = new ButtonWidget(X, Y - 8, H * 2, H, "type", "normal");
+		type = new ButtonWidget(X, Y - 8, H * 2, H, "type", "normal", onType);
 		add(type);
 		X += ww*2 + 38;
 		
@@ -144,7 +170,17 @@ class WaveWidget extends FlxUIGroup
 			plusMinus.label.text = "X";
 			sigils.visible = true;
 		}
+		
+		if (!empty && ID == 0){
+			plusMinus.visible = plusMinus.active = false;
+		}
+		
 		return empty;
+	}
+	
+	private function onType(){
+		trace("on type");
+		FlxUI.event("select_type", this, null);
 	}
 	
 	private function onPlusMinus(){
