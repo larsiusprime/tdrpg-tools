@@ -136,6 +136,7 @@ class MenuState extends FlxUIState
 				refreshWaves();
 			case "wave_change":
 				refreshWaves();
+				updatePreview();
 			case FlxUINumericStepper.CHANGE_EVENT, "sigil_change":
 				if (params != null && params.indexOf("wave_widget") != -1){
 					var widget = cast(sender, IFlxUIWidget);
@@ -264,8 +265,18 @@ class MenuState extends FlxUIState
 			#if tdrpg_haxe
 			setBattleFieldUtilityCallbacks();
 			#end
+		
+			var xml = getMapXML();
+			var bmp = getMapBitmap();
 			
-			preview.updatePreview(true, getMapBitmap(), getMapXML());
+			
+			var diff = meta.difficulty;
+			if (diff == "normal" || diff == "med"){
+				diff = "medium";
+			}
+			trace("xml = " + xml.x.toString());
+			
+			preview.updatePreview(true, bmp, xml, diff);
 		}
 		else{
 			preview.updatePreview(false);
@@ -466,7 +477,7 @@ class MenuState extends FlxUIState
 		undoBuffer = [];
 		
 		layers = [];
-		makeLayer(0xFF000000,  0, "grey_dirt", false, "");
+		makeMapLayer(0xFF000000,  0, "grey_dirt", false, "");
 		makeMapLayerFromTileset("grass", 1, "");
 		makeMapLayerFromTileset("dark_cliff", 2, "");
 		makeMapLayerFromTileset("water", 3, "");
@@ -596,6 +607,9 @@ class MenuState extends FlxUIState
 		
 		if (b > 0 && b < layer.length){
 			var layerB = layers[b];
+			if (layerB.isLast && layerB.interactive != ""){
+				return;
+			}
 			layers[b] = layer;
 			layers[a] = layerB;
 			refreshLayers();
@@ -608,20 +622,30 @@ class MenuState extends FlxUIState
 		var arr = null;
 		
 		if (layer.layer == 0){
-			arr = getTileTypes(false, false, false, true, false);
+			arr = getTileTypes(false, false, false, true, false, false);
 		}
 		else{
-			arr = getTileTypes(true, true, true, false, true);
+			if(layer.isLast){
+				arr = getTileTypes(true, true, true, false, true, true);
+			}
+			else{
+				arr = getTileTypes(true, true, true, false, true, false);
+			}
 		}
 		
 		var popup = new TypePopup(arr, "",
 			function(str:String, category:String = ""){
-				trace("str = " + str + " category = " + category);
 				if (category == "art"){
+					layer.interactive = "";
 					layer.art = str;
+				}
+				else if (category == "interactive"){
+					layer.art = "";
+					layer.interactive = str;
 				}
 				else{
 					layer.art = "";
+					layer.interactive = "";
 					layer.drawColor = dataFetcher.getTileColor(str);
 					layer.value = str;
 				}
@@ -633,7 +657,7 @@ class MenuState extends FlxUIState
 		openSubState(popup);
 	}
 	
-	private function getTileTypes(legal:Bool,illegal:Bool,water:Bool,single:Bool,art:Bool):Array<String>
+	private function getTileTypes(legal:Bool,illegal:Bool,water:Bool,single:Bool,art:Bool,interactive:Bool):Array<String>
 	{
 		var arr:Array<String> = [];
 		if(legal){
@@ -666,23 +690,41 @@ class MenuState extends FlxUIState
 				arr.push(str);
 			}
 		}
+		if (interactive){
+			arr.push("interactive:");
+			for (str in dataFetcher.interactives){
+				arr.push(str);
+			}
+		}
 		return arr;
 	}
 	
 	private function onAddLayer(){
 		
-		var arr = getTileTypes(true, true, true, false, true);
+		var interactiveI:Int = -1;
+		for (layer in layers){
+			if (layer.interactive != ""){
+				interactiveI = layer.layer;
+			}
+		}
+		
+		var arr = getTileTypes(true, true, true, false, true, interactiveI == -1);
 		
 		var popup = new TypePopup(arr, "",
 			function(str:String, category:String){
 				makeMapLayerFromTileset(str, layers.length, category);
+				
 				refreshLayers();
+				if (interactiveI != -1){
+					//if there was an interactives layer already, keep it on top
+					onMoveLayer(layers[layers.length - 1], -1);
+				}
+				refreshLayers();
+				composite();
 			}
 		);
 		
 		openSubState(popup);
-		
-		refreshLayers();
 	}
 	
 	private function refreshLayers(){
@@ -765,6 +807,10 @@ class MenuState extends FlxUIState
 			waveWidgets[i].empty = false;
 			waveWidgets[i].sync(ws[i]);
 			waveList.add(waveWidgets[i]);
+		}
+		
+		for (layer in layers){
+			layer.currDifficulty = meta.difficulty;
 		}
 		
 		var lastWave = new WaveWidget();
@@ -905,7 +951,7 @@ class MenuState extends FlxUIState
 		pt.x += W * 2;
 		
 		for (i in 1...layers.length){
-			if(layers[i].art == ""){
+			if(layers[i].art == "" && layers[i].interactive == ""){
 				var bmp = layers[i].sprite.graphic.bitmap;
 				img.copyPixels(bmp, bmp.rect, pt, null, null, true);
 				pt.x += bmp.width;
@@ -964,11 +1010,13 @@ class MenuState extends FlxUIState
 		var artLayerIndex = 0;
 		
 		var hasArt = false;
+		var hasInteractives = false;
 		var artStr = '<artlayers>';
+		var interactiveStr = '<features>';
 		
 		for (i in 0...layers.length){
 			
-			if (layers[i].art == "")
+			if (layers[i].art == "" && layers[i].interactive == "")
 			{
 				var color:FlxColor = layers[i].drawColor;
 				var value = switch(layers[i].value){
@@ -987,12 +1035,27 @@ class MenuState extends FlxUIState
 			}
 			else
 			{
-				var art = layers[i].art;
-				var artx = layers[i].artX;
-				var arty = layers[i].artY;
-				artLayerIndex = layerIndex - 1;
-				artStr += '<artlayer id="$art" x="$artx" y="$arty" layer="$artLayerIndex"/>';
-				hasArt = true;
+				if(layers[i].art != ""){
+					var art = layers[i].art;
+					var artx = layers[i].artX;
+					var arty = layers[i].artY;
+					artLayerIndex = layerIndex - 1;
+					artStr += '<artlayer id="$art" x="$artx" y="$arty" layer="$artLayerIndex"/>';
+					hasArt = true;
+				}else if (layers[i].interactive != ""){
+					
+					var feats = layers[i].getInteractiveFeatures();
+					for (feat in feats){
+						var featName = feat.name;
+						var featx = feat.x;
+						var featy = feat.y;
+						var feateasy = feat.easy;
+						var featmedium = feat.medium;
+						var feathard = feat.hard;
+						interactiveStr += '<feature id="$featName" x="$featx" y="$featy" easy="$feateasy" medium="$featmedium" hard="$feathard"/>';
+						hasInteractives = true;
+					}
+				}
 			}
 		}
 		var ids = ["a", "b", "c", "d", "e"];
@@ -1016,6 +1079,7 @@ class MenuState extends FlxUIState
 		}
 		tileStr += '</tiles>';
 		artStr += '</artlayers>';
+		interactiveStr += '</features>';
 		
 		var waveArr:Array<String> = [];
 		var waveStr = "";
@@ -1082,6 +1146,9 @@ class MenuState extends FlxUIState
 		if (hasArt){
 			save_xml.addChild(Util.xmlify(artStr));
 		}
+		if (hasInteractives){
+			save_xml.addChild(Util.xmlify(interactiveStr));
+		}
 		
 		for(waveStr in waveArr){
 			save_xml.addChild(Util.xmlify(waveStr));
@@ -1122,15 +1189,23 @@ class MenuState extends FlxUIState
 		if (i > 0)
 		{
 			if(i < layers.length){
-				if(b){
-					hintText.text = layers[i].value;
+				if (b){
+					if (layers[i].art != ""){
+						hintText.text = layers[i].art;
+					}
+					else if (layers[i].interactive != ""){
+						hintText.text = layers[i].interactive;
+					}
+					else {
+						hintText.text = layers[i].value;
+					}
 					hintText.visible = true;
 					sigilSprite.visible = false;
 					hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
 					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
 				}
 				else{
-					if(hintText.text == layers[i].value){
+					if(hintText.text == layers[i].value || hintText.text == layers[i].art){
 						hintText.visible = false;
 					}
 				}
@@ -1166,32 +1241,39 @@ class MenuState extends FlxUIState
 			tileset = dataFetcher.getNextTileset(tileset,tilesets);
 		}
 		
-		if (category == "art"){
+		if (category == "art" || category == "interactive"){
 			var color = FlxColor.WHITE;
-			makeLayer(color, layer, tileset, true, "art");
+			makeMapLayer(color, layer, tileset, true, category);
 		}
 		else{
 			var color = dataFetcher.getTileColor(tileset);
-			makeLayer(color, layer, tileset);
+			makeMapLayer(color, layer, tileset);
 		}
 	}
 	
-	private function makeLayer(color:FlxColor, layer:Int, value:String, editable:Bool=true, category:String="")
+	private function makeMapLayer(color:FlxColor, layer:Int, value:String, editable:Bool=true, category:String="")
 	{
 		var tileset = value;
-		if (category == "art"){
+		if (category == "art" || category == "interactive"){
 			tileset = "grass";
 			color = dataFetcher.getTileColor("grass");
 		}
 		
-		var l = new MapLayer(0, 0, data.squaresWide, data.squaresTall, color, layer, tileset, editable);
-		if(category == "art"){
-			l.art = value;
-		}
-		
 		var heightInPixels = data.tilesPerSquare * data.tilePixelsTall * data.squaresTall;
 		
+		var l = new MapLayer(0, 0, data.squaresWide, data.squaresTall, color, layer, tileset, editable);
 		l.effectiveScale = l.back.height / heightInPixels;
+		
+		if(category == "art"){
+			l.art = value;
+			l.interactive = "";
+		}
+		
+		if (category == "interactive"){
+			l.art = "";
+			l.interactive = value;
+			l.currDifficulty = meta.difficulty;
+		}
 		
 		l.button.onOver.callback = function(){
 			showLayer(l.layer, true);

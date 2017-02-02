@@ -51,7 +51,7 @@ class MapPreview extends FlxGroup
 		makeFakePreview(params);
 	}
 	
-	public function updatePreview(b:Bool, png:BitmapData=null, xml:Fast=null){
+	public function updatePreview(b:Bool, png:BitmapData=null, xml:Fast=null, diff:String="easy"){
 		#if tdrpg_haxe
 		
 		if (!b){
@@ -80,6 +80,7 @@ class MapPreview extends FlxGroup
 		
 		params.png = png;
 		params.xml = xml;
+		params.diff = diff;
 		preview = new BattleFieldPreview(params);
 		add(preview);
 		#end

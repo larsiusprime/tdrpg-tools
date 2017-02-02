@@ -47,6 +47,7 @@ class DataFetcher
 	public var waterTerrain:Array<String>;
 	public var singleTerrain:Array<String>;
 	public var arts:Array<String>;
+	public var interactives:Array<String>;
 	
 	public function new(saveData:SaveData) 
 	{
@@ -365,6 +366,7 @@ class DataFetcher
 		singleTerrain = [];
 		allTerrain = [];
 		arts = [];
+		interactives = [];
 		
 		var path = getPath("assets/gfx/_hd/tiles");
 		var results = readDirectory(path);
@@ -404,14 +406,17 @@ class DataFetcher
 				else if (Unifill.uIndexOf(r, ".png") != -1 && Unifill.uIndexOf(r, "feature_") == 0){
 					
 					r = fixFeatureStr(r);
-					if (index.interactives.exists(r) == false)
+					if (Unifill.uIndexOf(r, "stepping_stone") == -1)
 					{
-						if (Unifill.uIndexOf(r, "stepping_stone") == -1)
+						if (index.interactives.exists(r) == false)
 						{
 							arts.push(r);
 						}
+						else
+						{
+							interactives.push(r);
+						}
 					}
-					
 				}
 			}
 		}

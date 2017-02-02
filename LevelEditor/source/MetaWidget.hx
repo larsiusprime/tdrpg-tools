@@ -137,9 +137,7 @@ class MetaWidget extends FlxUIGroup
 	private function onDiffChange(){
 		var diff = difficulty.selectedId;
 		meta.difficulty = diff;
-		trace('diff = ' + diff);
 		var i = Util.diffI(diff);
-		trace('meta (' + i + ') = ' + meta.infos[i]);
 		sync(meta);
 		refreshRadios();
 		onWaveChange();

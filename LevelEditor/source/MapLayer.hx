@@ -49,11 +49,15 @@ class MapLayer extends FlxUIGroup
 	public var moveLeftButton:FlxUIButton;
 	public var moveRightButton:FlxUIButton;
 	
+	public var interactive(default, set):String="";
+	public var interactiveList:Array<InteractiveStruct>;
+	
 	public var art(default, set):String = "";
 	public var artX(get, set):Int;
 	public var artY(get, set):Int;
 	
 	public var isLast(default,set):Bool = false;
+	public var currDifficulty(default,set):String = "easy";
 	
 	public static inline var THE_SCALE:Int = 10;
 	
@@ -72,6 +76,8 @@ class MapLayer extends FlxUIGroup
 		changeButton = null;
 		sigilGroup = null;
 		border = null;
+		interactiveList = null;
+		interactiveGroup = null;
 	}
 	
 	public function new(X:Int, Y:Int, W:Int,H:Int,Color:FlxColor,Layer:Int,Value:String,Editable:Bool)
@@ -97,6 +103,9 @@ class MapLayer extends FlxUIGroup
 			spr.visible = false;
 			sigilGroup.add(spr);
 		}
+		
+		interactiveList = [];
+		interactiveGroup = new FlxSpriteGroup();
 		
 		back = new FlxSprite();
 		if (FlxG.bitmap.checkCache("backgrid") == false){
@@ -158,6 +167,7 @@ class MapLayer extends FlxUIGroup
 		add(rightButton);
 		add(sprite);
 		add(sigilGroup);
+		add(interactiveGroup);
 		add(box);
 	}
 	
@@ -186,7 +196,7 @@ class MapLayer extends FlxUIGroup
 		if (layer > 0 && !isLast){
 			moveRightButton.visible = moveRightButton.active = true;
 		}
-		if (layer > 1){
+		if (layer > 1 && interactive == ""){
 			moveLeftButton.visible = moveLeftButton.active = true;
 		}
 		
@@ -229,6 +239,49 @@ class MapLayer extends FlxUIGroup
 		return _artY;
 	}
 	
+	private function deleteInteractive(X:Int, Y:Int, diff:String){
+		var deleted:InteractiveStruct = null;
+		for (struct in interactiveList){
+			if (struct.x == X && struct.y == Y && struct.difficulty == diff){
+				deleted = struct;
+			}
+		}
+		interactiveList.remove(deleted);
+		updateInteractives();
+	}
+	
+	private function set_interactive(str:String):String{
+		interactive = str;
+		updateInteractives();
+		return interactive;
+	}
+	
+	private function set_currDifficulty(str:String):String{
+		currDifficulty = str;
+		updateInteractives();
+		return currDifficulty;
+	}
+	
+	private function setInteractive(name:String, X:Int, Y:Int, diff:String)
+	{
+		var found = false;
+		for (struct in interactiveList){
+			if (struct.x == X && struct.y == Y && struct.difficulty == diff){
+				struct.name = name;
+				found = true;
+			}
+		}
+		if (!found){
+			interactiveList.push({
+				name:name,
+				x:X,
+				y:Y,
+				difficulty:diff
+			});
+		}
+		updateInteractives();
+	}
+	
 	private function setArtXY(xx:Int, yy:Int):Void{
 		_artX = xx;
 		_artY = yy;
@@ -269,6 +322,7 @@ class MapLayer extends FlxUIGroup
 				remove(box, true);
 				add(box);
 			}
+			
 			artSprite.loadGraphic("assets/gfx/_hd/tiles/feature_" + str + ".png");
 			artSprite.scale.set(effectiveScale, effectiveScale);
 			artSprite.updateHitbox();
@@ -365,9 +419,13 @@ class MapLayer extends FlxUIGroup
 		var Value = super.set_visible(Value);
 		if(Value == true){
 			updateSigils();
+			updateInteractives();
 		}else{
 			if (!hasSigils){
 				sigilGroup.visible = false;
+			}
+			if (interactive == ""){
+				interactiveGroup.visible = false;
 			}
 		}
 		return Value;
@@ -388,7 +446,11 @@ class MapLayer extends FlxUIGroup
 	
 	public function onPencil():Bool{
 		var m = getMouseDXY();
-		if (art == ""){
+		if (interactive != ""){
+			setInteractive(interactive, m.x, m.y, currDifficulty);
+			return true;
+		}
+		else if (art == ""){
 			if (sprite.graphic.bitmap.getPixel32(m.x,m.y) != drawColor){
 				sprite.graphic.bitmap.setPixel32(m.x, m.y, drawColor);
 				return true;
@@ -405,6 +467,10 @@ class MapLayer extends FlxUIGroup
 	public function onEraser():Bool{
 		if (art != "") return false;
 		var m = getMouseDXY();
+		if (interactive != ""){
+			deleteInteractive(m.x, m.y, currDifficulty);
+			return true;
+		}
 		if (sprite.graphic.bitmap.getPixel32(m.x, m.y) != FlxColor.TRANSPARENT)
 		{
 			sprite.graphic.bitmap.setPixel32(m.x, m.y, FlxColor.TRANSPARENT);
@@ -483,6 +549,42 @@ class MapLayer extends FlxUIGroup
 		return change;
 	}
 	
+	public function getInteractiveFeatures():Array<{name:String, x:Int, y:Int, easy:Bool, medium:Bool, hard:Bool}>
+	{
+		var list:Array<{name:String, x:Int, y:Int, easy:Bool, medium:Bool, hard:Bool}> = [];
+		for (struct in interactiveList){
+			var found = false;
+			for (thing in list){
+				if (thing.name == struct.name && thing.x == struct.x && thing.y == struct.y){
+					switch(struct.difficulty){
+						case "easy": thing.easy = true;
+						case "medium","med","normal": thing.medium = true;
+						case "hard": thing.hard = true;
+					}
+					found = true;
+				}
+			}
+			if (!found){
+				var thing = {
+					name:struct.name,
+					x:struct.x,
+					y:struct.y,
+					easy:false,
+					medium:false,
+					hard:false
+				};
+				list.push(thing);
+				trace("struct.difficulty = " + struct.difficulty);
+				switch(struct.difficulty){
+					case "easy": thing.easy = true;
+					case "medium","med","normal": thing.medium = true;
+					case "hard": thing.hard = true;
+				}
+			}
+		}
+		return list;
+	}
+	
 	
 	//private
 	
@@ -491,6 +593,7 @@ class MapLayer extends FlxUIGroup
 	
 	private var border:FlxSprite;
 	private var sigilGroup:FlxSpriteGroup;
+	private var interactiveGroup:FlxSpriteGroup;
 	
 	private function canSigilBeDeleted(j:Int){
 		
@@ -523,6 +626,54 @@ class MapLayer extends FlxUIGroup
 		dx = Std.int(dx / sprite.scale.x);
 		dy = Std.int(dy / sprite.scale.y);
 		return new IntPt(Std.int(dx), Std.int(dy));
+	}
+	
+	private function updateInteractives(){
+		if (interactive != ""){
+			interactiveGroup.visible = true;
+			sprite.visible = false;
+			back.setColorTransform(1.0, 1.0, 1.0, 1.0, 192, 192, 192, 0);
+			for (i in 0...interactiveGroup.members.length){
+				interactiveGroup.members[i].visible = true;
+			}
+		}
+		else{
+			back.setColorTransform(1.0, 1.0, 1.0, 1.0, 0, 0, 0, 0);
+			interactiveGroup.visible = false;
+		}
+		
+		while(interactiveGroup.members.length > interactiveList.length){
+			var spr:FlxSprite = interactiveGroup.members.pop();
+			if (spr != null){
+				spr.destroy();
+			}
+		}
+		
+		while (interactiveGroup.members.length < interactiveList.length){
+			var spr:FlxSprite = new FlxSprite();
+			interactiveGroup.add(spr);
+		}
+		
+		for (i in 0...interactiveList.length){
+			var struct = interactiveList[i];
+			var sprite = interactiveGroup.members[i];
+			if (struct.difficulty == currDifficulty){
+				sprite.visible = true;
+				sprite.loadGraphic("assets/gfx/_hd/tiles/feature_" + struct.name+".png");
+				sprite.scale.set(effectiveScale, effectiveScale);
+				sprite.updateHitbox();
+				sprite.antialiasing = true;
+				sprite.x = Std.int(interactiveGroup.x + (struct.x * THE_SCALE));
+				sprite.y = Std.int(interactiveGroup.y + (struct.y * THE_SCALE));
+				sprite.x += Std.int((THE_SCALE-sprite.width) / 2);
+				sprite.y += Std.int((THE_SCALE-sprite.height) / 2);
+				sprite.alpha = 1.0;
+			}
+			else{
+				sprite.visible = true;
+				sprite.alpha = 0.25;
+			}
+		}
 	}
 	
 	private function updateSigils(){
@@ -595,4 +746,11 @@ class MapLayer extends FlxUIGroup
 		fs.add(bottom);
 		return fs;
 	}
+}
+
+typedef InteractiveStruct = {
+	var name:String;
+	var x:Int;
+	var y:Int;
+	var difficulty:String;
 }
