@@ -32,6 +32,17 @@ class EditState
 	
 	public function sync(other:Array<MapLayer>)
 	{
+		if (layers != null && other.length != layers.length){
+			while (layers.length > 0){
+				var bmp = layers.pop();
+				bmp.dispose();
+			}
+			FlxArrayUtil.clearArray(layers);
+			FlxArrayUtil.clearArray(sigils);
+			layers = null;
+			sigils = null;
+		}
+		
 		if (layers == null){
 			layers = [];
 			for (i in 0...other.length){

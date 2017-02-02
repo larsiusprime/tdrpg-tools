@@ -45,7 +45,7 @@
 	
 	<haxelib name="flixel-editors"/>
 	
-	<!--<set name="developer"/>-->
+	<set name="developer"/>
 	
 	<section if="developer">
 		<haxelib name="tdrpg-haxe"/>

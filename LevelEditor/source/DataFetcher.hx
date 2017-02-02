@@ -3,15 +3,20 @@ package;
 import com.leveluplabs.tdrpg.IndexData;
 import com.leveluplabs.tdrpg.GraphicStyleData;
 #end
+import com.leveluplabs.tdrpg.enums.TerrainType;
 import flash.display.BitmapData;
+import flash.geom.Matrix;
+import flash.geom.Point;
 import flixel.FlxG;
 import flixel.addons.ui.U;
+import flixel.util.FlxColor;
 import haxe.io.Bytes;
 import haxe.xml.Fast;
 import lime.graphics.Image;
 import lime.graphics.ImageBuffer;
 import openfl.Assets;
 import openfl.display.PNGEncoderOptions;
+import openfl.geom.Rectangle;
 import org.zamedev.lib.Utf8Ext;
 import sys.FileSystem;
 import sys.io.File;
@@ -36,6 +41,13 @@ class DataFetcher
 	public var graphics:GraphicStyleData = null;
 	#end
 	
+	public var allTerrain:Array<String>;
+	public var illegalTerrain:Array<String>;
+	public var legalTerrain:Array<String>;
+	public var waterTerrain:Array<String>;
+	public var singleTerrain:Array<String>;
+	public var arts:Array<String>;
+	
 	public function new(saveData:SaveData) 
 	{
 		devPath = saveData.devPath;
@@ -50,6 +62,7 @@ class DataFetcher
 		devPath2 = "";
 		modPath = "";
 		installPath = "";
+		setError(false, false, false, false);
 	}
 	
 	public function setPath(str:String):Void
@@ -64,27 +77,130 @@ class DataFetcher
 		save.installPath = installPath;
 	}
 	
+	private function fixFeatureStr(str:String):String{
+		if (Unifill.uIndexOf(str, ".png") != -1){
+			var l = Unifill.uLength(str);
+			str = Unifill.uSubstr(str, 0, l - 4);
+		}
+		if (Unifill.uIndexOf(str,"feature_") != -1){
+			var l = Unifill.uLength(str);
+			str = Unifill.uSubstr(str, 8, l - 8);
+		}
+		return str;
+	}
+	
+	private function fixTerrainStr(str:String):String{
+		if (Unifill.uIndexOf(str, ".png") != -1){
+			var l = Unifill.uLength(str);
+			str = Unifill.uSubstr(str, 0, l - 4);
+		}
+		if (Unifill.uIndexOf(str, "tile_") != -1){
+			var l = Unifill.uLength(str);
+			str = Unifill.uSubstr(str, 5, l - 5);
+		}
+		return str;
+	}
+	
+	public function getNextTileset(tileset:String, used:Array<String>):String{
+		
+		if (legalTerrain != null && tileset == "legal"){
+			for (t in legalTerrain){
+				if (used.indexOf(t) == -1){
+					tileset = t;
+				}
+			}
+		}
+		else if (illegalTerrain != null && tileset == "illegal"){
+			for (t in illegalTerrain){
+				if (used.indexOf(t) == -1){
+					tileset = t;
+				}
+			}
+		}
+		else if (waterTerrain != null && tileset == "water"){
+			for (t in waterTerrain){
+				if (used.indexOf(t) == -1){
+					tileset = t;
+				}
+			}
+		}
+		else if (singleTerrain != null && tileset == "single"){
+			for (t in singleTerrain){
+				if (used.indexOf(t) == -1){
+					tileset = t;
+				}
+			}
+		}
+		
+		return tileset;
+	}
+	
+	public function getTileColor(tileset:String):FlxColor{
+		
+		tileset = switch(tileset){
+			case "illegal": "dark_cliff";
+			case "legal": "grass";
+			default: tileset;
+		}
+		
+		if (index != null){
+			var bmp = getBitmapData("gfx/_hd/tiles/tile_" + tileset + ".png");
+			if (bmp != null){
+				//TODO: Fix for dq2
+				
+				var lastTileRect = new Rectangle(bmp.width - bmp.height, 0, bmp.height, bmp.height);
+				
+				var lastTile:BitmapData = new BitmapData(Std.int(lastTileRect.width), Std.int(lastTileRect.height), false, 0xFFFFFFFF);
+				lastTile.copyPixels(bmp, lastTileRect, new Point());
+				
+				var px:BitmapData = new BitmapData(1, 1);
+				var m:Matrix = new Matrix();
+				m.scale(1 / lastTile.width, 1 / lastTile.height);
+				px.draw(lastTile, m, null, null, null, true);
+				
+				var color:FlxColor = px.getPixel32(0, 0);
+				
+				if (color.brightness < 0.33){
+					color.brightness = 0.33;
+				}
+				
+				lastTile.dispose();
+				px.dispose();
+				
+				return color;
+			}
+		}
+		return switch(tileset){
+			case "water": FlxColor.BLUE;
+			case "grass": FlxColor.GREEN;
+			case "legal": FlxColor.WHITE;
+			case "illegal": FlxColor.RED;
+			case "dark_cliff": FlxColor.GRAY;
+			default: FlxColor.MAGENTA;
+		}
+	}
+	
 	public function getPathText():String{
 		var str:String = "";
 		if (modPath != null && modPath != ""){
 			str = Util.uCat("MOD: ",modPath);
 		}
 		if (devPath != null && devPath != ""){
-			if (str != null){
+			if (str != ""){
 				str = Util.uCat(str, "\n");
 			}
 			str = Util.uCat(str, "DQ: ");
 			str = Util.uCat(str, devPath);
 		}
 		if (devPath2 != null && devPath2 != ""){
-			if (str != null){
+			if (str != ""){
 				str = Util.uCat(str, "\n");
 			}
 			str = Util.uCat(str, "TDRPG: ");
 			str = Util.uCat(str, devPath2);
 		}
 		if (installPath != null && installPath != ""){
-			if (str != null){
+			if (str != ""){
 				str = Util.uCat(str, "\n");
 			}
 			str = Util.uCat(str, "INSTALL: ");
@@ -187,9 +303,16 @@ class DataFetcher
 		xLibrary.xGetPath = getPath;
 		Assets.registerLibrary("default", xLibrary);
 		
-		trace("hasmod = " + hasMod + " hasdev " + hasDev + " hasdev2 " + hasDev2 + " hasinstall " + hasInstall);
-		
 		#end
+		
+		setError(hasMod, hasDev, hasInstall, hasDev2);
+		
+		if (fetchCode == OK){
+			loadData();
+		}
+	}
+	
+	private function setError(hasMod:Bool, hasDev:Bool, hasInstall:Bool, hasDev2:Bool){
 		
 		if (fetchCode == DataFetchCode.NEEDS_ASSETS){
 			if (hasMod){
@@ -220,8 +343,9 @@ class DataFetcher
 			}
 		}
 		
-		if (fetchCode == OK){
-			loadData();
+		if (hasInstall){
+			error = "";
+			fetchCode = DataFetchCode.OK;
 		}
 	}
 	
@@ -229,6 +353,70 @@ class DataFetcher
 		loadEnemies();
 		loadIndex();
 		loadGraphics();
+		loadTiles();
+	}
+	
+	private function loadTiles(){
+		#if tdrpg_haxe
+		
+		legalTerrain = [];
+		illegalTerrain = [];
+		waterTerrain = [];
+		singleTerrain = [];
+		allTerrain = [];
+		arts = [];
+		
+		var path = getPath("assets/gfx/_hd/tiles");
+		var results = readDirectory(path);
+		
+		trace(index.interactives);
+		
+		if(results != null){
+			for (r in results){
+				if (Unifill.uIndexOf(r, ".png") != -1 && Unifill.uIndexOf(r, "tile_") == 0 && Unifill.uIndexOf(r,"tile_overworld_") != 0){
+					
+					var test = getBitmapData("assets/gfx/_hd/tiles/" + r);
+					var isSingle = false;
+					if (test != null && test.width < test.height * 2)
+					{
+						test.dispose();
+						isSingle = true;
+					}
+					
+					r = fixTerrainStr(r);
+					allTerrain.push(r);
+					
+					if (isSingle)
+					{
+						singleTerrain.push(r);
+					}
+					else if (index.isTileOfType(r, TerrainType.WATER))
+					{
+						waterTerrain.push(r);
+					}
+					else if (index.isTileLegal(r) == false){
+						illegalTerrain.push(r);
+					}
+					else{
+						legalTerrain.push(r);
+					}
+				}
+				else if (Unifill.uIndexOf(r, ".png") != -1 && Unifill.uIndexOf(r, "feature_") == 0){
+					
+					r = fixFeatureStr(r);
+					if (index.interactives.exists(r) == false)
+					{
+						if (Unifill.uIndexOf(r, "stepping_stone") == -1)
+						{
+							arts.push(r);
+						}
+					}
+					
+				}
+			}
+		}
+		
+		#end
 	}
 	
 	private function loadGraphics(){
@@ -287,6 +475,34 @@ class DataFetcher
 		return null;
 	}
 	
+	private function readDirectory(str:String):Array<String>{
+		var paths = ["mod", "dev", "dev2", "install"];
+		var contents = [];
+		
+		for(pathType in paths){
+			var str = killAssetPrefix(str);
+			
+			var path = fixPath(str, pathType);
+			
+			if (path != null && path != ""){
+				if (FileSystem.exists(path) && FileSystem.isDirectory(path)){
+					var raw = FileSystem.readDirectory(path);
+					for (r in raw){
+						if (contents.indexOf(r) == -1){
+							contents.push(r);
+						}
+					}
+				}
+			}
+		}
+		
+		if (contents.length == 0){
+			return null;
+		}
+		
+		return contents;
+	}
+	
 	private function getPath(str:String):String{
 		
 		var str = killAssetPrefix(str);
@@ -337,13 +553,48 @@ class DataFetcher
 		return newPath;
 	}
 	
+	private function fixPath(str:String, type:String):String{
+		
+		var sub = "";
+		
+		sub = switch(type){
+			case "mod": modPath;
+			case "dev": devPath;
+			case "dev2": devPath2;
+			case "install": installPath;
+			default: "";
+		}
+		
+		var result = str;
+		if (sub != ""){
+			var strBits = Util.splitPath(str);
+			var strBits2 = [];
+			var assetIndex = -1;
+			var i = 0;
+			for (bit in strBits){
+				if (assetIndex == -1 && Utf8Ext.toLowerCase(bit) == "assets"){
+					assetIndex = i;
+					break;
+				}
+				i++;
+				if (i > assetIndex && assetIndex != -1){
+					strBits2.push(bit);
+				}
+			}
+			var str2 = Util.joinPath(strBits2);
+			result = Util.joinPath([sub, str2]);
+		}
+		
+		return result;
+	}
+	
 	private function getGenericFile(str:String, dir:String):String{
 		var path = "";
 		var file = "";
 		
 		if (modPath != ""){
 			var file = getGenericFilePath(modPath, dir, str);
-			if (file != ""){
+			if (file != "" && file != null){
 				return file;
 			}
 		}
@@ -353,24 +604,24 @@ class DataFetcher
 			var fullStr = (dir != null && dir != "") ? "full/" + dir : "full";
 			
 			var file = getGenericFilePath(devPath, demoStr, str);
-			if (file == ""){
+			if (file != "" && file != null){
 				file = getGenericFilePath(devPath, fullStr, str);
 			}
-			if (file != ""){
+			if (file != "" && file != null){
 				return file;
 			}
 		}
 		
 		if (devPath != ""){
 			var file = getGenericFilePath(devPath2, dir, str);
-			if (file != ""){
+			if (file != "" && file != null){
 				return file;
 			}
 		}
 		
 		if(installPath != ""){
 			var file = getGenericFilePath(installPath, dir, str);
-			if (file != ""){
+			if (file != "" && file != null){
 				return file;
 			}
 		}
@@ -430,7 +681,6 @@ class DataFetcher
 		var test = Util.safePath(path, prefix);
 		test = Util.safePath(test, file);
 		test = Util.uCat(test, ".xml");
-		trace("test = " + test);
 		if(FileSystem.exists(test)){
 			return File.getContent(test);
 		}

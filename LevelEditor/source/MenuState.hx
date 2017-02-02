@@ -47,9 +47,9 @@ class MenuState extends FlxUIState
 	public static var dq1:Settings;
 	public static var dq2:Settings;
 	
-	private static inline var LAYER_X:Int = 10;
+	private static inline var LAYER_X:Int = 60;
 	private static inline var LAYER_Y:Int = 50;
-	private static inline var LAYER_W:Int = 650;
+	private static inline var LAYER_W:Int = 930;
 	
 	private static inline var WAVE_X:Int = 550;
 	private static inline var WAVE_Y:Int = 240;
@@ -108,6 +108,25 @@ class MenuState extends FlxUIState
 	{
 		super.getEvent(id, sender, data, params);
 		switch(id){
+			case "move_map_layer":
+				var i:Int = cast data;
+				
+				trace("move map layer " + i);
+				var layer:MapLayer = cast sender;
+				onMoveLayer(layer, i);
+			case "change_map_layer":
+				var i:Int = cast data;
+				var layer = layers[i];
+				onChangeLayer(layer);
+			case "delete_map_layer":
+				var i:Int = cast data;
+				var layer = layers.splice(i, 1);
+				trace("splice i = " + i);
+				if(layer != null && layer.length > 0){
+					layer[0].destroy();
+				}
+				refreshLayers();
+				composite();
 			case "delete_wave":
 				var i:Int = cast data;
 				waves[diffI()].splice(i,1);
@@ -131,8 +150,14 @@ class MenuState extends FlxUIState
 				var types = dataFetcher.getEnemyTypes();
 				if (types == null){
 					alert("No game data!", "The Level editor doesn't know what enemy types exist.\n\nYou must set a path to :\n\n  - a mod's root directory\n  - the 'asset' folder in the game's install directory\n  - the 'asset' folder in the game's source code directory\n\nTo do this, select the 'Set Path' button and select one of these.\n\nNOTE: If you select a mod path, you will afterwards need to supply one of the other two.");
-				}else{
-					var popup = new TypePopup(types, waveWidget);
+				}
+				else
+				{
+					var popup = new TypePopup(types, waveWidget.info.type,
+							function(str:String,category:String){
+								waveWidget.setType(str);
+							}
+						);
 					openSubState(popup);
 				}
 			case "preview_available":
@@ -143,6 +168,8 @@ class MenuState extends FlxUIState
 	}
 	
 	//PRIVATE
+	
+	private var addLayerBtn:FlxUIButton;
 	
 	private var previewAvailable:Bool = false;
 	private var preview:MapPreview;
@@ -159,6 +186,10 @@ class MenuState extends FlxUIState
 	
 	private var waves:Array<Array<WaveInfo>>;
 	private var waveWidgets:Array<WaveWidget>;
+	private var waveList:FlxUIList;
+	
+	private var layers:Array<MapLayer>;
+	private var layerList:FlxUIList;
 	
 	private var meta:MetaEntry;
 	private var metaWidget:MetaWidget;
@@ -166,14 +197,12 @@ class MenuState extends FlxUIState
 	private var hintText:FlxText;
 	private var sigilSprite:FlxSprite;
 	private var sigilHint:String;
-	private var layers:Array<MapLayer>;
 	private var data:Settings;
 	private var maxUndo:Int = 100;
 	private var undoPointer:Int = -1;
 	private var undoBuffer:Array<EditState>;
 	private var tempState:EditState;
-	private var waveList:FlxUIList;
-	private var layerList:FlxUIList;
+	
 	
 	private function resolveWidgetChange(widget:IFlxUIWidget, params:Array<Dynamic>){
 		
@@ -207,7 +236,7 @@ class MenuState extends FlxUIState
 		
 		for (i in 0...layers.length){
 			var layer = layers[i];
-			layer.update();
+			layer.update(elapsed);
 			if (toolFlows && (tool != Bucket && tool != Turpentine)){
 				if (layer.button.pressed){
 					doInput(layer);
@@ -309,7 +338,10 @@ class MenuState extends FlxUIState
 					}
 			}
 		}
-		composite();
+		
+		if(change){
+			composite();
+		}
 		
 		if(change){
 			pushUndo(tempState);
@@ -408,15 +440,17 @@ class MenuState extends FlxUIState
 		
 		for (i in 1...layers.length){
 			var layer = layers[i];
-			var lbmp = layer.sprite.graphic.bitmap;
-			bmp.copyPixels(lbmp, lbmp.rect, zpt, null, null, true);
-			switch(layer.value){
-				case "legal","illegal":
-					for (sigil in layers[0].sigils){
-						if (sigil.x != -1 && sigil.y != -1){
-							bmp.setPixel32(sigil.x, sigil.y, FlxColor.BLACK);
+			if(layer.art == ""){
+				var lbmp = layer.sprite.graphic.bitmap;
+				bmp.copyPixels(lbmp, lbmp.rect, zpt, null, null, true);
+				switch(layer.value){
+					case "legal","illegal":
+						for (sigil in layers[0].sigils){
+							if (sigil.x != -1 && sigil.y != -1){
+								bmp.setPixel32(sigil.x, sigil.y, FlxColor.BLACK);
+							}
 						}
-					}
+				}
 			}
 		}
 		
@@ -432,12 +466,14 @@ class MenuState extends FlxUIState
 		undoBuffer = [];
 		
 		layers = [];
-		makeLayer(0xFF000000,  0, "composite", false);
-		makeLayer(0xFFFFFFFF,  1, "legal");
-		makeLayer(0xFFFF0000,  2, "illegal");
-		makeLayer(0xFF0000FF,  3, "water");
+		makeLayer(0xFF000000,  0, "grey_dirt", false, "");
+		makeMapLayerFromTileset("grass", 1, "");
+		makeMapLayerFromTileset("dark_cliff", 2, "");
+		makeMapLayerFromTileset("water", 3, "");
 		
 		layers[0].hasSigils = true;
+		
+		refreshLayers();
 		
 		sigilSprite = new FlxSprite();
 		sigilSprite.loadGraphic("*assets/images/sigils.png", true, 48, 48);
@@ -463,17 +499,8 @@ class MenuState extends FlxUIState
 		
 		tempState = new EditState(layers);
 		
-		layers[0].onSigilPlace(START_I-1, 0, Std.int(layers[0].height / 2));
-		layers[0].onSigilPlace(END_I - 1, layers[0].width - 1, Std.int(layers[0].height / 2));
-		
-		for (i in 0...layers.length){
-			layers[i].button.onOver.callback = function(){
-				showLayer(i, true);
-			}
-			layers[i].button.onOut.callback = function(){
-				showLayer(i, false);
-			}
-		}
+		layers[0].onSigilPlace(START_I-1, 0, Std.int(layers[0].squareHeight / 2));
+		layers[0].onSigilPlace(END_I - 1, Std.int(layers[0].squareWidth - 1), Std.int(layers[0].squareHeight / 2));
 		
 		composite();
 		
@@ -560,6 +587,150 @@ class MenuState extends FlxUIState
 		};
 	}
 	
+	private function onMoveLayer(layer:MapLayer, i:Int){
+		
+		if (layer == null) return;
+		
+		var a = layer.layer;
+		var b = layer.layer + i;
+		
+		if (b > 0 && b < layer.length){
+			var layerB = layers[b];
+			layers[b] = layer;
+			layers[a] = layerB;
+			refreshLayers();
+			composite();
+		}
+	}
+	
+	private function onChangeLayer(layer:MapLayer){
+		
+		var arr = null;
+		
+		if (layer.layer == 0){
+			arr = getTileTypes(false, false, false, true, false);
+		}
+		else{
+			arr = getTileTypes(true, true, true, false, true);
+		}
+		
+		var popup = new TypePopup(arr, "",
+			function(str:String, category:String = ""){
+				trace("str = " + str + " category = " + category);
+				if (category == "art"){
+					layer.art = str;
+				}
+				else{
+					layer.art = "";
+					layer.drawColor = dataFetcher.getTileColor(str);
+					layer.value = str;
+				}
+				refreshLayers();
+				composite();
+			}
+		);
+		
+		openSubState(popup);
+	}
+	
+	private function getTileTypes(legal:Bool,illegal:Bool,water:Bool,single:Bool,art:Bool):Array<String>
+	{
+		var arr:Array<String> = [];
+		if(legal){
+			arr.push("legal:");
+			for (str in dataFetcher.legalTerrain){
+				arr.push(str);
+			}
+		}
+		if(illegal){
+			arr.push("illegal:");
+			for (str in dataFetcher.illegalTerrain){
+				arr.push(str);
+			}
+		}
+		if(water){
+			arr.push("water:");
+			for (str in dataFetcher.waterTerrain){
+				arr.push(str);
+			}
+		}
+		if (single){
+			arr.push("single:");
+			for (str in dataFetcher.singleTerrain){
+				arr.push(str);
+			}
+		}
+		if (art){
+			arr.push("art:");
+			for (str in dataFetcher.arts){
+				arr.push(str);
+			}
+		}
+		return arr;
+	}
+	
+	private function onAddLayer(){
+		
+		var arr = getTileTypes(true, true, true, false, true);
+		
+		var popup = new TypePopup(arr, "",
+			function(str:String, category:String){
+				makeMapLayerFromTileset(str, layers.length, category);
+				refreshLayers();
+			}
+		);
+		
+		openSubState(popup);
+		
+		refreshLayers();
+	}
+	
+	private function refreshLayers(){
+		
+		var scrollIndex = 0;
+		if (layerList != null){
+			scrollIndex = layerList.scrollIndex;
+			var l = layerList.members.length;
+			for (i in 0...l){
+				var j = l - i - 1;
+				layerList.remove(layerList.members[j],true);
+			}
+			remove(layerList, true);
+			layerList.destroy();
+		}
+		
+		if (addLayerBtn == null){
+			addLayerBtn = Util.makeBtn(LAYER_X + LAYER_W + 5, LAYER_Y, "+", onAddLayer, 32, 32);
+			add(addLayerBtn);
+		}
+		
+		var widgets:Array<IFlxUIWidget> = [];
+		var l = layers.length;
+		for (i in 0...l){
+			layers[i].layer = i;
+			widgets.push(layers[i]);
+			layers[i].isLast = (i == (l - 1));
+		}
+		
+		layerList = new FlxUIList(LAYER_X, LAYER_Y, widgets, LAYER_W, layers[0].back.height, "<X> more...", FlxUIList.STACK_HORIZONTAL, 5);
+		add(layerList);
+		
+		layerList.scrollIndex = scrollIndex;
+		
+		var lastLayer = layers[0];
+		
+		for (i in 0...layers.length){
+			if (layers[i].visible){
+				lastLayer = layers[i];
+			}
+		}
+		
+		if(lastLayer != null){
+			addLayerBtn.x = Std.int(lastLayer.x + lastLayer.width + 5);
+			addLayerBtn.y = Std.int(lastLayer.y + (lastLayer.height - addLayerBtn.height) / 2);
+		}
+	}
+	
 	private function refreshWaves()
 	{
 		if (waveList == null){
@@ -612,6 +783,7 @@ class MenuState extends FlxUIState
 		dataFetcher.clearPaths();
 		saveData.clear();
 		pathTxt.text = dataFetcher.getPathText();
+		refreshPreview();
 	}
 	
 	private function onSetPath(){
@@ -690,6 +862,9 @@ class MenuState extends FlxUIState
 		
 		dataFetcher.sync(saveData);
 		saveData.save();
+		
+		refreshPreview();
+		composite();
 	}
 	
 	private function onExport()
@@ -730,9 +905,11 @@ class MenuState extends FlxUIState
 		pt.x += W * 2;
 		
 		for (i in 1...layers.length){
-			var bmp = layers[i].sprite.graphic.bitmap;
-			img.copyPixels(bmp, bmp.rect, pt, null, null, true);
-			pt.x += bmp.width;
+			if(layers[i].art == ""){
+				var bmp = layers[i].sprite.graphic.bitmap;
+				img.copyPixels(bmp, bmp.rect, pt, null, null, true);
+				pt.x += bmp.width;
+			}
 		}
 		
 		return img;
@@ -781,20 +958,41 @@ class MenuState extends FlxUIState
 		
 		var fast:Fast= new Fast(save_xml);
 		
-		var tileStr = tab(1)+'<tiles>';
+		var tileStr = '<tiles>';
+		
+		var layerIndex = 0;
+		var artLayerIndex = 0;
+		
+		var hasArt = false;
+		var artStr = '<artlayers>';
+		
 		for (i in 0...layers.length){
-			var color:FlxColor = layers[i].color;
-			var value = switch(layers[i].value){
-				case "legal": "grass";
-				case "illegal": "dark_cliff";
-				case "water": "water";
-				default: layers[i].value;
+			
+			if (layers[i].art == "")
+			{
+				var color:FlxColor = layers[i].drawColor;
+				var value = switch(layers[i].value){
+					case "legal": "grass";
+					case "illegal": "dark_cliff";
+					case "water": "water";
+					default: layers[i].value;
+				}
+				if (i == 0){
+					tileStr += '<tile rgb="0x000000" tile_sheet="single" value="$value" layer="0"/>';
+				}
+				else {
+					tileStr += '<tile rgb="' + color.toHexString(false, true) + '" value="$value" layer="$layerIndex"/>';
+				}
+				layerIndex++;
 			}
-			if (i == 0){
-				tileStr += '<tile rgb="0x000000" tile_sheet="single" value="grey_dirt" layer="0"/>';
-			}
-			else {
-				tileStr += '<tile rgb="' + color.toHexString(false, true) + '" value="$value" layer="$i"/>';
+			else
+			{
+				var art = layers[i].art;
+				var artx = layers[i].artX;
+				var arty = layers[i].artY;
+				artLayerIndex = layerIndex - 1;
+				artStr += '<artlayer id="$art" x="$artx" y="$arty" layer="$artLayerIndex"/>';
+				hasArt = true;
 			}
 		}
 		var ids = ["a", "b", "c", "d", "e"];
@@ -817,6 +1015,7 @@ class MenuState extends FlxUIState
 			}
 		}
 		tileStr += '</tiles>';
+		artStr += '</artlayers>';
 		
 		var waveArr:Array<String> = [];
 		var waveStr = "";
@@ -880,6 +1079,9 @@ class MenuState extends FlxUIState
 		save_xml.addChild(Util.xmlify('<victory><condition value="kill_all"/></victory>'));
 		save_xml.addChild(Util.xmlify('<failure/>'));
 		save_xml.addChild(Util.xmlify(tileStr));
+		if (hasArt){
+			save_xml.addChild(Util.xmlify(artStr));
+		}
 		
 		for(waveStr in waveArr){
 			save_xml.addChild(Util.xmlify(waveStr));
@@ -919,16 +1121,18 @@ class MenuState extends FlxUIState
 	{
 		if (i > 0)
 		{
-			if(b){
-				hintText.text = layers[i].value;
-				hintText.visible = true;
-				sigilSprite.visible = false;
-				hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
-				hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
-			}
-			else{
-				if(hintText.text == layers[i].value){
-					hintText.visible = false;
+			if(i < layers.length){
+				if(b){
+					hintText.text = layers[i].value;
+					hintText.visible = true;
+					sigilSprite.visible = false;
+					hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
+					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
+				}
+				else{
+					if(hintText.text == layers[i].value){
+						hintText.visible = false;
+					}
 				}
 			}
 		}
@@ -952,15 +1156,51 @@ class MenuState extends FlxUIState
 		sigilSprite.y = hintText.y + hintText.height;
 	}
 	
-	private function makeLayer(color:FlxColor, layer:Int, value:String, editable:Bool=true)
+	private function makeMapLayerFromTileset(tileset:String, layer:Int, category:String)
 	{
-		var l = new MapLayer(data.squaresWide, data.squaresTall, color, layer, value, editable);
+		if (tileset == "legal" || tileset == "illegal" || tileset == "water"){
+			var tilesets = [];
+			for (ml in layers){
+				tilesets.push(ml.value);
+			}
+			tileset = dataFetcher.getNextTileset(tileset,tilesets);
+		}
+		
+		if (category == "art"){
+			var color = FlxColor.WHITE;
+			makeLayer(color, layer, tileset, true, "art");
+		}
+		else{
+			var color = dataFetcher.getTileColor(tileset);
+			makeLayer(color, layer, tileset);
+		}
+	}
+	
+	private function makeLayer(color:FlxColor, layer:Int, value:String, editable:Bool=true, category:String="")
+	{
+		var tileset = value;
+		if (category == "art"){
+			tileset = "grass";
+			color = dataFetcher.getTileColor("grass");
+		}
+		
+		var l = new MapLayer(0, 0, data.squaresWide, data.squaresTall, color, layer, tileset, editable);
+		if(category == "art"){
+			l.art = value;
+		}
+		
+		var heightInPixels = data.tilesPerSquare * data.tilePixelsTall * data.squaresTall;
+		
+		l.effectiveScale = l.back.height / heightInPixels;
+		
+		l.button.onOver.callback = function(){
+			showLayer(l.layer, true);
+		}
+		l.button.onOut.callback = function(){
+			showLayer(l.layer, false);
+		}
+		
 		layers.push(l);
-		
-		l.x = Std.int(LAYER_X + (l.sprite.width + 5) * layer);
-		l.y = LAYER_Y;
-		
-		l.addTo(this);
 	}
 	
 	private function makeSettings(){

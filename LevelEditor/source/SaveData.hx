@@ -20,31 +20,27 @@ class SaveData
 	
 	public function clear(){
 		devPath = "";
+		devPath2 = "";
 		modPath = "";
 		installPath = "";
 		save();
 	}
 	
 	public function save(){
-		trace("save");
 		var name = FlxG.save.name;
 		if (FlxG.save.bind("level_editor_data")){
 			setStr("devPath", devPath);
 			setStr("modPath", modPath);
 			setStr("installPath", installPath);
 			setStr("devPath2", devPath2);
-			trace("modPath = " + modPath);
-			trace("FlxG.save.data = " + FlxG.save.data);
 			FlxG.save.flush();
 		}
 		FlxG.save.bind(name);
 	}
 	
 	public function load(){
-		trace("load");
 		var name = FlxG.save.name;
 		if (FlxG.save.bind("level_editor_data")){
-			trace("FlxG.save.data = " + FlxG.save.data);
 			devPath = getStr("devPath");
 			devPath2 = getStr("devPath2");
 			modPath = getStr("modPath");
@@ -63,6 +59,5 @@ class SaveData
 	
 	private function setStr(field:String, value:String){
 		Reflect.setField(FlxG.save.data, field, value);
-		trace("setStr field("+field+","+value+") now = " + Reflect.field(FlxG.save.data, field));
 	}
 }

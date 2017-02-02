@@ -73,7 +73,6 @@ class WaveWidget extends FlxUIGroup
 	}
 	
 	public function write(info:WaveInfo){
-		trace("write before info.starts = " + info.starts);
 		info.count = Std.int(count.stepper.value);
 		info.wait = wait.stepper.value;
 		info.level = Std.int(level.stepper.value);
@@ -81,11 +80,9 @@ class WaveWidget extends FlxUIGroup
 		info.type = type.button.label.text;
 		info.starts = sigils.starts.copy();
 		info.ends = sigils.ends.copy();
-		trace("write after info.starts = " + info.starts);
 	}
 	
 	public function setType(typeStr:String){
-		trace("setType(" + typeStr + ")");
 		type.button.label.text = typeStr;
 		type.button.autoCenterLabel();
 		if (info != null){
@@ -179,7 +176,6 @@ class WaveWidget extends FlxUIGroup
 	}
 	
 	private function onType(){
-		trace("on type");
 		FlxUI.event("select_type", this, null);
 	}
 	
