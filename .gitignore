@@ -41,3 +41,6 @@ TSVCompare/bin/
 SteamBuildVersionRename/bin/
 LevelEditor/export/
 LevelEditor/dump/
+DataEditor/build/openfl/windows/cpp/
+DataEditor/build/hxwidgets/src/
+DataEditor/build/

@@ -1,12 +1,25 @@
 package;
+import flash.display.BitmapData;
+import flixel.FlxObject;
+import flixel.FlxState;
 import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUICheckBox;
 import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUILine;
 import flixel.addons.ui.FlxUIRadioGroup;
+import flixel.addons.ui.FlxUISprite;
+import flixel.addons.ui.FlxUIState;
+import flixel.addons.ui.FlxUISubState;
 import flixel.addons.ui.FlxUIText;
+import flixel.addons.ui.U;
+import flixel.addons.ui.interfaces.IFlxUIState;
 import flixel.util.FlxColor;
 import haxe.xml.Fast;
+import lime.ui.FileDialog;
+import lime.ui.FileDialogType;
+import openfl.geom.Point;
+import openfl.geom.Rectangle;
+import unifill.CodePoint;
 import unifill.Unifill;
 import flixel.text.FlxText.FlxTextAlign;
 import flixel.addons.ui.FlxUILine.LineAxis;
@@ -17,7 +30,70 @@ import flixel.addons.ui.FlxUILine.LineAxis;
  */
 class Util
 {
-
+	public static var dq1:Settings;
+	public static var dq2:Settings;
+	public static var dataFetcher:DataFetcher;
+	
+	public static function initSettings(){
+		makeSettings();
+	}
+	
+	private static function makeSettings(){
+		dq1 = new Settings();
+		dq2 = new Settings();
+		
+		dq1.tilesetStyle = "dq1";
+		dq1.tilesPerSquare = 2;
+		dq1.squaresWide = 15;
+		dq1.squaresTall = 14;
+		
+		dq2.tilesetStyle = "dq2";
+		dq2.tilesPerSquare = 1;
+		dq2.squaresWide = 23;
+		dq2.squaresTall = 15;
+	}
+	
+	public static function abc2num(str:String):Int{
+		return switch(str){
+			case "a": 0;
+			case "b": 1;
+			case "c": 2;
+			case "d": 3;
+			case "e": 4;
+			default: 0;
+		}
+	}
+	
+	public static function num2abc(i:Int):String{
+		return switch(i){
+			case 0: "a";
+			case 1: "b";
+			case 2: "c";
+			case 3: "d";
+			case 4: "e";
+			default: "a";
+		}
+	}
+	
+	
+	
+	public static function splitMapBitmap(bmp:BitmapData, layers:Int):Array<BitmapData>
+	{
+		var sw = Util.dq1.squaresWide;
+		var sh = Util.dq1.squaresTall;
+		
+		var arr = [];
+		var rect = new Rectangle(sw, 0, sw, sh);
+		for (i in 0...layers){
+			var out:BitmapData = new BitmapData(sw, sh, false, 0x000000);
+			out.copyPixels(bmp, rect, new Point());
+			arr.push(out);
+			rect.x += sw;
+		}
+		
+		return arr;
+	}
+	
 	public static function xmlify(str:String){
 		return Xml.parse(str).firstElement();
 	}
@@ -114,17 +190,161 @@ class Util
 		return radios;
 	}
 	
-	public static function makeBox(W:Int, H:Int):FlxUIGroup{
+	public static function makeBox(W:Int, H:Int, Col:FlxColor = null):FlxUIGroup{
 		var top    = new FlxUILine(0, 0,     LineAxis.HORIZONTAL, W, 2, FlxColor.BLACK);
 		var left   = new FlxUILine(0, 0,     LineAxis.VERTICAL  , H, 2, FlxColor.BLACK);
 		var bottom = new FlxUILine(0, H - 2, LineAxis.HORIZONTAL, W, 2, FlxColor.BLACK);
 		var right  = new FlxUILine(W - 2, 0, LineAxis.VERTICAL  , H, 2, FlxColor.BLACK);
 		var g = new FlxUIGroup();
+		if (Col != null){
+			var s = new FlxUISprite(0, 0);
+			s.makeGraphic(1, 1, Col, true);
+			s.scale.set(W, H);
+			s.updateHitbox();
+			g.add(s);
+		}
 		g.add(top);
 		g.add(left);
 		g.add(right);
 		g.add(bottom);
 		return g;
+	}
+	
+	public static function promptPath(callback:String->Void, type:FileDialogType = null){
+		#if sys
+			if (type == null){
+				type = FileDialogType.SAVE;
+			}
+			var openFileDialog = new FileDialog();
+			openFileDialog.onSelect.add(callback);
+			
+			try
+			{
+				openFileDialog.browse(type,"");
+			}
+			catch (e:Dynamic)
+			{
+				trace("error : " + e);
+			}
+		#end
+	}
+	
+	public static inline function center(fb1:FlxObject,fb2:FlxObject,centerX:Bool=true,centerY:Bool=true):Void {
+		U.center(fb1, fb2, centerX, centerY);
+		fb2.x = Std.int(fb2.x);
+		fb2.y = Std.int(fb2.y);
+	}
+	
+	public static function alert(state:IFlxUIState, title:String, message:String, closeParam:String=""){
+		var popup = new Popup(title, message, closeParam);
+		if(Std.is(state,FlxUIState)){
+			cast(state,FlxUIState).openSubState(popup);
+		}
+		else if (Std.is(state, FlxUISubState)){
+			cast(state,FlxUISubState).openSubState(popup);
+		}
+	}
+	
+	public static function fixSlashes(str:String):String
+	{
+		var slash:String = getSlash();
+		
+		var otherslash:String = "";
+		if (slash == "/") {
+			otherslash = "\\";
+		}else if(slash == "\\"){
+			otherslash = "/";
+		}
+	
+		//enforce operating system slash style
+		str = uReplace(str, otherslash, slash);
+		
+		return str;
+	}
+	
+	public static function fixDoubleSlash(str:String):String{
+		var str = fixSlashes(str);
+		return uReplace(str, getSlash() + getSlash(), getSlash());
+	}
+	
+	public static function getSlash(os:String=""):String {
+		var os = "";
+		#if windows
+			os = "win";
+		#end
+		var slash:String = "/";
+		if (os == "win" || os == "windows") { slash = "\\";}
+		return slash;
+	}
+	
+	public static function uReplace(s:String, substr:String, by:String, recursive:Bool=true):String
+	{
+		if (Unifill.uIndexOf(s, substr) == -1) return s;
+		
+		var sb = new StringBuf();
+		
+		//turn the substr into an array of code points
+		var substrArr:Array<CodePoint> = [];
+		var iter = Unifill.uIterator(substr);
+		while (iter.hasNext())
+		{
+			substrArr.push(iter.next());
+		}
+		
+		//turn the by str into an array of code points
+		var byArr:Array<CodePoint> = [];
+		iter = Unifill.uIterator(by);
+		while (iter.hasNext())
+		{
+			byArr.push(iter.next());
+		}
+		
+		var matchI:Int = 0;
+		var onMatch = false;
+		iter = Unifill.uIterator(s);
+		
+		while (iter.hasNext())
+		{
+			//iterate through the main string code point by code point
+			var cp:CodePoint = iter.next();
+			
+			if (matchI < substrArr.length && cp == substrArr[matchI])
+			{
+				//detected the substr -- advance but don't write to the buffer
+				onMatch = true;
+				matchI++;
+			}
+			else
+			{
+				if (onMatch)
+				{
+					onMatch = false;
+					matchI = 0;
+					//write the replacement str to the buffer
+					for (i in 0...byArr.length)
+					{
+						Unifill.uAddChar(sb, byArr[i]);
+					}
+				}
+				//write the character to the buffer
+				Unifill.uAddChar(sb, cp);
+			}
+		}
+		if (onMatch && matchI >= substrArr.length)
+		{
+			for (i in 0...byArr.length)
+			{
+				Unifill.uAddChar(sb, byArr[i]);
+			}
+		}
+		
+		if (recursive)
+		{
+			return uReplace(sb.toString(), substr, by, true);
+		}
+		
+		//return the final string
+		return sb.toString();
 	}
 	
 	public static function safePath(path:String, add:String):String{
@@ -135,10 +355,15 @@ class Util
 		var sb = new StringBuf();
 		sb.add(path);
 		if (needsSlash){
-			sb.add("/");
+			sb.add(getSlash());
+		}
+		if (Unifill.uIndexOf(add, "\\") != -1 || Unifill.uIndexOf(add, "/") != -1){
+			add == Unifill.uSubstr(add, 1, Unifill.uLength(add) - 1);
 		}
 		sb.add(add);
-		return sb.toString();
+		var str = sb.toString();
+		str = fixDoubleSlash(str);
+		return str;
 	}
 	
 	public static function uCat(a:String, b:String):String{
@@ -154,10 +379,35 @@ class Util
 			var str = arr[i];
 			sb.add(str);
 			if (trailingSlash || i != arr.length - 1){
-				sb.add("/");
+				sb.add(getSlash());
 			}
 		}
 		return sb.toString();
+	}
+	
+	public static function getParentDir(path:String):String{
+		var bits = splitPath(path);
+		if (bits != null && bits.length > 0){
+			bits.pop();
+			return joinPath(bits);
+		}
+		return "";
+	}
+	
+	public static function pathStartsWithAssets(path:String):Bool{
+		var bits = splitPath(path);
+		if (bits != null && bits.length > 0 && bits[0] == "assets"){
+			return true;
+		}
+		return false;
+	}
+	
+	public static function pathEndsInAssets(path:String):Bool{
+		var bits = splitPath(path);
+		if (bits != null && bits.length > 0 && bits[bits.length - 1] == "assets"){
+			return true;
+		}
+		return false;
 	}
 	
 	public static function splitPath(path:String):Array<String>
@@ -188,7 +438,7 @@ class Util
 		var sb:StringBuf = new StringBuf();
 		for (i in 0...arr.length){
 			sb.add(arr[i]);
-			sb.add("/");
+			sb.add(getSlash());
 		}
 		
 		return sb.toString();

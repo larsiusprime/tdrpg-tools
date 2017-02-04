@@ -3,12 +3,19 @@ package;
 import com.leveluplabs.tdrpg.IndexData;
 import com.leveluplabs.tdrpg.GraphicStyleData;
 #end
+import com.leveluplabs.tdrpg.FireTongueEx;
+import com.leveluplabs.tdrpg.Item;
+import com.leveluplabs.tdrpg.ItemIndex;
+import com.leveluplabs.tdrpg.enums.ItemClass;
 import com.leveluplabs.tdrpg.enums.TerrainType;
+import firetongue.FireTongue;
 import flash.display.BitmapData;
 import flash.geom.Matrix;
 import flash.geom.Point;
 import flixel.FlxG;
 import flixel.addons.ui.U;
+import flixel.addons.ui.interfaces.IFireTongue;
+import flixel.util.FlxArrayUtil;
 import flixel.util.FlxColor;
 import haxe.io.Bytes;
 import haxe.xml.Fast;
@@ -38,6 +45,8 @@ class DataFetcher
 	
 	#if tdrpg_haxe
 	public var index:IndexData = null;
+	public var itemIndex:ItemIndex = null;
+	public var tongue:FireTongue = null;
 	public var graphics:GraphicStyleData = null;
 	#end
 	
@@ -51,6 +60,10 @@ class DataFetcher
 	
 	public function new(saveData:SaveData) 
 	{
+		load(saveData);
+	}
+	
+	public function load(saveData:SaveData){
 		devPath = saveData.devPath;
 		devPath2 = saveData.devPath2;
 		modPath = saveData.modPath;
@@ -69,6 +82,41 @@ class DataFetcher
 	public function setPath(str:String):Void
 	{
 		interpretPath(str);
+	}
+	
+	public function getItems(code:String):{names:Array<String>,labels:Array<String>}
+	{
+		#if tdrpg_haxe
+		var names:Array<String> = [];
+		var labels:Array<String> = [];
+		var classes:Array<ItemClass> = itemIndex.getClasses();
+		for (ic in classes){
+			var types = itemIndex.getTypes(ic);
+			if (types == null) continue;
+			var l = types.length;
+			for (i in 0...l){
+				var type = types[i];
+				var items:Array<Item> = itemIndex.getItems(ic, type);
+				if (items == null) continue;
+				for (i in 0...items.length){
+					var item = items[i];
+					if (item == null) continue;
+					var pass = true;
+					if (code == "unique"){
+						if (item.unique == false){
+							pass = false;
+						}
+					}
+					if (pass){
+						names.push(item.itemClass + "_" + item.itemType+"_" + item.level);
+						labels.push(item.name);
+					}
+				}
+			}
+		}
+		
+		return {names:names, labels:labels};
+		#end
 	}
 	
 	public function sync(save:SaveData){
@@ -285,6 +333,7 @@ class DataFetcher
 	}
 	
 	private var xLibrary:AssetLibraryX;
+	private static var dLibrary:DefaultAssetLibrary = null;
 	
 	private function refresh()
 	{
@@ -294,14 +343,15 @@ class DataFetcher
 		
 		var hasInstall = installPath != "" && installPath != null;
 		#if tdrpg_haxe
-		if (xLibrary == null){
-			var defaultLibrary:DefaultAssetLibrary = cast lime.Assets.libraries.get("default");
-			xLibrary = new AssetLibraryX(modPath, defaultLibrary);
+		if(dLibrary == null){
+			dLibrary = cast lime.Assets.libraries.get("default");
 		}
+		xLibrary = new AssetLibraryX(modPath, dLibrary);
 		xLibrary.xExists = getExists;
 		xLibrary.xGetBytes = getBytes;
 		xLibrary.xGetImage = getImage;
 		xLibrary.xGetPath = getPath;
+		xLibrary.xGetText = getText;
 		Assets.registerLibrary("default", xLibrary);
 		
 		#end
@@ -355,6 +405,34 @@ class DataFetcher
 		loadIndex();
 		loadGraphics();
 		loadTiles();
+		loadFireTongue();
+	}
+	
+	private function fExists(str:String):Bool{
+		str = killAssetPrefix(str);
+		return assetExists(str, AssetType.TEXT);
+	}
+	
+	private function fGetText(str:String):String{
+		str = killAssetPrefix(str);
+		str = getGenericFile(str, "");
+		if (str != "" && str != null){
+			return File.getContent(str);
+		}
+		return null;
+	}
+	
+	private function fGetDir(str:String):Array<String>{
+		str = killAssetPrefix(str);
+		return readDirectory(str);
+	}
+	
+	private function loadFireTongue(){
+		tongue = new FireTongue(null, fExists, fGetText, fGetDir);
+		tongue.init("en-US");
+		#if tdrpg_haxe
+		Item.staticTongue = tongue;
+		#end
 	}
 	
 	private function loadTiles(){
@@ -370,8 +448,6 @@ class DataFetcher
 		
 		var path = getPath("assets/gfx/_hd/tiles");
 		var results = readDirectory(path);
-		
-		trace(index.interactives);
 		
 		if(results != null){
 			for (r in results){
@@ -449,11 +525,23 @@ class DataFetcher
 			index = null;
 		}
 		
+		if (itemIndex != null){
+			itemIndex.destroy();
+			itemIndex = null;
+		}
+		
 		var xmlStr = getXMLFile("index", "maps");
 		var the_xml:Xml = Xml.parse(xmlStr);
 		var fast:Fast = new Fast(the_xml.firstElement());
 		
 		index = new IndexData(fast);
+		
+		xmlStr = getXMLFile("items");
+		the_xml = Xml.parse(xmlStr);
+		fast = new Fast(the_xml.firstElement());
+		
+		itemIndex = new ItemIndex(fast);
+		
 		#end
 	}
 	
@@ -480,7 +568,7 @@ class DataFetcher
 		return null;
 	}
 	
-	private function readDirectory(str:String):Array<String>{
+	public function readDirectory(str:String):Array<String>{
 		var paths = ["mod", "dev", "dev2", "install"];
 		var contents = [];
 		
@@ -515,6 +603,14 @@ class DataFetcher
 		var path = getGenericFile(str, "");
 		if (path != "" && path != null){
 			return path;
+		}
+		return null;
+	}
+	
+	private function getText(str:String):String{
+		var path = getGenericFile(str, "");
+		if (path != "" && path != null){
+			return File.getContent(path);
 		}
 		return null;
 	}
@@ -594,8 +690,12 @@ class DataFetcher
 	}
 	
 	private function getGenericFile(str:String, dir:String):String{
+		var foo = false;
+		if (str.indexOf("paths.xml") != -1) foo = true;
+		
 		var path = "";
 		var file = "";
+		
 		
 		if (modPath != ""){
 			var file = getGenericFilePath(modPath, dir, str);
@@ -673,11 +773,18 @@ class DataFetcher
 	}
 	
 	private function getGenericFilePath(path:String, prefix:String, file:String):String{
+		
 		var test = Util.safePath(path, prefix);
 		test = Util.safePath(test, file);
 		
 		if (FileSystem.exists(test)){
 			return test;
+		}
+		else{
+			if (Util.pathEndsInAssets(path) && Util.pathStartsWithAssets(file)){
+				path = Util.getParentDir(path);
+				return getGenericFilePath(path, prefix, file);
+			}
 		}
 		return "";
 	}

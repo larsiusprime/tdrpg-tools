@@ -1,0 +1,9 @@
+#main {
+    border: 1px solid #CCCCCC;
+    padding: 10px;
+}
+
+.big-button {
+    font-size: 30px;
+    width: 250px;
+}

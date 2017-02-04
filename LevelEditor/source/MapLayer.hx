@@ -5,6 +5,7 @@ import flixel.FlxSprite;
 import flixel.addons.ui.FlxClickArea;
 import flixel.addons.ui.FlxUI;
 import flixel.addons.ui.FlxUIButton;
+import flixel.addons.ui.FlxUICheckBox;
 import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUILine;
 import flixel.addons.ui.FlxUIList;
@@ -46,6 +47,10 @@ class MapLayer extends FlxUIGroup
 	public var changeButton:FlxUIButton;
 	public var xButton:FlxUIButton;
 	
+	public var sigilWidget:SigilWidget;
+	public var checkDoodad:FlxUICheckBox;
+	public var checkSteppingStones:FlxUICheckBox;
+	
 	public var moveLeftButton:FlxUIButton;
 	public var moveRightButton:FlxUIButton;
 	
@@ -56,6 +61,7 @@ class MapLayer extends FlxUIGroup
 	public var artX(get, set):Int;
 	public var artY(get, set):Int;
 	
+	public var isWater(default, set):Bool = false;
 	public var isLast(default,set):Bool = false;
 	public var currDifficulty(default,set):String = "easy";
 	
@@ -78,6 +84,7 @@ class MapLayer extends FlxUIGroup
 		border = null;
 		interactiveList = null;
 		interactiveGroup = null;
+		sigilWidget = null;
 	}
 	
 	public function new(X:Int, Y:Int, W:Int,H:Int,Color:FlxColor,Layer:Int,Value:String,Editable:Bool)
@@ -159,7 +166,27 @@ class MapLayer extends FlxUIGroup
 		add(moveLeftButton);
 		add(moveRightButton);
 		
+		sigilWidget = new SigilWidget(X, Std.int(Y + back.height+5), 44);
+		add(sigilWidget);
+		sigilWidget.allAsRadio = true;
+		sigilWidget.setValues([true, false, false, false, false], [false, false, false, false, false]);
+		sigilWidget.x = X + Std.int((back.width - sigilWidget.width) / 2);
+		sigilWidget.event = "map_sigil_change";
+		
+		checkDoodad = Util.makeCheckbox(X, Std.int(Y + back.height+5), "Doodads", null);
+		add(checkDoodad);
+		checkDoodad.x = X + Std.int((back.width - checkDoodad.width) / 2);
+		
+		checkSteppingStones = Util.makeCheckbox(X, checkDoodad.y, "Stepping Stones", null);
+		add(checkSteppingStones);
+		checkSteppingStones.x = checkDoodad.x;
+		checkSteppingStones.y = checkDoodad.y + checkDoodad.height;
+		
 		layer = layer;
+		
+		if (!hasSigils){
+			showSprite(true);
+		}
 		
 		add(border);
 		add(back);
@@ -167,6 +194,7 @@ class MapLayer extends FlxUIGroup
 		add(rightButton);
 		add(sprite);
 		add(sigilGroup);
+		add(sigilWidget);
 		add(interactiveGroup);
 		add(box);
 	}
@@ -292,7 +320,7 @@ class MapLayer extends FlxUIGroup
 		if (artSprite != null){
 			if (art != ""){
 				artSprite.visible = true;
-				sprite.visible = false;
+				showSprite(false);
 			}
 			var theX = back.x + X * THE_SCALE;
 			var theY = back.y + Y * THE_SCALE;
@@ -313,7 +341,6 @@ class MapLayer extends FlxUIGroup
 	}
 	
 	private function set_art(str:String):String{
-		trace("set_art = " + str);
 		art = str;
 		if(art != ""){
 			if (artSprite == null){
@@ -330,7 +357,7 @@ class MapLayer extends FlxUIGroup
 			artSprite.y = back.y;
 			artSprite.antialiasing = true;
 			artSprite.visible = true;
-			sprite.visible = false;
+			showSprite(false);
 			
 			if (updateArtLoc(artX, artY) == false){
 				setArtXY(0, 0);
@@ -342,11 +369,33 @@ class MapLayer extends FlxUIGroup
 		else{
 			if(artSprite != null){
 				artSprite.visible = false;
-				sprite.visible = true;
+				showSprite(true);
 			}
 		}
 		
 		return art;
+	}
+	
+	private function set_isWater(b:Bool):Bool{
+		isWater = b;
+		showSprite(sprite.visible);
+		return isWater;
+	}
+	
+	private function showSprite(b:Bool){
+		if (sprite != null) sprite.visible = b;
+		if (checkDoodad != null){
+			checkDoodad.visible = b;
+			if (hasSigils){
+				checkDoodad.visible = false;
+			}
+		}
+		if (checkSteppingStones != null){
+			checkSteppingStones.visible = b;
+			if (b){
+				checkSteppingStones.visible = isWater;
+			}
+		}
 	}
 	
 	private function set_isLast(b:Bool):Bool{
@@ -370,8 +419,18 @@ class MapLayer extends FlxUIGroup
 	
 	private function set_drawColor(f:FlxColor):FlxColor{
 		var oldColor:FlxColor = drawColor;
+		var oldDoodad:FlxColor = getDoodadColor();
+		var oldStep:FlxColor = getSteppingStoneColor();
+		
 		oldColor.alpha = 0;
+		oldDoodad.alpha = 0;
+		oldStep.alpha = 0;
+		
 		drawColor = f;
+		
+		var doodad = getDoodadColor();
+		var step = getSteppingStoneColor();
+		
 		if (sprite != null && sprite.graphic != null && sprite.graphic.bitmap != null){
 			var bmp = sprite.graphic.bitmap;
 			for (yy in 0...bmp.height){
@@ -379,6 +438,12 @@ class MapLayer extends FlxUIGroup
 					var rgb = bmp.getPixel(xx, yy);
 					if (oldColor == rgb){
 						bmp.setPixel32(xx, yy, drawColor);
+					}
+					else if (rgb == oldDoodad){
+						bmp.setPixel32(xx, yy, doodad);
+					}
+					else if (rgb == oldStep){
+						bmp.setPixel32(xx, yy, step);
 					}
 				}
 			}
@@ -388,19 +453,16 @@ class MapLayer extends FlxUIGroup
 	
 	private function onMove(i:Int):Void
 	{
-		trace("move " + i);
 		FlxUI.event("move_map_layer", this, i);
 	}
 	
 	private function onChange():Void
 	{
-		trace("change");
 		FlxUI.event("change_map_layer", this, layer);
 	}
 	
 	private function onX():Void
 	{
-		trace("x");
 		FlxUI.event("delete_map_layer", this, layer);
 	}
 	
@@ -423,6 +485,7 @@ class MapLayer extends FlxUIGroup
 		}else{
 			if (!hasSigils){
 				sigilGroup.visible = false;
+				sigilWidget.visible = false;
 			}
 			if (interactive == ""){
 				interactiveGroup.visible = false;
@@ -444,6 +507,70 @@ class MapLayer extends FlxUIGroup
 		}
 	}
 	
+	public function getBasicBitmap():BitmapData{
+		var doodadCol = getDoodadColor();
+		var bmp = sprite.graphic.bitmap.clone();
+		for (yy in 0...bmp.height){
+			for (xx in 0...bmp.width){
+				var pix = bmp.getPixel32(xx, yy);
+				if (pix == doodadCol){
+					bmp.setPixel32(xx, yy, drawColor);
+				}
+			}
+		}
+		return bmp;
+	}
+	
+	public function getSteppingStoneColor():FlxColor{
+		var stepColor = drawColor;
+		stepColor.brightness *= 0.5;
+		return stepColor;
+	}
+	
+	public function getDoodadColor():FlxColor{
+		var doodadColor = drawColor;
+		doodadColor.brightness *= 0.75;
+		return doodadColor;
+	}
+	
+	private function isDoodad():Bool{
+		return checkDoodad != null && checkDoodad.visible && checkDoodad.checked;
+	}
+	
+	private function isSteppingStone():Bool{
+		return checkSteppingStones != null && checkSteppingStones.visible && checkSteppingStones.checked;
+	}
+	
+	public function hasSteppingStones():Bool{
+		var bmp = sprite.graphic.bitmap;
+		var scol = getSteppingStoneColor();
+		for (yy in 0...bmp.height){
+			for (xx in 0...bmp.width){
+				var col = bmp.getPixel32(xx, yy);
+				if (col == scol)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	public function hasDoodads():Bool{
+		var bmp = sprite.graphic.bitmap;
+		var dcol = getDoodadColor();
+		for (yy in 0...bmp.height){
+			for (xx in 0...bmp.width){
+				var col = bmp.getPixel32(xx, yy);
+				if (col == dcol)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	public function onPencil():Bool{
 		var m = getMouseDXY();
 		if (interactive != ""){
@@ -451,8 +578,16 @@ class MapLayer extends FlxUIGroup
 			return true;
 		}
 		else if (art == ""){
-			if (sprite.graphic.bitmap.getPixel32(m.x,m.y) != drawColor){
-				sprite.graphic.bitmap.setPixel32(m.x, m.y, drawColor);
+			var theColor = drawColor;
+			if (isDoodad()){
+				theColor = getDoodadColor();
+			}
+			else if (isSteppingStone()){
+				theColor = getSteppingStoneColor();
+			}
+			
+			if (sprite.graphic.bitmap.getPixel32(m.x,m.y) != theColor){
+				sprite.graphic.bitmap.setPixel32(m.x, m.y, theColor);
 				return true;
 			}
 		}
@@ -506,10 +641,25 @@ class MapLayer extends FlxUIGroup
 		return true;
 	}
 	
-	public function onSigilPlace(i:Int, X:Int =-1, Y:Int =-1):Bool{
-		if (i == -1) return false;
-		
+	public function onSigilPlace(i:Int = -1, X:Int =-1, Y:Int =-1):Bool{
 		var m = getMouseDXY();
+		
+		if(i == -1){
+			if (sigilWidget.allAsRadio){
+				for (j in 0...sigilWidget.starts.length){
+					if (sigilWidget.starts[j]){
+						i = j;
+					}
+				}
+				for (j in 0...sigilWidget.ends.length){
+					if (sigilWidget.ends[j]){
+						i = j + 5;
+					}
+				}
+			}
+		}
+		
+		if (i == -1) return false;
 		
 		if (X != -1) m.x = X;
 		if (Y != -1) m.y = Y;
@@ -524,8 +674,11 @@ class MapLayer extends FlxUIGroup
 		return true;
 	}
 	
-	public function onSigilErase(i:Int):Bool{
+	public function onSigilErase(X:Int = -1, Y:Int = -1):Bool{
 		var m = getMouseDXY();
+		
+		if (X != -1) m.x = X;
+		if (Y != -1) m.y = Y;
 		
 		var change = false;
 		
@@ -597,10 +750,10 @@ class MapLayer extends FlxUIGroup
 	
 	private function canSigilBeDeleted(j:Int){
 		
-		if (j <= MenuState.END_I - 2){
+		if (j <= LevelEditState.END_I - 2){
 			//it's a start index
 			var count = 0;
-			for (i in 0...MenuState.END_I-1){
+			for (i in 0...LevelEditState.END_I-1){
 				if (sigils[i].x != -1 && sigils[i].y != -1){
 					count++;
 				}
@@ -615,7 +768,7 @@ class MapLayer extends FlxUIGroup
 			//it's an end index
 			
 			//Can't delete the default mcguffin position!
-			if (j == MenuState.END_I -1) return false;
+			if (j == LevelEditState.END_I -1) return false;
 		}
 		return true;
 	}
@@ -631,7 +784,7 @@ class MapLayer extends FlxUIGroup
 	private function updateInteractives(){
 		if (interactive != ""){
 			interactiveGroup.visible = true;
-			sprite.visible = false;
+			showSprite(false);
 			back.setColorTransform(1.0, 1.0, 1.0, 1.0, 192, 192, 192, 0);
 			for (i in 0...interactiveGroup.members.length){
 				interactiveGroup.members[i].visible = true;
@@ -658,7 +811,7 @@ class MapLayer extends FlxUIGroup
 			var struct = interactiveList[i];
 			var sprite = interactiveGroup.members[i];
 			if (struct.difficulty == currDifficulty){
-				sprite.visible = true;
+				showSprite(true);
 				sprite.loadGraphic("assets/gfx/_hd/tiles/feature_" + struct.name+".png");
 				sprite.scale.set(effectiveScale, effectiveScale);
 				sprite.updateHitbox();
@@ -670,7 +823,7 @@ class MapLayer extends FlxUIGroup
 				sprite.alpha = 1.0;
 			}
 			else{
-				sprite.visible = true;
+				showSprite(true);
 				sprite.alpha = 0.25;
 			}
 		}
@@ -679,6 +832,7 @@ class MapLayer extends FlxUIGroup
 	private function updateSigils(){
 		if (!hasSigils){
 			sigilGroup.visible = false;
+			sigilWidget.visible = false;
 			for (i in 0...sigilGroup.members.length)
 			{
 				sigilGroup.members[i].visible = false;
@@ -687,6 +841,9 @@ class MapLayer extends FlxUIGroup
 		}
 		else{
 			sigilGroup.visible = true;
+			sigilWidget.visible = true;
+			checkDoodad.visible = false;
+			checkSteppingStones.visible = false;
 		}
 		
 		for (i in 0...sigilGroup.members.length)

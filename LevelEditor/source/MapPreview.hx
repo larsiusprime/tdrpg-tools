@@ -27,6 +27,7 @@ typedef BattleFieldPreviewParams = {
 	var png:BitmapData;
 	var xml:Fast;
 	var levelEdit:Bool;
+	var doodads:Bool;
 }
 
 #end

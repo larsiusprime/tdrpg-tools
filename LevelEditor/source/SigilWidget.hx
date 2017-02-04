@@ -19,6 +19,13 @@ class SigilWidget extends FlxUIGroup
 	public var starts:Array<Bool> = [true,false,false,false,false];
 	public var ends:Array<Bool> = [true,false,false,false,false];
 	
+	public var startsAsRadio:Bool = false;
+	public var endsAsRadio:Bool = false;
+	public var allAsRadio:Bool = false;
+	
+	public var event:String = "sigil_change";
+	public var code:String = "wave_widget";
+	
 	public function new(xx:Int,yy:Int,H:Float) 
 	{
 		super(xx, yy);
@@ -55,6 +62,16 @@ class SigilWidget extends FlxUIGroup
 		}
 	}
 	
+	public function setValues(starts:Array<Bool>, ends:Array<Bool>){
+		if (starts.length != 5 && ends.length != 5) return;
+		for(i in 0...5){
+			toggleStart(i, starts[i]);
+		}
+		for (i in 0...5){
+			toggleEnd(i, ends[i]);
+		}
+	}
+	
 	public function sync(info:WaveInfo){
 		for (i in 0...info.starts.length){
 			toggleStart(i, info.starts[i]);
@@ -65,14 +82,19 @@ class SigilWidget extends FlxUIGroup
 	}
 	
 	private function toggleStart(i:Int, ?b:Bool){
-		trace("toggleStart(" + i + "," + b + ")");
 		for (j in 0...members.length){
 			var member = members[j];
 			if (member.ID == i){
 				var spr:FlxUISprite = cast member;
-				if(b == null){
+				if (b == null){
+					if (allAsRadio){
+						turnOff(true, true);
+					}
+					if (startsAsRadio){
+						turnOff(true, false);
+					}
 					starts[i] = !starts[i];
-					FlxUI.event("sigil_change", this, null, ["wave_widget"]);
+					FlxUI.event(event, this, i, [code,"start"]);
 				}else{
 					starts[i] = b;
 				}
@@ -82,19 +104,41 @@ class SigilWidget extends FlxUIGroup
 		}
 	}
 	
-	private function toggleEnd(i:Int,?b:Bool){
+	private function toggleEnd(i:Int, ?b:Bool){
 		for (j in 0...members.length){
 			var member = members[j];
 			if (member.ID == i+5){
 				var spr:FlxUISprite = cast member;
-				if(b == null){
+				if (b == null){
+					if (allAsRadio){
+						turnOff(true, true);
+					}
+					if (endsAsRadio){
+						turnOff(false, true);
+					}
 					ends[i] = !ends[i];
-					FlxUI.event("sigil_change", this, null, ["wave_widget"]);
+					FlxUI.event(event, this, i, [code,"end"]);
 				}else{
 					ends[i] = b;
 				}
 				spr.alpha = ends[i] ? 1.0 : 0.25;
 				return;
+			}
+		}
+	}
+	
+	private function turnOff(doStarts:Bool, doEnds:Bool){
+		for (j in 0...members.length){
+			var member = members[j];
+			var spr:FlxUISprite = cast member;
+			if (spr == null) continue;
+			if (doStarts && member.ID < 5){
+				starts[member.ID] = false;
+				spr.alpha = 0.25;
+			}
+			if (doEnds && member.ID >= 5){
+				ends[member.ID - 5] = false;
+				spr.alpha = 0.25;
 			}
 		}
 	}

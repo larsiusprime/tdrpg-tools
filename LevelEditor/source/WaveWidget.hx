@@ -100,7 +100,8 @@ class WaveWidget extends FlxUIGroup
 		box = makeBox(W, H);
 		add(box);
 		
-		sigils = new SigilWidget(4,Std.int(H/4),H/2);
+		sigils = new SigilWidget(4, Std.int(H / 4), H / 2);
+		sigils.endsAsRadio = true;
 		add(sigils);
 		
 		var X = 4 + sigils.width + 8;

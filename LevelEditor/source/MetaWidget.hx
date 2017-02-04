@@ -1,4 +1,6 @@
 package;
+import flixel.FlxState;
+import flixel.FlxSubState;
 import flixel.addons.ui.FlxUI;
 import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUICheckBox;
@@ -6,8 +8,11 @@ import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUILine;
 import flixel.addons.ui.FlxUIRadioGroup;
 import flixel.addons.ui.FlxUISprite;
+import flixel.addons.ui.FlxUIState;
+import flixel.addons.ui.U;
 import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.util.FlxColor;
+import RewardsPicker.RewardStruct;
 
 /**
  * ...
@@ -26,6 +31,12 @@ class MetaWidget extends FlxUIGroup
 	public var endless:FlxUICheckBox;
 	public var endlessLevelup:NumberWidget;
 	public var isBonus:FlxUICheckBox;
+	
+	private var rewardsButton1:ButtonWidget;
+	private var rewardsButton2:ButtonWidget;
+	
+	private var rewards1:RewardStruct;
+	private var rewards2:RewardStruct;
 	
 	public function new(X:Float=0,Y:Float=0) 
 	{
@@ -98,6 +109,24 @@ class MetaWidget extends FlxUIGroup
 		box = Util.makeBox(W, H);
 		add(box);
 		
+		rewards1 = {
+			feat:"pass",
+			goal:"true",
+			type:"xp",
+			value:"100",
+			typePlus:"xp",
+			valuePlus:"100"
+		};
+		
+		rewards2 = {
+			feat:"pass",
+			goal:"true",
+			type:"xp",
+			value:"100",
+			typePlus:"xp",
+			valuePlus:"100"
+		};
+		
 		var Y = 20;
 		
 		difficulty = Util.makeRadios(5, 5, ["easy", "normal", "hard"], ["Normal", "Advanced", "Extreme"], 
@@ -116,18 +145,89 @@ class MetaWidget extends FlxUIGroup
 		
 		var X = 100 + dx;
 		
-		endless = Util.makeCheckbox(X, Y, "Endless", onChange);
+		isBonus = Util.makeCheckbox(X, Y, "Is bonus level", onChange);
+		add(isBonus);
+		
+		endless = Util.makeCheckbox(X, Y + 30, "Endless", onChange);
 		add(endless);
 		
-		X += dx;
+		X += dx + 20;
 		
 		endlessLevelup = new NumberWidget(X, Y, ww, "Endless levelup", 1, 0, 0, 99, 0);
 		add(endlessLevelup);
 		
-		X += dx;
+		X += dx + 5;
 		
-		isBonus = Util.makeCheckbox(X, Y, "Is bonus level", onChange);
-		add(isBonus);
+		rewardsButton1 = new ButtonWidget(X, Y, 140, 64, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
+		add(rewardsButton1);
+		
+		X += dx + 50;
+		
+		rewardsButton2 = new ButtonWidget(X, Y, 140, 64, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
+		add(rewardsButton2);
+	}
+	
+	private function getRewardText(i:Int):String{
+		var reward:RewardStruct = null;
+		switch(i){
+			case 1: reward = rewards1;
+			case 2: reward = rewards2;
+		}
+		if (reward != null){
+			var str = "";
+			if (reward.type != "item" && reward.type != "nothing"){
+				if (reward.type == "xp")
+				{
+					str += reward.value + "xp";
+				}
+				if (reward.type == "gold")
+				{
+					str += "$" + reward.value;
+				}
+			}else if (reward.type == "item"){
+				str += reward.value;
+			}
+			str += "/";
+			if (reward.typePlus != "item" && reward.typePlus != "nothing"){
+				if (reward.typePlus == "xp")
+				{
+					str += reward.valuePlus + "xp";
+				}
+				if (reward.typePlus == "gold")
+				{
+					str += "$" + reward.valuePlus;
+				}
+			}else if (reward.typePlus == "item"){
+				str += reward.valuePlus;
+			}
+			if (str.length > 14){
+				str = str.substr(0, 14) + "...";
+			}
+			return str;
+		}
+		return "...";
+	}
+	
+	private function onChangeRewards(i:Int){
+		
+		var theReward:RewardStruct = (i == 1) ? rewards1 : rewards2;
+		
+		var popup = new RewardsPicker(isBonus.checked, endless.checked, i, theReward, function(reward:RewardStruct){
+			if (i == 1){
+				rewards1 = reward;
+				rewardsButton1.button.label.text = getRewardText(1);
+			}else{
+				rewards2 = reward;
+				rewardsButton2.button.label.text = getRewardText(2);
+			}
+		});
+		
+		var s = FlxUI.getLeafUIState();
+		if (Std.is(s, FlxState)){
+			cast(s, FlxState).openSubState(popup);
+		}else if (Std.is(s, FlxSubState)){
+			cast(s, FlxSubState).openSubState(popup);
+		}
 	}
 	
 	private function onWaveChange(){

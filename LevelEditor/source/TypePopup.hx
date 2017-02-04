@@ -10,6 +10,7 @@ import flixel.addons.ui.FlxUISubState;
 import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.util.FlxColor;
 import flixel.text.FlxText.FlxTextBorderStyle;
+import flixel.util.FlxTimer;
 import org.zamedev.lib.Utf8Ext;
 import unifill.Unifill;
 
@@ -23,7 +24,10 @@ class TypePopup extends FlxUISubState
 	private var existing:String;
 	private var callback:String->String->Void;
 	
-	public function new(array:Array<String>, Existing:String, Callback:String->String->Void) 
+	private var list:FlxUIList;
+	private var wait:Bool = false;
+	
+	public function new(array:Array<String>, Existing:String, Callback:String->String->Void, labels:Array<String>=null) 
 	{
 		super(0xB0000000);
 		
@@ -46,6 +50,11 @@ class TypePopup extends FlxUISubState
 		var group:FlxUIGroup = new FlxUIGroup();
 		var i = 0;
 		
+		var offX = 0;
+		var furthestRight:Float = 0;
+		var furthestLeft:Float = 999999;
+		
+		var j = 0;
 		var category = "";
 		for (str in array){
 			if (str.indexOf(":") != -1){
@@ -68,11 +77,18 @@ class TypePopup extends FlxUISubState
 				var btn = Util.makeBtn(0, 0, str, onClick.bind(str, category), buttonWidth, buttonHeight);
 				group.add(btn);
 				btn.x = 0 + Std.int(((FlxG.width / 4) - btn.width) / 2);
+				
+				if (labels != null){
+					btn.label.text = labels[j];
+				}
+				
 				if (str == existing){
 					btn.label.color = FlxColor.WHITE;
 					btn.setLabelFormat("assets/fonts/verdanab.ttf", btn.label.size, FlxColor.WHITE, null, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 					btn.label.text = Utf8Ext.toUpperCase(btn.label.text);
 				}
+				
+				
 				switch(i){
 					case 1:
 						btn.x += (Std.int(FlxG.width * 1 / 4));
@@ -82,6 +98,12 @@ class TypePopup extends FlxUISubState
 						btn.x += (Std.int(FlxG.width * 3 / 4));
 					default:
 						//nothing
+				}
+				if (btn.x + btn.width > furthestRight){
+					furthestRight = btn.x + btn.width;
+				}
+				if (btn.x < furthestLeft){
+					furthestLeft = btn.x;
 				}
 				i++;
 				if (i >= 4){
@@ -93,10 +115,36 @@ class TypePopup extends FlxUISubState
 					i = 0;
 				}
 			}
+			j++;
 		}
 		
-		var list = new FlxUIList(0, offY, buttons, FlxG.width, (FlxG.height - (offY * 2)), "<X> more...", FlxUIList.STACK_VERTICAL, 5);
+		var emptySpace = (FlxG.width - furthestRight);
+		offX = Std.int(emptySpace / 2);
+		
+		list = new FlxUIList(offX, offY, buttons, FlxG.width, (FlxG.height - (offY * 2)), "<X> more...", FlxUIList.STACK_VERTICAL, 5);
 		add(list);
+		
+		var nxb:FlxUIButton = cast list.nextButton;
+		var pvb:FlxUIButton = cast list.prevButton;
+		
+		nxb.label.color = FlxColor.WHITE;
+		pvb.label.color = FlxColor.WHITE;
+		
+		new FlxTimer().start(0.25, function(f:FlxTimer){
+			wait = false;
+		});
+	}
+	
+	override public function update(elapsed:Float):Void 
+	{
+		if (wait) return;
+		super.update(elapsed);
+	}
+	
+	override public function draw():Void 
+	{
+		if (wait) return;
+		super.draw();
 	}
 	
 	private function alpha(a:String, b:String):Int{

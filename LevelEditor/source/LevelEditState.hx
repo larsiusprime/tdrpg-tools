@@ -38,39 +38,57 @@ import sys.FileSystem;
 import sys.io.File;
 import unifill.Unifill;
 import WaveWidget.WaveInfo;
+import BattleData.WaveData;
 import DataFetcher.DataFetchCode;
 import MetaWidget.MetaInfo;
 import MetaWidget.MetaEntry;
 
-class MenuState extends FlxUIState
+class LevelEditState extends FlxUIState
 {
 	public static var dq1:Settings;
 	public static var dq2:Settings;
 	
 	private static inline var LAYER_X:Int = 60;
-	private static inline var LAYER_Y:Int = 50;
+	private static inline var LAYER_Y:Int = 30;
 	private static inline var LAYER_W:Int = 930;
 	
 	private static inline var WAVE_X:Int = 550;
 	private static inline var WAVE_Y:Int = 240;
 	
-	public var sigil:Int = 0;
 	public var tool:Tool = Tool.Pencil;
 	public var toolFlows:Bool = true;
+	
+	public var dirty(default, set):Bool = false;
 	
 	public static inline var START_I:Int = 1;
 	public static inline var END_I:Int = 6;
 	
+	public function new(saveData_:SaveData)
+	{
+		saveData = saveData_;
+		super();
+	}
+	
 	override public function create():Void
 	{
 		super.create();
-		saveData = new SaveData();
-		dataFetcher = new DataFetcher(saveData);
+		dataFetcher = Util.dataFetcher;
+		
+		var mapsDir = Util.safePath(saveData.modPath, "maps");
+		if (FileSystem.exists(mapsDir) == false){
+			FileSystem.createDirectory(mapsDir);
+		}
+		lastSavePath = Util.safePath(mapsDir, saveData.mapID + ".xml");
 		
 		FlxG.sound.muted = false;
 		makeBkg();
-		makeSettings();
+		
+		dq1 = Util.dq1;
+		dq2 = Util.dq2;
+		
 		load(dq1);
+		
+		dirty = false;
 	}
 	
 	override public function update(elapsed:Float):Void 
@@ -89,25 +107,43 @@ class MenuState extends FlxUIState
 			redo();
 		}
 		
-		if (FlxG.keys.justPressed.ONE)   doSigil(1);
-		if (FlxG.keys.justPressed.TWO)   doSigil(2);
-		if (FlxG.keys.justPressed.THREE) doSigil(3);
-		if (FlxG.keys.justPressed.FOUR)  doSigil(4);
-		if (FlxG.keys.justPressed.FIVE)  doSigil(5);
-		if (FlxG.keys.justPressed.A)     doSigil(6);
-		if (FlxG.keys.justPressed.B)     doSigil(7);
-		if (FlxG.keys.justPressed.C)     doSigil(8);
-		if (FlxG.keys.justPressed.D)     doSigil(9);
-		if (FlxG.keys.justPressed.E)     doSigil(10);
-		
 		super.update(elapsed);
 		updateInput(elapsed);
+	}
+	
+	override public function getRequest(id:String, sender:Dynamic, data:Dynamic, ?params:Array<Dynamic>):Dynamic 
+	{
+		//super.getRequest(id, sender, data, params);
+		switch(id){
+			case "items":
+				var code:String = cast data;
+				var items = dataFetcher.getItems(code);
+				//var items = {names:["a", "b", "c"], labels:["A", "B", "C"]};
+				if (items == null){
+					return {names:[""], labels:["nothing"]};
+				}
+				return items;
+			default: //donothing
+		}
+		return null;
 	}
 	
 	override public function getEvent(id:String, sender:Dynamic, data:Dynamic, ?params:Array<Dynamic>):Void 
 	{
 		super.getEvent(id, sender, data, params);
 		switch(id){
+			case "map_sigil_change":
+				var sigilWidget:SigilWidget = cast sender;
+				var i:Int = cast data;
+				var value:Bool = false;
+				if (params.indexOf("start") != -1){
+					value = sigilWidget.starts[i];
+				}
+				else if (params.indexOf("end") != -1){
+					value = sigilWidget.ends[i];
+					i += 5;
+				}
+				getSigilHint(i + 1);
 			case "move_map_layer":
 				var i:Int = cast data;
 				
@@ -120,32 +156,23 @@ class MenuState extends FlxUIState
 				onChangeLayer(layer);
 			case "delete_map_layer":
 				var i:Int = cast data;
-				var layer = layers.splice(i, 1);
-				trace("splice i = " + i);
-				if(layer != null && layer.length > 0){
-					layer[0].destroy();
-				}
-				refreshLayers();
-				composite();
+				onDeleteLayer(i);
 			case "delete_wave":
 				var i:Int = cast data;
-				waves[diffI()].splice(i,1);
-				refreshWaves();
+				onDeleteWave(i);
 			case "add_wave":
-				waves[diffI()].push(getWave());
-				refreshWaves();
+				onAddWave();
 			case "wave_change":
-				refreshWaves();
-				updatePreview();
+				onWaveChange();
 			case FlxUINumericStepper.CHANGE_EVENT, "sigil_change":
 				if (params != null && params.indexOf("wave_widget") != -1){
 					var widget = cast(sender, IFlxUIWidget);
 					resolveWidgetChange(widget, params);
 				}
 			case FlxUIPopup.CLICK_EVENT:
-				if (params != null && params.indexOf("setPath") != -1){
-					onSetPath();
-				}
+				
+				//
+				
 			case "select_type":
 				var waveWidget:WaveWidget = cast sender;
 				var types = dataFetcher.getEnemyTypes();
@@ -157,6 +184,7 @@ class MenuState extends FlxUIState
 					var popup = new TypePopup(types, waveWidget.info.type,
 							function(str:String,category:String){
 								waveWidget.setType(str);
+								dirty = true;
 							}
 						);
 					openSubState(popup);
@@ -176,10 +204,9 @@ class MenuState extends FlxUIState
 	private var preview:MapPreview;
 	
 	private var pathTxt:FlxUIText;
-	private var setpath:FlxUIButton;
-	private var clearpath:FlxUIButton;
-	private var export:FlxUIButton;
+	private var saveAs:FlxUIButton;
 	private var save:FlxUIButton;
+	private var menu:FlxUIButton;
 	
 	private var saveData:SaveData;
 	private var dataFetcher:DataFetcher;
@@ -196,7 +223,6 @@ class MenuState extends FlxUIState
 	private var metaWidget:MetaWidget;
 	
 	private var hintText:FlxText;
-	private var sigilSprite:FlxSprite;
 	private var sigilHint:String;
 	private var data:Settings;
 	private var maxUndo:Int = 100;
@@ -204,6 +230,48 @@ class MenuState extends FlxUIState
 	private var undoBuffer:Array<EditState>;
 	private var tempState:EditState;
 	
+	
+	private function set_dirty(b:Bool){
+		dirty = b;
+		if (save != null){
+			if (b == true){
+				save.label.text = "Save*";
+				saveAs.label.text = "Save As*";
+			}else{
+				save.label.text = "Save";
+				saveAs.label.text = "Save As";
+			}
+		}
+		return dirty;
+	}
+	
+	private function onWaveChange(){
+		refreshWaves();
+		updatePreview();
+		dirty = true;
+	}
+	
+	private function onAddWave(){
+		waves[diffI()].push(getWave());
+		refreshWaves();
+		dirty = true;
+	}
+	
+	private function onDeleteWave(i:Int){
+		waves[diffI()].splice(i, 1);
+		refreshWaves();
+		dirty = true;
+	}
+	
+	private function onDeleteLayer(i:Int){
+		var layer = layers.splice(i, 1);
+		if(layer != null && layer.length > 0){
+			layer[0].destroy();
+		}
+		dirty = true;
+		refreshLayers();
+		composite();
+	}
 	
 	private function resolveWidgetChange(widget:IFlxUIWidget, params:Array<Dynamic>){
 		
@@ -274,7 +342,6 @@ class MenuState extends FlxUIState
 			if (diff == "normal" || diff == "med"){
 				diff = "medium";
 			}
-			trace("xml = " + xml.x.toString());
 			
 			preview.updatePreview(true, bmp, xml, diff);
 		}
@@ -283,9 +350,7 @@ class MenuState extends FlxUIState
 		}
 	}
 	
-	private function doSigil(i:Int){
-		sigil = i - 1;
-		sigilSprite.animation.frameIndex = sigil;
+	private function getSigilHint(i:Int){
 		var changeHint:Bool = (hintText.text == sigilHint);
 		sigilHint = switch(i){
 			case 1, 2, 3, 4, 5:
@@ -312,10 +377,10 @@ class MenuState extends FlxUIState
 			if (layer.hasSigils){
 				if (!rightClick)
 				{
-					change = layer.onSigilPlace(sigil);
+					change = layer.onSigilPlace();
 				}
 				else{
-					change = layer.onSigilErase(sigil);
+					change = layer.onSigilErase();
 				}
 				skipTool = true;
 			}
@@ -357,6 +422,10 @@ class MenuState extends FlxUIState
 		if(change){
 			pushUndo(tempState);
 			tempState = new EditState(layers);
+		}
+		
+		if(change){
+			dirty = true;
 		}
 	}
 	
@@ -476,19 +545,40 @@ class MenuState extends FlxUIState
 		data = settings;
 		undoBuffer = [];
 		
+		//loadFromData(mapPNG, mapXMLString);
+		var mapPath = Util.safePath(saveData.modPath, "maps");
+		var bmpPath = Util.safePath(mapPath, saveData.mapID + ".png");
+		var xmlPath = Util.safePath(mapPath, saveData.mapID + ".xml");
+		
+		var mapPNG:BitmapData = (FileSystem.exists(bmpPath) ? BitmapData.fromFile(bmpPath) : getMapBitmap());
+		var mapXMLString:String = (FileSystem.exists(xmlPath) ? File.getContent(xmlPath) : "");
+		
+		var mapXML:Fast = null;
+		if (mapXMLString != null){
+			mapXML = new Fast(Util.xmlify(mapXMLString));
+		}else{
+			mapXML = getMapXML();
+		}
+		
+		var bData = BattleData.fromXML(mapXML);
+		var bmps = Util.splitMapBitmap(mapPNG, bData.layers.length);
+		
 		layers = [];
-		makeMapLayer(0xFF000000,  0, "grey_dirt", false, "");
-		makeMapLayerFromTileset("grass", 1, "");
-		makeMapLayerFromTileset("dark_cliff", 2, "");
-		makeMapLayerFromTileset("water", 3, "");
+		
+		for (layer in bData.layers){
+			if (layer.layer == 0){
+				makeMapLayer(0xFF000000, 0, layer.value, false, "");
+			}else{
+				makeMapLayerFromTileset(layer.value, layer.layer, ""); 
+			}
+			var ml:MapLayer = layers[layer.layer];
+			var copyBmp = bmps[layer.layer];
+			ml.sprite.graphic.bitmap.copyPixels(copyBmp, copyBmp.rect, new Point());
+		}
 		
 		layers[0].hasSigils = true;
 		
 		refreshLayers();
-		
-		sigilSprite = new FlxSprite();
-		sigilSprite.loadGraphic("*assets/images/sigils.png", true, 48, 48);
-		add(sigilSprite);
 		
 		hintText = new FlxText(0, 0, layers[0].sprite.width, "Testing");
 		hintText.alignment = FlxTextAlign.CENTER;
@@ -500,24 +590,33 @@ class MenuState extends FlxUIState
 		hintText.y = FlxG.height - hintText.height * 2;
 		add(hintText);
 		
-		sigilSprite.x = Std.int(hintText.x + (hintText.width - sigilSprite.width) / 2);
-		sigilSprite.y = hintText.y - sigilSprite.height - 5;
-		
-		doSigil(1);
-		
-		sigilSprite.visible = false;
 		hintText.visible = false;
 		
 		tempState = new EditState(layers);
 		
+		for (key in bData.starts.keys()){
+			var i = Util.abc2num(key);
+			var pt = bData.starts.get(key);
+			layers[0].onSigilPlace(START_I - 1 + i, pt.x, pt.y);
+		}
+		for (key in bData.ends.keys()){
+			var i = Util.abc2num(key);
+			var pt = bData.ends.get(key);
+			layers[0].onSigilPlace(END_I - 1 + i, pt.x, pt.y);
+		}
+		
+		/*
 		layers[0].onSigilPlace(START_I-1, 0, Std.int(layers[0].squareHeight / 2));
 		layers[0].onSigilPlace(END_I - 1, Std.int(layers[0].squareWidth - 1), Std.int(layers[0].squareHeight / 2));
+		*/
+		
+		getSigilHint(0);
 		
 		composite();
 		
 		var previewParams = {
-			X:Std.int(layers[0].x+10),
-			Y:Std.int(WAVE_Y+45),
+			X:Std.int(layers[0].x),
+			Y:Std.int(WAVE_Y+25),
 			name:"",
 			diff:"easy",
 			tileHeight:14,
@@ -525,30 +624,20 @@ class MenuState extends FlxUIState
 			heightInSquares:settings.squaresTall,
 			tilesetStyle:settings.tilesetStyle,
 			tilesPerSquare:settings.tilesPerSquare,
-			png:getMapBitmap(),
-			xml:getMapXML(),
-			levelEdit:true
+			png:mapPNG,
+			xml:mapXML,
+			levelEdit:true,
+			doodads:true
 		}
 		
 		preview = new MapPreview(previewParams);
 		add(preview);
 		
-		export = addBtn(0, 5, "Save As", onExport);
-		export.x = FlxG.width - export.width - 5;
+		menu = addBtn(0, 5, "Main Menu", onMainMenu);
+		menu.x = FlxG.width - menu.width - 5;
 		
-		save      = addBtn(export.x, export.y + export.height + 5, "Save", onSave);
-		setpath   = addBtn(export.x, save.y + save.height + 5, "Set Path", onSetPath);
-		clearpath = addBtn(export.x, setpath.y + setpath.height + 5, "Clear Paths", onClearPaths);
-		
-		pathTxt = new FlxUIText(0, 0, FlxG.width - (setpath.width+5), dataFetcher.getPathText(), 12);
-		pathTxt.font = "assets/fonts/verdana.ttf";
-		pathTxt.color = FlxColor.BLACK;
-		pathTxt.x = setpath.x - pathTxt.width;
-		pathTxt.y = 0;
-		pathTxt.alignment = FlxTextAlign.LEFT;
-		add(pathTxt);
-		
-		tooltips.add(setpath, {title:"No path set",body:""});
+		saveAs = addBtn(menu.x, menu.y + menu.height + 5, "Save As", onExport);
+		save = addBtn(saveAs.x, saveAs.y + saveAs.height + 5, "Save", onSave);
 		
 		meta = {
 			difficulty:"easy",
@@ -560,14 +649,21 @@ class MenuState extends FlxUIState
 		
 		waves = [[],[],[]];
 		waveWidgets = [];
-		waves[0].push(getWave());
-		waves[1].push(getWave());
-		waves[2].push(getWave());
+		
+		trace("bData.waves = " + bData.waves);
+		for (waveData in bData.waves){
+			var diffI = Util.diffToI(waveData.difficulty);
+			for (waveInfo in waveData.waves){
+				waves[diffI].push(WaveData.copyWaveInfo(waveInfo));
+			}
+		}
+		
 		refreshWaves();
 		
 		refreshSavePath();
 		refreshPreview();
 	}
+	
 	
 	private function getMeta(diff:String):MetaInfo{
 		return {
@@ -615,6 +711,8 @@ class MenuState extends FlxUIState
 			refreshLayers();
 			composite();
 		}
+		
+		dirty = true;
 	}
 	
 	private function onChangeLayer(layer:MapLayer){
@@ -635,6 +733,7 @@ class MenuState extends FlxUIState
 		
 		var popup = new TypePopup(arr, "",
 			function(str:String, category:String = ""){
+				trace("str = " + str + " category = " + category);
 				if (category == "art"){
 					layer.interactive = "";
 					layer.art = str;
@@ -648,9 +747,17 @@ class MenuState extends FlxUIState
 					layer.interactive = "";
 					layer.drawColor = dataFetcher.getTileColor(str);
 					layer.value = str;
+					if (category == "water"){
+						layer.isWater = true;
+					}
+					else{
+						layer.isWater = false;
+					}
 				}
 				refreshLayers();
 				composite();
+				
+				dirty = true;
 			}
 		);
 		
@@ -721,6 +828,8 @@ class MenuState extends FlxUIState
 				}
 				refreshLayers();
 				composite();
+				
+				dirty = true;
 			}
 		);
 		
@@ -752,6 +861,9 @@ class MenuState extends FlxUIState
 			layers[i].layer = i;
 			widgets.push(layers[i]);
 			layers[i].isLast = (i == (l - 1));
+			if(i != 0){
+				layers[i].isWater = dataFetcher.waterTerrain.indexOf(layers[i].value) != -1;
+			}
 		}
 		
 		layerList = new FlxUIList(LAYER_X, LAYER_Y, widgets, LAYER_W, layers[0].back.height, "<X> more...", FlxUIList.STACK_HORIZONTAL, 5);
@@ -817,35 +929,18 @@ class MenuState extends FlxUIState
 		lastWave.ID = waveWidgets.length - 1;
 		lastWave.empty = true;
 		waveList.add(lastWave);
+		
+		dirty = true;
 	}
 	
 	private function onSave(){
 		if (lastSavePath != ""){
 			exportData(lastSavePath);
+			dirty = false;
 		}
-	}
-	
-	private function onClearPaths(){
-		dataFetcher.clearPaths();
-		saveData.clear();
-		pathTxt.text = dataFetcher.getPathText();
-		refreshPreview();
-	}
-	
-	private function onSetPath(){
-		promptPath(setDataPath, FileDialogType.OPEN_DIRECTORY);
 	}
 	
 	private function refreshSavePath(){
-		save.update(0);
-		if (lastSavePath != ""){
-			save.active = true;
-			save.alpha = 1.0;
-		}
-		else{
-			save.active = false;
-			save.alpha = 0.25;
-		}
 		refreshPreview();
 	}
 	
@@ -858,64 +953,43 @@ class MenuState extends FlxUIState
 		updatePreview();
 	}
 	
-	private function setDataPath(path:String){
-		var title = "";
-		var body = "";
-		var tt = "No path set";
+	private function onMainMenu()
+	{
 		
-		dataFetcher.setPath(path);
-		
-		switch(dataFetcher.fetchCode){
-			case DataFetchCode.OK:
-				//FlxUI
-			case DataFetchCode.HAS_DEV_NEED_MORE:
-				title = "Base path required";
-				body = dataFetcher.error;
-				alert(title, body, "setPath");
-			case DataFetchCode.HAS_MOD_NEED_BASE:
-				title = "Base path required";
-				body = dataFetcher.error;
-				alert(title, body, "setPath");
-			case DataFetchCode.HAS_NOTHING:
-				title = "Error!";
-				body = dataFetcher.error;
-				tt = "No path set";
-				alert(title, body);
-				tooltips.add(setpath, {
-					title:tt,
-					body:"",
-					style:{
-						titleWidth:200,
-						bodyWidth:200
+		if (dirty){
+			
+			var popup = new YesNoCancelPopup("Unsaved changes", "Save your changes before closing this level?", function(str:String){
+				
+				if (str != "cancel"){
+					if (str == "yes"){
+						onSave();
 					}
-				});
-			case DataFetchCode.NEEDS_ASSETS:
-				title = "Error!";
-				body = dataFetcher.error;
-				tt = "No path set";
-				alert(title, body);
-				tooltips.add(setpath, {
-					title:tt,
-					body:"",
-					style:{
-						titleWidth:200,
-						bodyWidth:200
-					}
-				});
+					FlxG.switchState(new StartState());
+				}
+				
+			});
+			
+			openSubState(popup);
+			
+		}else{
+			FlxG.switchState(new StartState());
 		}
 		
-		pathTxt.text = dataFetcher.getPathText();
-		
-		dataFetcher.sync(saveData);
-		saveData.save();
-		
-		refreshPreview();
-		composite();
 	}
 	
 	private function onExport()
 	{
-		promptPath(exportData);
+		var popup = new TextPopup(saveData.mapID, "Battle ID", function(str:String){
+			
+			var path = Util.safePath(saveData.modPath, "maps");
+			path = Util.safePath(path, str + ".xml");
+			exportData(path);
+			
+		});
+		
+		openSubState(popup);
+		
+		//promptPath(exportData);
 	}
 	
 	private var _mapBmp:BitmapData = null;
@@ -952,7 +1026,8 @@ class MenuState extends FlxUIState
 		
 		for (i in 1...layers.length){
 			if(layers[i].art == "" && layers[i].interactive == ""){
-				var bmp = layers[i].sprite.graphic.bitmap;
+				var bmp = layers[i].getBasicBitmap();
+		
 				img.copyPixels(bmp, bmp.rect, pt, null, null, true);
 				pt.x += bmp.width;
 			}
@@ -1005,6 +1080,7 @@ class MenuState extends FlxUIState
 		var fast:Fast= new Fast(save_xml);
 		
 		var tileStr = '<tiles>';
+		var tileMiddleStr = "";
 		
 		var layerIndex = 0;
 		var artLayerIndex = 0;
@@ -1025,11 +1101,22 @@ class MenuState extends FlxUIState
 					case "water": "water";
 					default: layers[i].value;
 				}
+				var hexcol = color.toHexString(false, true);
 				if (i == 0){
-					tileStr += '<tile rgb="0x000000" tile_sheet="single" value="$value" layer="0"/>';
+					tileMiddleStr += '<tile rgb="0x000000" tile_sheet="single" value="$value" layer="0"/>';
 				}
 				else {
-					tileStr += '<tile rgb="' + color.toHexString(false, true) + '" value="$value" layer="$layerIndex"/>';
+					var doodadBit = "";
+					if (layers[i].hasDoodads()){
+						var hexdoodad = layers[i].getDoodadColor().toHexString(false, true);
+						doodadBit = ' doodad="$hexdoodad" ';
+					}
+					tileMiddleStr += '<tile rgb="$hexcol" $doodadBit value="$value" layer="$layerIndex"/>';
+				}
+				if (layers[i].isWater && layers[i].hasSteppingStones()){
+					
+					var hexstep = layers[i].getSteppingStoneColor().toHexString(false, true);
+					tileStr += '<tweak_tile rgb="$hexstep" look="$hexcol" walk="0x000000" feature="stepping_stone_$value:6"/>';
 				}
 				layerIndex++;
 			}
@@ -1077,7 +1164,7 @@ class MenuState extends FlxUIState
 				tileStr += '<$nodeName id="$id" x="$X" y="$Y"/>';
 			}
 		}
-		tileStr += '</tiles>';
+		tileStr += tileMiddleStr + '</tiles>';
 		artStr += '</artlayers>';
 		interactiveStr += '</features>';
 		
@@ -1170,6 +1257,7 @@ class MenuState extends FlxUIState
 			if (type == null){
 				type = FileDialogType.SAVE;
 			}
+			
 			var openFileDialog = new FileDialog();
 			openFileDialog.onSelect.add(callback);
 			
@@ -1200,9 +1288,8 @@ class MenuState extends FlxUIState
 						hintText.text = layers[i].value;
 					}
 					hintText.visible = true;
-					sigilSprite.visible = false;
 					hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
-					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
+					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 35;
 				}
 				else{
 					if(hintText.text == layers[i].value || hintText.text == layers[i].art){
@@ -1213,32 +1300,29 @@ class MenuState extends FlxUIState
 		}
 		else{
 			if (b){
-				sigilSprite.visible = true;
 				hintText.visible = true;
 				hintText.text = sigilHint;
 				hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
-				hintText.y = layers[i].sprite.y + layers[i].sprite.height + 5;
+				hintText.y = layers[i].sprite.y + layers[i].sprite.height + 50;
 			}
 			else{
 				if (hintText.text == sigilHint){
-					sigilSprite.visible = false;
 					hintText.visible = false;
 				}
 			}
 		}
-		
-		sigilSprite.x = Std.int(hintText.x + (hintText.width - sigilSprite.width) / 2);
-		sigilSprite.y = hintText.y + hintText.height;
 	}
 	
 	private function makeMapLayerFromTileset(tileset:String, layer:Int, category:String)
 	{
+		var category = "";
 		if (tileset == "legal" || tileset == "illegal" || tileset == "water"){
 			var tilesets = [];
 			for (ml in layers){
 				tilesets.push(ml.value);
 			}
-			tileset = dataFetcher.getNextTileset(tileset,tilesets);
+			tileset = dataFetcher.getNextTileset(tileset, tilesets);
+			category = tileset;
 		}
 		
 		if (category == "art" || category == "interactive"){
@@ -1275,6 +1359,10 @@ class MenuState extends FlxUIState
 			l.currDifficulty = meta.difficulty;
 		}
 		
+		if (category == "water"){
+			l.isWater = true;
+		}
+		
 		l.button.onOver.callback = function(){
 			showLayer(l.layer, true);
 		}
@@ -1283,21 +1371,6 @@ class MenuState extends FlxUIState
 		}
 		
 		layers.push(l);
-	}
-	
-	private function makeSettings(){
-		dq1 = new Settings();
-		dq2 = new Settings();
-		
-		dq1.tilesetStyle = "dq1";
-		dq1.tilesPerSquare = 2;
-		dq1.squaresWide = 15;
-		dq1.squaresTall = 14;
-		
-		dq2.tilesetStyle = "dq2";
-		dq2.tilesPerSquare = 1;
-		dq2.squaresWide = 23;
-		dq2.squaresTall = 15;
 	}
 	
 	private function makeBkg(){

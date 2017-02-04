@@ -12,6 +12,7 @@ class SaveData
 	public var devPath2:String = "";
 	public var modPath:String = "";
 	public var installPath:String = "";
+	public var mapID:String = "";
 	
 	public function new()
 	{
@@ -23,16 +24,18 @@ class SaveData
 		devPath2 = "";
 		modPath = "";
 		installPath = "";
+		mapID + "";
 		save();
 	}
 	
 	public function save(){
 		var name = FlxG.save.name;
 		if (FlxG.save.bind("level_editor_data")){
-			setStr("devPath", devPath);
-			setStr("modPath", modPath);
-			setStr("installPath", installPath);
-			setStr("devPath2", devPath2);
+			setStr("devPath", Util.fixDoubleSlash(devPath));
+			setStr("modPath", Util.fixDoubleSlash(modPath));
+			setStr("installPath", Util.fixDoubleSlash(installPath));
+			setStr("devPath2", Util.fixDoubleSlash(devPath2));
+			setStr("mapID", mapID);
 			FlxG.save.flush();
 		}
 		FlxG.save.bind(name);
@@ -41,10 +44,11 @@ class SaveData
 	public function load(){
 		var name = FlxG.save.name;
 		if (FlxG.save.bind("level_editor_data")){
-			devPath = getStr("devPath");
-			devPath2 = getStr("devPath2");
-			modPath = getStr("modPath");
-			installPath = getStr("installPath");
+			devPath = Util.fixDoubleSlash(getStr("devPath"));
+			devPath2 = Util.fixDoubleSlash(getStr("devPath2"));
+			modPath = Util.fixDoubleSlash(getStr("modPath"));
+			installPath = Util.fixDoubleSlash(getStr("installPath"));
+			mapID = getStr("mapID");
 			FlxG.save.flush();
 		}
 		FlxG.save.bind(name);

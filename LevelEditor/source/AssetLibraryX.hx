@@ -21,6 +21,8 @@ class AssetLibraryX extends #if tdrpg_haxe ModAssetLibrary #else AssetLibrary #e
 	public var xExists:String->String->Bool;
 	public var xGetImage:String->Image;
 	public var xGetPath:String->String;
+	public var xGetText:String->String;
+	private var _fallback:DefaultAssetLibrary;
 	
 	public function new(Dir:String, Fallback:DefaultAssetLibrary=null, Dirs:Array<String>=null)
 	{
@@ -29,10 +31,10 @@ class AssetLibraryX extends #if tdrpg_haxe ModAssetLibrary #else AssetLibrary #e
 		#else
 		super();
 		#end
+		_fallback = Fallback;
 	}
 	
 	public override function exists (id:String, type:String):Bool {
-		
 		var s = testStar(id);
 		if (s != "") return super.exists(s, type);
 		
@@ -52,6 +54,16 @@ class AssetLibraryX extends #if tdrpg_haxe ModAssetLibrary #else AssetLibrary #e
 	}
 	
 	
+	public override function getText (id:String):String {
+		var s = testStar(id);
+		if (s != "") return super.getText(s);
+		
+		if (xGetText != null) return xGetText(id);
+		return super.getText(id);
+		
+	}
+	
+	
 	public override function getImage (id:String):Image{
 		var s = testStar(id);
 		if (s != "") return super.getImage(s);
@@ -63,7 +75,6 @@ class AssetLibraryX extends #if tdrpg_haxe ModAssetLibrary #else AssetLibrary #e
 	
 	
 	public override function getPath (id:String):String {
-		
 		var s = testStar(id);
 		if (s != "") return super.getPath(s);
 		

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vbox id="main">
+    <style source="../css/main.css" />
+
+    <script>
+        function testButton1Click() {
+            testButton1.text = "Set from script!";
+        }
+    </script>
+
+    <label text="Hello, world!" style="horizontal-align: center; font-size:35px; color: #888888;" />
+    <image resource="haxeui-core/styles/default/haxeui.png" style="horizontal-align: center;" />
+    <hbox>
+        <button id="testButton1" styleNames="big-button" text="Click Me!" onClick="testButton1Click()" />
+        <button id="testButton2" styleNames="big-button" text="Click Me!" />
+    </hbox>
+</vbox>
