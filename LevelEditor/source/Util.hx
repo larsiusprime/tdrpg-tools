@@ -19,10 +19,12 @@ import lime.ui.FileDialog;
 import lime.ui.FileDialogType;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
+import sys.FileSystem;
 import unifill.CodePoint;
 import unifill.Unifill;
 import flixel.text.FlxText.FlxTextAlign;
 import flixel.addons.ui.FlxUILine.LineAxis;
+import RewardsPicker.RewardStruct;
 
 /**
  * ...
@@ -94,8 +96,71 @@ class Util
 		return arr;
 	}
 	
+	public static function isLineBlank(str:String){
+		var i:Int;
+		for (i in 0...str.length){
+			switch(str.charAt(i)){
+				case " ", "\t", "\r", "\n":
+					//do nothing
+				default:
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	public static function killBlankLines(str:String):String{
+		var lines = Unifill.uSplit(str, "\n");
+		var lastLine = "";
+		var newLines = [];
+		for (i in 0...lines.length){
+			if (i != 0){
+				if (!isLineBlank(lines[i])){
+					newLines.push(lines[i]);
+				}
+			}
+		}
+		var sb:StringBuf = new StringBuf();
+		for (i in 0...newLines.length){
+			sb.add(newLines[i]);
+			if(i != newLines.length-1){
+				sb.add("\n");
+			}
+		}
+		return sb.toString();
+	}
+	
 	public static function xmlify(str:String){
 		return Xml.parse(str).firstElement();
+	}
+	
+	public static function ensurePath(path:String)
+	{
+		if (FileSystem.exists(path) && FileSystem.isDirectory(path)) return;
+		
+		var parent = getParentDir(path);
+		if (parent == null || parent == "" || FileSystem.exists(parent)){
+			//donothing
+		}
+		else{
+			ensurePath(parent);
+		}
+		
+		var stripped = stripExtension(path);
+		var isFile = (stripped != path);
+		
+		if(path != null && path != "" && !isFile){
+			FileSystem.createDirectory(path);
+		}
+	}
+	
+	public static function matchRewards(a:RewardStruct, b:RewardStruct){
+		a.feat = b.feat;
+		a.goal = b.goal;
+		a.type = b.type;
+		a.typePlus = b.typePlus;
+		a.value = b.value;
+		a.valuePlus = b.valuePlus;
 	}
 	
 	public static function getLastFolder(path:String):String

@@ -12,11 +12,15 @@ import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.addons.util.PNGEncoder;
 import flixel.util.FlxColor;
 import flixel.text.FlxText.FlxTextAlign;
+import haxe.xml.Fast;
+import haxe.xml.Printer;
 import lime.system.System;
 import lime.ui.FileDialogType;
 import openfl.Assets;
+import org.zamedev.lib.Utf8Ext;
 import sys.FileSystem;
 import sys.io.File;
+import unifill.Unifill;
 
 /**
  * ...
@@ -239,6 +243,8 @@ class StartState extends FlxUIState
 		saveData.mapID = mapID;
 		saveData.save();
 		
+		saveStuff();
+		
 		FlxG.switchState(new LevelEditState(saveData));
 		
 	}
@@ -247,16 +253,51 @@ class StartState extends FlxUIState
 		
 		var popup = new TextPopup("untitled", "Battle ID", function(str:String){
 			
-			var dqString = Util.dq1.dqString;
+			var dqString = Utf8Ext.toLowerCase(Util.dq1.dqString);
 			
 			var basePng:BitmapData = Assets.getBitmapData("*assets/levels/" + dqString + ".png");
 			var baseXml:String = Assets.getText("*assets/levels/" + dqString + ".xml");
+			var baseBonus:String = Assets.getText("*assets/levels/bonus.xml");
 			
-			var mapID = str;
+			var mapID = Utf8Ext.toLowerCase(str);
 			
-			if (basePng != null && baseXml != null){
-				var outPng = Util.safePath(saveData.modPath, mapID + ".png");
-				var outXml = Util.safePath(saveData.modPath, mapID + ".xml");
+			baseBonus = Util.uReplace(baseBonus, "$ID$", mapID, false);
+			
+			if (basePng != null && baseXml != null && baseBonus != null){
+				var outPng = Util.safePath(saveData.modPath, "maps/"+mapID + ".png");
+				var outXml = Util.safePath(saveData.modPath, "maps/"+mapID + ".xml");
+				
+				var maps = Util.safePath(saveData.modPath, "maps");
+				
+				Util.ensurePath(maps);
+				
+				var outBonus = Util.safePath(saveData.modPath, "_append/xml/bonus.xml");
+				
+				Util.ensurePath(outBonus);
+				
+				var bonusEntryExists = false;
+				if (FileSystem.exists(outBonus)){
+					var xml = new Fast(Util.xmlify(File.getContent(outBonus)));
+					if (xml.hasNode.bonus){
+						for (bonusNode in xml.nodes.bonus){
+							var bid = U.xml_name(bonusNode.x);
+							if (bid == mapID){
+								bonusEntryExists = true;
+								break;
+							}
+						}
+						if (!bonusEntryExists){
+							xml.x.addChild(Util.xmlify(baseBonus));
+							var baseBonusStr = Printer.print(xml.x, true);
+							
+							baseBonusStr = Util.killBlankLines(baseBonusStr);
+							
+							baseBonusStr = Util.uCat('<?xml version="1.0" encoding="utf-8" ?>\n<data>\n', baseBonusStr);
+							File.saveContent(outBonus, baseBonusStr);
+						}
+					}
+				}
+				
 				File.saveBytes(outPng, PNGEncoder.encode(basePng));
 				File.saveContent(outXml, baseXml);
 			}
@@ -341,6 +382,7 @@ class StartState extends FlxUIState
 	
 	private function saveStuff(){
 		saveData.save();
+		Util.dataFetcher.projectData = new ProjectData(saveData.modPath);
 		refreshText();
 	}
 	

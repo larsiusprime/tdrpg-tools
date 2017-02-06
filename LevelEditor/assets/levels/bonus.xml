@@ -1,0 +1,6 @@
+<bonus id="$ID$" title="untitled" description="description goes here" stars="1" color="blue" color_plus="gold" stars_plus="1">
+	<rewards>
+		<reward feat="pass"    type="xp" value="100" type_plus="xp" value_plus="1000" goal="true"/>
+		<reward feat="perfect" type="xp" value="200" type_plus="xp" value_plus="2000" goal="true"/>
+	</rewards>
+</bonus>

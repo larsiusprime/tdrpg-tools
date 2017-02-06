@@ -43,6 +43,8 @@ class DataFetcher
 	public var modPath(default, null):String = "";
 	public var installPath(default, null):String = "";
 	
+	public var projectData:ProjectData;
+	
 	#if tdrpg_haxe
 	public var index:IndexData = null;
 	public var itemIndex:ItemIndex = null;
@@ -182,6 +184,12 @@ class DataFetcher
 		}
 		
 		return tileset;
+	}
+
+	public function getTileCategory(tileset:String):String{
+		if (waterTerrain.indexOf(tileset) != -1) return "water";
+		if (illegalTerrain.indexOf(tileset) != -1) return "illegal";
+		return "";
 	}
 	
 	public function getTileColor(tileset:String):FlxColor{

@@ -64,6 +64,7 @@ class MapLayer extends FlxUIGroup
 	public var isWater(default, set):Bool = false;
 	public var isLast(default,set):Bool = false;
 	public var currDifficulty(default,set):String = "easy";
+	public var hasFocus:Bool = false;
 	
 	public static inline var THE_SCALE:Int = 10;
 	
@@ -197,6 +198,17 @@ class MapLayer extends FlxUIGroup
 		add(sigilWidget);
 		add(interactiveGroup);
 		add(box);
+	}
+	
+	public function clearBlack(){
+		for (yy in 0...sprite.graphic.bitmap.height){
+			for (xx in 0...sprite.graphic.bitmap.width){
+				var pix = sprite.graphic.bitmap.getPixel32(xx, yy);
+				if (pix == FlxColor.BLACK){
+					sprite.graphic.bitmap.setPixel32(xx, yy, FlxColor.TRANSPARENT);
+				}
+			}
+		}
 	}
 	
 	private function updateButtons(){
@@ -498,6 +510,11 @@ class MapLayer extends FlxUIGroup
 	{
 		super.update(elapsed);
 		if (FlxG.mouse.overlaps(button)){
+			
+			if (FlxG.mouse.justPressed || FlxG.mouse.justPressedRight){
+				FlxUI.event("focus_layer", this, null);
+			}
+			
 			var m = getMouseDXY();
 			box.x = button.x + m.x * THE_SCALE-2;
 			box.y = button.y + m.y * THE_SCALE-2;
@@ -617,14 +634,18 @@ class MapLayer extends FlxUIGroup
 	public function onBucket():Bool{
 		if (art != "") return false;
 		var m = getMouseDXY();
-		sprite.graphic.bitmap.floodFill(m.x, m.y, drawColor);
+		if(sprite.graphic.bitmap.getPixel32(m.x,m.y) != drawColor){
+			sprite.graphic.bitmap.floodFill(m.x, m.y, drawColor);
+		}
 		return true;
 	}
 	
 	public function onTurpentine():Bool{
 		if (art != "") return false;
 		var m = getMouseDXY();
-		sprite.graphic.bitmap.floodFill(m.x, m.y, FlxColor.TRANSPARENT);
+		if(sprite.graphic.bitmap.getPixel32(m.x,m.y) != FlxColor.TRANSPARENT){
+			sprite.graphic.bitmap.floodFill(m.x, m.y, FlxColor.TRANSPARENT);
+		}
 		return true;
 	}
 	

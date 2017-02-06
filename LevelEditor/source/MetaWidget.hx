@@ -1,4 +1,5 @@
 package;
+import com.leveluplabs.tdrpg.UI_Recruit.ColorSwatchStruct;
 import flixel.FlxState;
 import flixel.FlxSubState;
 import flixel.addons.ui.FlxUI;
@@ -13,6 +14,8 @@ import flixel.addons.ui.U;
 import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.util.FlxColor;
 import RewardsPicker.RewardStruct;
+import flixel.util.FlxTimer;
+import BattleData.BonusStruct;
 
 /**
  * ...
@@ -22,9 +25,11 @@ class MetaWidget extends FlxUIGroup
 {
 	public static inline var W:Int = 700;
 	public static inline var H:Int = 72;
+	public static inline var H2:Int = 92;
 	
 	public var box:FlxUIGroup;
 	public var meta:MetaEntry;
+	public var project:ProjectData;
 	
 	public var difficulty:FlxUIRadioGroup;
 	public var firstWait:NumberWidget;
@@ -34,9 +39,13 @@ class MetaWidget extends FlxUIGroup
 	
 	private var rewardsButton1:ButtonWidget;
 	private var rewardsButton2:ButtonWidget;
+	private var bonusSettings:ButtonWidget;
 	
-	private var rewards1:RewardStruct;
-	private var rewards2:RewardStruct;
+	public var bonusStruct:BonusStruct;
+	public var rewards1:RewardStruct;
+	public var rewards2:RewardStruct;
+	
+	public static inline var LOCK_ISBONUS:Bool = true;
 	
 	public function new(X:Float=0,Y:Float=0) 
 	{
@@ -44,13 +53,41 @@ class MetaWidget extends FlxUIGroup
 		init();
 	}
 	
-	public function sync(Meta:MetaEntry,refresh:Bool=true){
+	public function syncRewards(r1:RewardStruct, r2:RewardStruct){
+		Util.matchRewards(rewards1, r1);
+		Util.matchRewards(rewards2, r2);
+		rewardsButton1.button.label.text = getRewardText(1);
+		rewardsButton2.button.label.text = getRewardText(2);
+	}
+	
+	public function syncBonus(bd:BonusStruct){
+		
+		bonusStruct.stars = bd.stars;
+		bonusStruct.starsColor = bd.starsColor;
+		bonusStruct.starsPlus = bd.starsPlus;
+		bonusStruct.starsPlusColor = bd.starsPlusColor;
+		bonusStruct.matchRewards(bd.rewards);
+		
+		syncRewards(bd.rewards[0], bd.rewards[1]);
+		
+		refreshBonusSettingsButton();
+	}
+	
+	public function setBonus(b:Bool){
+		meta.infos[0].isBonus = b;
+		isBonus.checked = b;
+		refreshRadios();
+		isBonus.active = !LOCK_ISBONUS;
+		isBonus.alpha = LOCK_ISBONUS ? 0.5 : 1.0;
+	}
+	
+	public function sync(Meta:MetaEntry, refresh:Bool=true){
 		meta = Meta;
 		
 		var i = Util.diffI(meta.difficulty);
 		var info = meta.infos[i];
 		
-		difficulty.selectedId = meta.difficulty;
+		difficulty.selectedId  = meta.difficulty;
 		endlessLevelup.stepper.value = info.endlessLevelup;
 		endless.checked = info.isEndless;
 		isBonus.checked = info.isBonus;
@@ -59,7 +96,6 @@ class MetaWidget extends FlxUIGroup
 		if(refresh){
 			refreshRadios();
 		}
-		
 	}
 	
 	override public function destroy():Void 
@@ -103,10 +139,10 @@ class MetaWidget extends FlxUIGroup
 	{
 		var chrome = new FlxUISprite();
 		chrome.makeGraphic(1, 1, FlxColor.WHITE);
-		chrome.scale.set(W, H);
+		chrome.scale.set(W, H2);
 		chrome.updateHitbox();
 		add(chrome);
-		box = Util.makeBox(W, H);
+		box = Util.makeBox(W, H2);
 		add(box);
 		
 		rewards1 = {
@@ -127,6 +163,13 @@ class MetaWidget extends FlxUIGroup
 			valuePlus:"100"
 		};
 		
+		bonusStruct = new BonusStruct();
+		bonusStruct.stars = 0;
+		bonusStruct.starsColor = "blue";
+		bonusStruct.starsPlus = 0;
+		bonusStruct.starsPlusColor = "blue";
+		bonusStruct.rewards = [rewards1, rewards2];
+		
 		var Y = 20;
 		
 		difficulty = Util.makeRadios(5, 5, ["easy", "normal", "hard"], ["Normal", "Advanced", "Extreme"], 
@@ -145,25 +188,28 @@ class MetaWidget extends FlxUIGroup
 		
 		var X = 100 + dx;
 		
-		isBonus = Util.makeCheckbox(X, Y, "Is bonus level", onChange);
+		isBonus = Util.makeCheckbox(X, Y-10, "Is bonus level", onChange);
 		add(isBonus);
 		
-		endless = Util.makeCheckbox(X, Y + 30, "Endless", onChange);
+		bonusSettings = new ButtonWidget(X, Y+10, 100, 90, "Bonus settings", "...", onChangeBonusSettings);
+		add(bonusSettings);
+		
+		X += dx + 25;
+		
+		endless = Util.makeCheckbox(X, Y-10, "Endless", onChange);
 		add(endless);
 		
-		X += dx + 20;
-		
-		endlessLevelup = new NumberWidget(X, Y, ww, "Endless levelup", 1, 0, 0, 99, 0);
+		endlessLevelup = new NumberWidget(X, Y+15, ww, "Endless levelup", 1, 0, 0, 99, 0);
 		add(endlessLevelup);
 		
-		X += dx + 5;
+		X += dx;
 		
-		rewardsButton1 = new ButtonWidget(X, Y, 140, 64, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
+		rewardsButton1 = new ButtonWidget(X, Y, 140, 90, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
 		add(rewardsButton1);
 		
 		X += dx + 50;
 		
-		rewardsButton2 = new ButtonWidget(X, Y, 140, 64, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
+		rewardsButton2 = new ButtonWidget(X, Y, 140, 90, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
 		add(rewardsButton2);
 	}
 	
@@ -187,7 +233,7 @@ class MetaWidget extends FlxUIGroup
 			}else if (reward.type == "item"){
 				str += reward.value;
 			}
-			str += "/";
+			str += "\n";
 			if (reward.typePlus != "item" && reward.typePlus != "nothing"){
 				if (reward.typePlus == "xp")
 				{
@@ -200,12 +246,38 @@ class MetaWidget extends FlxUIGroup
 			}else if (reward.typePlus == "item"){
 				str += reward.valuePlus;
 			}
-			if (str.length > 14){
-				str = str.substr(0, 14) + "...";
-			}
+			/*if (str.length > 28){
+				str = str.substr(0, 28) + "...";
+			}*/
 			return str;
 		}
 		return "...";
+	}
+	
+	private function onChangeBonusSettings(){
+		
+		var popup = new BonusSettingsPopup(bonusStruct.stars, bonusStruct.starsColor, bonusStruct.starsPlus, bonusStruct.starsPlusColor, function(stars:Float, starsColor:String, starsPlus:Float, starsPlusColor:String){
+			
+			bonusStruct.stars = Std.int(stars);
+			bonusStruct.starsColor = starsColor;
+			bonusStruct.starsPlus = Std.int(starsPlus);
+			bonusStruct.starsPlusColor = starsPlusColor;
+			
+			refreshBonusSettingsButton();
+			
+			new FlxTimer().start(0.01,function(f:FlxTimer){
+				FlxUI.event("bonus_change", null, bonusStruct);
+			});
+		});
+		
+		openPopup(popup);
+	}
+	
+	private function refreshBonusSettingsButton(){
+		
+		var str = bonusStruct.stars + " " + bonusStruct.starsColor + "\n" + bonusStruct.starsPlus + " " + bonusStruct.starsPlusColor;
+		bonusSettings.button.label.text = str;
+		bonusSettings.button.autoCenterLabel();
 	}
 	
 	private function onChangeRewards(i:Int){
@@ -220,14 +292,25 @@ class MetaWidget extends FlxUIGroup
 				rewards2 = reward;
 				rewardsButton2.button.label.text = getRewardText(2);
 			}
+			onRewardChange([rewards1, rewards2]);
 		});
 		
+		openPopup(popup);
+	}
+	
+	private function openPopup(popup:FlxSubState){
 		var s = FlxUI.getLeafUIState();
 		if (Std.is(s, FlxState)){
 			cast(s, FlxState).openSubState(popup);
 		}else if (Std.is(s, FlxSubState)){
 			cast(s, FlxSubState).openSubState(popup);
 		}
+	}
+	
+	private function onRewardChange(arr:Array<RewardStruct>){
+		new FlxTimer().start(0.01,function(f:FlxTimer){
+			FlxUI.event("reward_change", null, arr);
+		});
 	}
 	
 	private function onWaveChange(){
@@ -252,8 +335,7 @@ class MetaWidget extends FlxUIGroup
 	
 	private function refreshRadios()
 	{
-		var i = Util.diffI(meta.difficulty);
-		if (meta.infos[i].isBonus){
+		if (meta.infos[0].isBonus){
 			Util.activateRadios(difficulty, ["normal", "hard"], false);
 			difficulty.selectedId = "easy";
 			meta.difficulty = "easy";
@@ -261,9 +343,6 @@ class MetaWidget extends FlxUIGroup
 			meta.infos[0].isBonus = true;
 			isBonus.checked = true;
 			onWaveChange();
-			if(i != 0){
-				meta.infos[i].isBonus = false;
-			}
 		}else{
 			Util.activateRadios(difficulty, ["easy", "normal", "hard"], true);
 		}

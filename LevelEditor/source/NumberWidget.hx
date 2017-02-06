@@ -33,7 +33,7 @@ class NumberWidget extends FlxUIGroup
 		label.font = "assets/fonts/verdana.ttf";
 		label.color = FlxColor.BLACK;
 		label.alignment = FlxTextAlign.CENTER;
-		label.y = stepper.y;
+		label.y = stepper.height;
 		add(label);
 		
 		stepper.params = ["wave_widget"];

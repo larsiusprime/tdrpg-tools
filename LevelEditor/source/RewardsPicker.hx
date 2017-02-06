@@ -79,13 +79,12 @@ class RewardsPicker extends FlxUISubState
 			
 			criterion = reward.goal;
 			
-			/*
-			if(rewardNum == 1){
-				criterion = "10";
-			}else{
-				criterion = "20";
+			var parsedInt:Null<Int> = Std.parseInt(reward.goal);
+			if (parsedInt == null){
+				parsedInt = 10;
 			}
-			*/
+			criterion = Std.string(parsedInt);
+			
 		}else{
 			freezeCriterion = true;
 			criterionLabel = "Victory status";

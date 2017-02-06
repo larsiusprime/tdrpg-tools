@@ -5,6 +5,7 @@ import com.leveluplabs.tdrpg.BattleFieldUtility;
 import com.leveluplabs.tdrpg.IndexData;
 import com.leveluplabs.tdrpg.enums.TerrainType;
 #end
+import com.leveluplabs.tdrpg.BonusData;
 import flash.display.BitmapData;
 import flash.geom.Point;
 import flash.geom.Rectangle;
@@ -34,6 +35,7 @@ import openfl.display.PNGEncoderOptions;
 import openfl.events.Event;
 import openfl.Assets.AssetType;
 import openfl.utils.ByteArray;
+import org.zamedev.lib.Utf8Ext;
 import sys.FileSystem;
 import sys.io.File;
 import unifill.Unifill;
@@ -42,6 +44,8 @@ import BattleData.WaveData;
 import DataFetcher.DataFetchCode;
 import MetaWidget.MetaInfo;
 import MetaWidget.MetaEntry;
+import RewardsPicker.RewardStruct;
+import BattleData.BonusStruct;
 
 class LevelEditState extends FlxUIState
 {
@@ -53,10 +57,9 @@ class LevelEditState extends FlxUIState
 	private static inline var LAYER_W:Int = 930;
 	
 	private static inline var WAVE_X:Int = 550;
-	private static inline var WAVE_Y:Int = 240;
+	private static inline var WAVE_Y:Int = 210;
 	
 	public var tool:Tool = Tool.Pencil;
-	public var toolFlows:Bool = true;
 	
 	public var dirty(default, set):Bool = false;
 	
@@ -132,6 +135,12 @@ class LevelEditState extends FlxUIState
 	{
 		super.getEvent(id, sender, data, params);
 		switch(id){
+			case "focus_layer":
+				var mapLayer:MapLayer = cast sender;
+				for (layer in layers){
+					layer.hasFocus = false;
+				}
+				mapLayer.hasFocus = true;
 			case "map_sigil_change":
 				var sigilWidget:SigilWidget = cast sender;
 				var i:Int = cast data;
@@ -146,8 +155,6 @@ class LevelEditState extends FlxUIState
 				getSigilHint(i + 1);
 			case "move_map_layer":
 				var i:Int = cast data;
-				
-				trace("move map layer " + i);
 				var layer:MapLayer = cast sender;
 				onMoveLayer(layer, i);
 			case "change_map_layer":
@@ -164,6 +171,10 @@ class LevelEditState extends FlxUIState
 				onAddWave();
 			case "wave_change":
 				onWaveChange();
+			case "reward_change":
+				onRewardChange(cast data);
+			case "bonus_change":
+				onBonusChange(cast data);
 			case FlxUINumericStepper.CHANGE_EVENT, "sigil_change":
 				if (params != null && params.indexOf("wave_widget") != -1){
 					var widget = cast(sender, IFlxUIWidget);
@@ -245,6 +256,29 @@ class LevelEditState extends FlxUIState
 		return dirty;
 	}
 	
+	private function onBonusChange(bonusData:BonusStruct){
+		if (meta.infos[0].isBonus){
+			for (bs in dataFetcher.projectData.bonusData){
+				if (bs.id == saveData.mapID){
+					bs.match(bonusData);
+				}
+			}
+		}
+		dirty = true;
+	}
+	
+	private function onRewardChange(rewards:Array<RewardStruct>){
+		if (meta.infos[0].isBonus){
+			for (bs in dataFetcher.projectData.bonusData){
+				if (bs.id == saveData.mapID){
+					bs.matchRewards(rewards);
+					
+				}
+			}
+		}
+		dirty = true;
+	}
+	
 	private function onWaveChange(){
 		refreshWaves();
 		updatePreview();
@@ -306,20 +340,14 @@ class LevelEditState extends FlxUIState
 		for (i in 0...layers.length){
 			var layer = layers[i];
 			layer.update(elapsed);
-			if (toolFlows && (tool != Bucket && tool != Turpentine)){
+			
+			if (layer.hasFocus){
+				
 				if (layer.button.pressed){
-					doInput(layer);
+					doInput(layer, false);
 				}
 				else if (layer.rightButton.pressed){
 					doInput(layer, true);
-				}
-			}
-			else{
-				if (layer.button.justPressed){
-					doInput(layer, false, true);
-				}
-				else if (layer.rightButton.justPressed){
-					doInput(layer, true, true);
 				}
 			}
 		}
@@ -367,7 +395,7 @@ class LevelEditState extends FlxUIState
 		}
 	}
 	
-	private function doInput(layer:MapLayer, rightClick:Bool = false, justPressed:Bool=false){
+	private function doInput(layer:MapLayer, rightClick:Bool = false, justPressed:Bool = false){
 		var change = false;
 		tempState.sync(layers);
 		
@@ -398,14 +426,11 @@ class LevelEditState extends FlxUIState
 				case Eraser:
 					change = layer.onEraser();
 				case Bucket:
-					if (justPressed)
-					{
-						if(!rightClick){
-							change = layer.onBucket();
-						}
-						else{
-							change = layer.onTurpentine();
-						}
+					if(!rightClick){
+						change = layer.onBucket();
+					}
+					else{
+						change = layer.onTurpentine();
 					}
 				case Turpentine:
 					if (justPressed)
@@ -545,7 +570,6 @@ class LevelEditState extends FlxUIState
 		data = settings;
 		undoBuffer = [];
 		
-		//loadFromData(mapPNG, mapXMLString);
 		var mapPath = Util.safePath(saveData.modPath, "maps");
 		var bmpPath = Util.safePath(mapPath, saveData.mapID + ".png");
 		var xmlPath = Util.safePath(mapPath, saveData.mapID + ".xml");
@@ -569,11 +593,13 @@ class LevelEditState extends FlxUIState
 			if (layer.layer == 0){
 				makeMapLayer(0xFF000000, 0, layer.value, false, "");
 			}else{
-				makeMapLayerFromTileset(layer.value, layer.layer, ""); 
+				var category = dataFetcher.getTileCategory(layer.value);
+				makeMapLayer(layer.rgb, layer.layer, layer.value, true, category);
 			}
 			var ml:MapLayer = layers[layer.layer];
 			var copyBmp = bmps[layer.layer];
 			ml.sprite.graphic.bitmap.copyPixels(copyBmp, copyBmp.rect, new Point());
+			ml.clearBlack();
 		}
 		
 		layers[0].hasSigils = true;
@@ -604,11 +630,6 @@ class LevelEditState extends FlxUIState
 			var pt = bData.ends.get(key);
 			layers[0].onSigilPlace(END_I - 1 + i, pt.x, pt.y);
 		}
-		
-		/*
-		layers[0].onSigilPlace(START_I-1, 0, Std.int(layers[0].squareHeight / 2));
-		layers[0].onSigilPlace(END_I - 1, Std.int(layers[0].squareWidth - 1), Std.int(layers[0].squareHeight / 2));
-		*/
 		
 		getSigilHint(0);
 		
@@ -643,14 +664,39 @@ class LevelEditState extends FlxUIState
 			difficulty:"easy",
 			infos:[getMeta("easy"), getMeta("normal"), getMeta("hard")]
 		};
+		
+		var isBonus = false;
+		var thisBD:BonusStruct = null;
+		for (bd in dataFetcher.projectData.bonusData){
+			if (bd.id == saveData.mapID){
+				isBonus = true;
+				thisBD = bd;
+			}
+		}
+		
+		for (i in 0...meta.infos.length){
+			var metaInfo:MetaInfo = meta.infos[i];
+			metaInfo.firstWait = bData.waves[i].firstWait;
+			metaInfo.isEndless = bData.waves[i].isEndless;
+			metaInfo.endlessLevelup = bData.waves[i].endlessLevelup;
+		}
+		
 		metaWidget = new MetaWidget(WAVE_X, WAVE_Y);
 		add(metaWidget);
 		metaWidget.sync(meta);
 		
+		if(thisBD != null){
+			metaWidget.syncBonus(thisBD);
+		}
+		
+		//syncing rewards for non-bonus levels must come later
+		//metaWidget.syncRewards(dataFetcher.projectData.);
+		
+		metaWidget.setBonus(isBonus);
+		
 		waves = [[],[],[]];
 		waveWidgets = [];
 		
-		trace("bData.waves = " + bData.waves);
 		for (waveData in bData.waves){
 			var diffI = Util.diffToI(waveData.difficulty);
 			for (waveInfo in waveData.waves){
@@ -662,6 +708,15 @@ class LevelEditState extends FlxUIState
 		
 		refreshSavePath();
 		refreshPreview();
+	}
+	
+	private function getRewards():Array<RewardStruct>{
+		for (bd in dataFetcher.projectData.bonusData){
+			if (bd.id == saveData.mapID){
+				return bd.rewards;
+			}
+		}
+		return null;
 	}
 	
 	
@@ -733,7 +788,6 @@ class LevelEditState extends FlxUIState
 		
 		var popup = new TypePopup(arr, "",
 			function(str:String, category:String = ""){
-				trace("str = " + str + " category = " + category);
 				if (category == "art"){
 					layer.interactive = "";
 					layer.art = str;
@@ -892,6 +946,10 @@ class LevelEditState extends FlxUIState
 			add(waveList);
 		}
 		
+		if (waves == null){
+			return;
+		}
+		
 		var ws = waves[diffI()];
 		
 		while (waveWidgets.length < ws.length){
@@ -988,8 +1046,6 @@ class LevelEditState extends FlxUIState
 		});
 		
 		openSubState(popup);
-		
-		//promptPath(exportData);
 	}
 	
 	private var _mapBmp:BitmapData = null;
@@ -1054,7 +1110,38 @@ class LevelEditState extends FlxUIState
 		File.saveBytes(path + ".png", bytes);
 		File.saveContent(path + ".xml", getXMLString());
 		
+		if (meta.infos[0].isBonus){
+			saveBonusData();
+			
+			var basePath = Util.dataFetcher.modPath;
+			var bonusPath = Util.uCat(basePath, "/_append/xml/bonus.xml");
+			Util.ensurePath(bonusPath);
+			File.saveContent(bonusPath, getBonusString());
+		}
+		
 		refreshSavePath();
+	}
+	
+	private function saveBonusData(){
+		var exists = false;
+		for (bd in Util.dataFetcher.projectData.bonusData){
+			if (bd.id == saveData.mapID){
+				exists = true;
+			}
+		}
+		if (!exists){
+			var newBonus = new BonusStruct();
+			
+			newBonus.stars = 0;
+			newBonus.starsColor = "blue";
+			newBonus.starsPlus = 0;
+			newBonus.starsPlusColor = "blue";
+			newBonus.id = saveData.mapID;
+			newBonus.title = saveData.mapID;
+			newBonus.description = "";
+			newBonus.matchRewards([metaWidget.rewards1, metaWidget.rewards2]);
+			Util.dataFetcher.projectData.bonusData.push(newBonus);
+		}
 	}
 	
 	private function tab(i:Int):String
@@ -1065,6 +1152,48 @@ class LevelEditState extends FlxUIState
 			str += tab;
 		}
 		return tab;
+	}
+	
+	private function getBonusString():String
+	{
+		var saveStr:String = '<data>';
+		
+		for (b in dataFetcher.projectData.bonusData){
+			var bstars = b.stars;
+			var bcolor = b.starsColor;
+			var bstarsPlus = b.starsPlus;
+			var bcolorPlus = b.starsPlusColor;
+			var bid = b.id;
+			var btitle = b.title;
+			var bdescription = b.description;
+			var bonusStr:String = '<bonus stars="$bstars" color="$bcolor" stars_plus="$bstarsPlus" color_plus="$bcolorPlus" id="$bid" title="$btitle" description="$bdescription">';
+			bonusStr = Util.uCat(bonusStr, '<rewards>');
+			for (r in b.rewards)
+			{
+				var rfeat = r.feat;
+				var rgoal = r.goal;
+				var rtype = r.type;
+				var rvalue = Utf8Ext.toLowerCase(r.value);
+				var rtypePlus = r.typePlus;
+				var rvaluePlus = Utf8Ext.toLowerCase(r.valuePlus);
+				
+				if (rvalue == "xp") rvalue = "XP";
+				if (rvaluePlus == "xp") rvaluePlus = "XP";
+				
+				var rewardStr:String = '<reward feat="$rfeat" goal="$rgoal" type="$rtype" value="$rvalue" type_plus="$rtypePlus" value_plus="$rvaluePlus"/>';
+				bonusStr = Util.uCat(bonusStr, rewardStr);
+			}
+			bonusStr = Util.uCat(bonusStr, '</rewards>');
+			bonusStr = Util.uCat(bonusStr, "</bonus>");
+			saveStr = Util.uCat(saveStr, bonusStr);
+		}
+		
+		var save_xml:Xml = Xml.parse(saveStr);
+		
+		var outputstr = Printer.print(save_xml,true);
+		var outputstr = '<?xml version="1.0" encoding="utf-8" ?>\n' + outputstr;
+		
+		return outputstr;
 	}
 	
 	private function getMapXML():Fast
@@ -1187,8 +1316,10 @@ class LevelEditState extends FlxUIState
 					continue;
 				}
 				
+				var wlvl_up = meta.infos[i].endlessLevelup;
+				var winfinite = meta.infos[i].isEndless ? ' infinite="true" lvl_up="$wlvl_up" ' : "";
 				var wfirstwait = meta.infos[i].firstWait;
-				waveStr = '<waves first_wait="$wfirstwait" diff="$wdiff">';
+				waveStr = '<waves diff="$wdiff" first_wait="$wfirstwait" $winfinite>';
 				
 				for (wave in ws){
 					var locStr = "";
