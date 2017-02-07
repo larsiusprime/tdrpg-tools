@@ -57,7 +57,7 @@ class LevelEditState extends FlxUIState
 	private static inline var LAYER_W:Int = 930;
 	
 	private static inline var WAVE_X:Int = 550;
-	private static inline var WAVE_Y:Int = 210;
+	private static inline var WAVE_Y:Int = 225;
 	
 	public var tool:Tool = Tool.Pencil;
 	
@@ -209,6 +209,8 @@ class LevelEditState extends FlxUIState
 	
 	//PRIVATE
 	
+	private var locStrs:Map<String,Map<String,String>>;
+	
 	private var addLayerBtn:FlxUIButton;
 	
 	private var previewAvailable:Bool = false;
@@ -217,6 +219,8 @@ class LevelEditState extends FlxUIState
 	private var pathTxt:FlxUIText;
 	private var saveAs:FlxUIButton;
 	private var save:FlxUIButton;
+	private var titleBtn:FlxUIButton;
+	private var blurbBtn:FlxUIButton;
 	private var menu:FlxUIButton;
 	
 	private var saveData:SaveData;
@@ -287,7 +291,7 @@ class LevelEditState extends FlxUIState
 	
 	private function onAddWave(){
 		waves[diffI()].push(getWave());
-		refreshWaves();
+		refreshWaves(true);
 		dirty = true;
 	}
 	
@@ -631,7 +635,7 @@ class LevelEditState extends FlxUIState
 			layers[0].onSigilPlace(END_I - 1 + i, pt.x, pt.y);
 		}
 		
-		getSigilHint(0);
+		getSigilHint(layers[0].sigilWidget.getFirstI()+1);
 		
 		composite();
 		
@@ -659,6 +663,8 @@ class LevelEditState extends FlxUIState
 		
 		saveAs = addBtn(menu.x, menu.y + menu.height + 5, "Save As", onExport);
 		save = addBtn(saveAs.x, saveAs.y + saveAs.height + 5, "Save", onSave);
+		titleBtn = addBtn(save.x, save.y + save.height + 5, "Title...", onTitle);
+		blurbBtn = addBtn(titleBtn.x, titleBtn.y + titleBtn.height + 5, "Blurb...", onBlurb);
 		
 		meta = {
 			difficulty:"easy",
@@ -703,6 +709,9 @@ class LevelEditState extends FlxUIState
 				waves[diffI].push(WaveData.copyWaveInfo(waveInfo));
 			}
 		}
+		
+		locStrs = dataFetcher.getStrMaps();
+		trace("locStrs = " + locStrs);
 		
 		refreshWaves();
 		
@@ -880,7 +889,7 @@ class LevelEditState extends FlxUIState
 					//if there was an interactives layer already, keep it on top
 					onMoveLayer(layers[layers.length - 1], -1);
 				}
-				refreshLayers();
+				refreshLayers(true);
 				composite();
 				
 				dirty = true;
@@ -890,7 +899,7 @@ class LevelEditState extends FlxUIState
 		openSubState(popup);
 	}
 	
-	private function refreshLayers(){
+	private function refreshLayers(autoScroll:Bool=false){
 		
 		var scrollIndex = 0;
 		if (layerList != null){
@@ -925,6 +934,10 @@ class LevelEditState extends FlxUIState
 		
 		layerList.scrollIndex = scrollIndex;
 		
+		if (autoScroll && layerList.amountNext > 0){
+			layerList.scrollIndex++;
+		}
+		
 		var lastLayer = layers[0];
 		
 		for (i in 0...layers.length){
@@ -939,7 +952,7 @@ class LevelEditState extends FlxUIState
 		}
 	}
 	
-	private function refreshWaves()
+	private function refreshWaves(autoScroll:Bool=false)
 	{
 		if (waveList == null){
 			waveList = new FlxUIList(WAVE_X, WAVE_Y+metaWidget.height+20, null, WaveWidget.W, WaveWidget.H * 5);
@@ -988,7 +1001,37 @@ class LevelEditState extends FlxUIState
 		lastWave.empty = true;
 		waveList.add(lastWave);
 		
+		if (autoScroll && waveList.amountNext > 0){
+			waveList.scrollIndex++;
+		}
+		
 		dirty = true;
+	}
+	
+	private function onTitle(){
+		
+		var titleMap = locStrs.get("title");
+		var popup = new LocaleTextPopup(titleMap, "Battle Title", function(texts:Map<String,String>){
+			
+			trace("titleMap = " + texts);
+			dirty = true;
+			
+		});
+		
+		openSubState(popup);
+	}
+	
+	private function onBlurb(){
+		
+		var blurbMap = locStrs.get("blurb");
+		var popup = new LocaleTextPopup(blurbMap, "Battle Blurb", function(texts:Map<String,String>){
+			
+			trace("blurbMap = " + blurbMap);
+			dirty = true;
+			
+		});
+		
+		openSubState(popup);
 	}
 	
 	private function onSave(){
@@ -1110,16 +1153,38 @@ class LevelEditState extends FlxUIState
 		File.saveBytes(path + ".png", bytes);
 		File.saveContent(path + ".xml", getXMLString());
 		
+		var basePath = Util.dataFetcher.modPath;
+		
 		if (meta.infos[0].isBonus){
 			saveBonusData();
 			
-			var basePath = Util.dataFetcher.modPath;
 			var bonusPath = Util.uCat(basePath, "/_append/xml/bonus.xml");
 			Util.ensurePath(bonusPath);
 			File.saveContent(bonusPath, getBonusString());
 		}
 		
+		var localePath = Util.safePath(basePath, "/_append/locales");
+		Util.ensurePath(localePath);
+		
+		writeLocaleStrings("title", localePath, "$"+saveData.mapID.toUpperCase()+"_TITLE");
+		writeLocaleStrings("blurb", localePath, "$"+saveData.mapID.toUpperCase()+"_TEXT");
+		
 		refreshSavePath();
+	}
+	
+	private function writeLocaleStrings(id:String, path:String, flag:String){
+		var map = locStrs.get(id);
+		for (locale in map.keys()){
+			var locPath = Util.safePath(path, locale);
+			Util.ensurePath(locPath);
+			locPath = Util.safePath(locPath, "maps.tsv");
+			if (!FileSystem.exists(locPath)){
+				File.saveContent(locPath, "flag\tcontent\tcomment\n");
+			}
+			var tsvData = File.getContent(locPath);
+			tsvData = Util.appendToTSV(tsvData, flag, map.get(locale));
+			File.saveContent(locPath, tsvData);
+		}
 	}
 	
 	private function saveBonusData(){
@@ -1403,6 +1468,16 @@ class LevelEditState extends FlxUIState
 		#end
 	}
 	
+	private function getTileCategory(value:String):String{
+		var type:String = getTileType(value);
+		return switch(type){
+			case "path": "path";
+			case "wall": "illegal";
+			case "water": "water";
+			default: "legal";
+		}
+	}
+	
 	private function showLayer(i:Int, b:Bool)
 	{
 		if (i > 0)
@@ -1416,11 +1491,12 @@ class LevelEditState extends FlxUIState
 						hintText.text = layers[i].interactive;
 					}
 					else {
-						hintText.text = layers[i].value;
+						hintText.text = layers[i].value + " (" + getTileCategory(layers[i].value) + ")";
+						
 					}
 					hintText.visible = true;
 					hintText.x = Std.int(layers[i].sprite.x + (layers[i].sprite.width - hintText.width)/2);
-					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 35;
+					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 20;
 				}
 				else{
 					if(hintText.text == layers[i].value || hintText.text == layers[i].art){

@@ -1,6 +1,7 @@
 package;
 
 import lime.graphics.Image;
+import lime.text.Font;
 import lime.utils.Bytes;
 import openfl.Assets.AssetLibrary;
 import openfl.display.BitmapData;
@@ -73,6 +74,12 @@ class AssetLibraryX extends #if tdrpg_haxe ModAssetLibrary #else AssetLibrary #e
 		
 	}
 	
+	public override function getFont(id:String):Font{
+		trace("getFont(" + id + ")");
+		var f = super.getFont(id);
+		trace("f = " + f);
+		return f;
+	}
 	
 	public override function getPath (id:String):String {
 		var s = testStar(id);

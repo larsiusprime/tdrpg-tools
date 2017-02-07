@@ -4,6 +4,7 @@ import com.leveluplabs.tdrpg.UU;
 import flash.display.BitmapData;
 import flixel.FlxG;
 import flixel.addons.util.PNGEncoder;
+import openfl.Assets;
 import sys.FileSystem;
 import sys.io.File;
 
@@ -40,6 +41,16 @@ class ModUtil
 		var icon = new BitmapData(512, 512, false, FlxG.random.color());
 		var byteArray = PNGEncoder.encode(icon);
 		File.saveBytes(iconPath, byteArray);
+		
+		var outGfx = Util.safePath(modPath, "_merge/xml/graphics.xml");
+		
+		if (!FileSystem.exists(outGfx)){
+			var outGfxPath = Util.safePath(modPath, "_merge/xml");
+			Util.ensurePath(outGfxPath);
+			var outGfx = Util.safePath(modPath, "_merge/xml/graphics.xml");
+			var baseGraphics:String = Assets.getText("*assets/levels/graphics.xml");
+			File.saveContent(outGfx, baseGraphics);
+		}
 		
 		return true;
 	}

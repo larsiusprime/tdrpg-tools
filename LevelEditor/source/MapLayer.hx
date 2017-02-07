@@ -178,10 +178,13 @@ class MapLayer extends FlxUIGroup
 		add(checkDoodad);
 		checkDoodad.x = X + Std.int((back.width - checkDoodad.width) / 2);
 		
+		//TODO: locking out doodads for now, re-enable later
+		checkDoodad.visible = false;
+		
 		checkSteppingStones = Util.makeCheckbox(X, checkDoodad.y, "Stepping Stones", null);
 		add(checkSteppingStones);
 		checkSteppingStones.x = checkDoodad.x;
-		checkSteppingStones.y = checkDoodad.y + checkDoodad.height;
+		checkSteppingStones.y = checkDoodad.y;// + checkDoodad.height;
 		
 		layer = layer;
 		
@@ -396,12 +399,14 @@ class MapLayer extends FlxUIGroup
 	
 	private function showSprite(b:Bool){
 		if (sprite != null) sprite.visible = b;
+		/*
 		if (checkDoodad != null){
 			checkDoodad.visible = b;
 			if (hasSigils){
 				checkDoodad.visible = false;
 			}
 		}
+		*/
 		if (checkSteppingStones != null){
 			checkSteppingStones.visible = b;
 			if (b){
@@ -503,6 +508,19 @@ class MapLayer extends FlxUIGroup
 				interactiveGroup.visible = false;
 			}
 		}
+		
+		if (checkSteppingStones != null){
+			if(Value){
+				checkSteppingStones.visible = isWater;
+			}else{
+				checkSteppingStones.visible = false;
+			}
+		}
+		
+		if (checkDoodad != null){
+			checkDoodad.visible = false;
+		}
+		
 		return Value;
 	}
 	

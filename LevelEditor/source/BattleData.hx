@@ -101,10 +101,10 @@ class WaveData
 				var starts = [false,false,false,false,false];
 				var ends = [false,false,false,false,false];
 				var startStr = U.xml_str(wave.x, "loc");
-				//var endStr = U.xml_str(xml.x, "ends");
+				var endStr = U.xml_str(xml.x, "ends");
 				
 				var startArr = startStr.split(",");
-				//var endArr = endStr.split(",");
+				var endArr = endStr.split(",");
 				
 				for (start in startArr){
 					var i:Int = switch(start){
@@ -117,18 +117,17 @@ class WaveData
 					}
 					starts[i] = true;
 				}
-				/*
 				for (end in endArr){
 					var i:Int = switch(end){
 						case "a": 0;
-						case "b": 1;
-						case "c": 2;
-						case "d": 3;
-						case "e": 4;
+						//case "b": 1;
+						//case "c": 2;
+						//case "d": 3;
+						//case "e": 4;
 						default: 0;
 					}
 					ends[i] = true;
-				}*/
+				}
 				
 				var info = {
 					type:U.xml_str(wave.x,"type",true),

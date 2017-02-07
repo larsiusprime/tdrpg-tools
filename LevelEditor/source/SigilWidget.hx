@@ -26,6 +26,8 @@ class SigilWidget extends FlxUIGroup
 	public var event:String = "sigil_change";
 	public var code:String = "wave_widget";
 	
+	public var lockExtraEnds:Bool = true;
+	
 	public function new(xx:Int,yy:Int,H:Float) 
 	{
 		super(xx, yy);
@@ -55,11 +57,27 @@ class SigilWidget extends FlxUIGroup
 			var click = new FlxUIButton(X, Y, "", toggleEnd.bind(i));
 			click.resize(sigil.width, sigil.height);
 			click.ID = -1;
-			add(click);
-			add(sigil);
 			click.alpha = 0;
 			X += Std.int(sigil.width + 1);
+			
+			if (lockExtraEnds && i > 0){
+				//don't add them!
+			}else{
+				add(click);
+				add(sigil);
+			}
 		}
+	}
+	
+	public function getFirstI():Int{
+		for (i in 0...10){
+			if (i < 5){
+				if (starts[i]) return i;
+			}else{
+				if (ends[i - 5]) return i;
+			}
+		}
+		return -1;
 	}
 	
 	public function setValues(starts:Array<Bool>, ends:Array<Bool>){
@@ -84,7 +102,7 @@ class SigilWidget extends FlxUIGroup
 	private function toggleStart(i:Int, ?b:Bool){
 		for (j in 0...members.length){
 			var member = members[j];
-			if (member.ID == i){
+			if (member.ID == i && member.ID < 5){
 				var spr:FlxUISprite = cast member;
 				if (b == null){
 					if (allAsRadio){
@@ -107,8 +125,9 @@ class SigilWidget extends FlxUIGroup
 	private function toggleEnd(i:Int, ?b:Bool){
 		for (j in 0...members.length){
 			var member = members[j];
-			if (member.ID == i+5){
+			if (member.ID == i + 5){
 				var spr:FlxUISprite = cast member;
+				
 				if (b == null){
 					if (allAsRadio){
 						turnOff(true, true);
@@ -122,7 +141,6 @@ class SigilWidget extends FlxUIGroup
 					ends[i] = b;
 				}
 				spr.alpha = ends[i] ? 1.0 : 0.25;
-				return;
 			}
 		}
 	}

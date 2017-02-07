@@ -86,6 +86,9 @@ class StartState extends FlxUIState
 		Util.dataFetcher = new DataFetcher(saveData);
 		
 		refreshText();
+		
+		FlxG.mouse.useSystemCursor = true;
+		FlxG.autoPause = false;
 	}
 	
 	private function refreshText(){
@@ -93,6 +96,24 @@ class StartState extends FlxUIState
 		projectText.text = "Project directory: (" + saveData.modPath + ")";
 		
 		initBattleButtons();
+		
+		var pl = getProjectList();
+		
+		if (loadProject != null){
+			if (getProjectList() == null){
+				loadProject.visible = false;
+			}else{
+				loadProject.visible = true;
+			}
+		}
+		
+		if(loadBattle != null){
+			if (getBattleList() == null){
+				loadBattle.visible = false;
+			}else{
+				loadBattle.visible = true;
+			}
+		}
 	}
 	
 	private function initBattleButtons(){
@@ -218,6 +239,7 @@ class StartState extends FlxUIState
 								ModUtil.exportMod(name, title, modPath, Util.dq1.dqString, Util.dq1.dqVersion, true);
 								saveData.modPath = modPath;
 								saveStuff();
+								refreshText();
 							}else{
 								
 							}
@@ -228,6 +250,7 @@ class StartState extends FlxUIState
 					else{
 						saveData.modPath = modPath;
 						saveStuff();
+						refreshText();
 					}
 					
 				});
@@ -257,10 +280,10 @@ class StartState extends FlxUIState
 			
 			var basePng:BitmapData = Assets.getBitmapData("*assets/levels/" + dqString + ".png");
 			var baseXml:String = Assets.getText("*assets/levels/" + dqString + ".xml");
-			var baseBonus:String = Assets.getText("*assets/levels/bonus.xml");
 			
 			var mapID = Utf8Ext.toLowerCase(str);
 			
+			var baseBonus:String = Assets.getText("*assets/levels/bonus.xml");
 			baseBonus = Util.uReplace(baseBonus, "$ID$", mapID, false);
 			
 			if (basePng != null && baseXml != null && baseBonus != null){
@@ -272,30 +295,35 @@ class StartState extends FlxUIState
 				Util.ensurePath(maps);
 				
 				var outBonus = Util.safePath(saveData.modPath, "_append/xml/bonus.xml");
+				var outPath = Util.safePath(saveData.modPath, "_append/xml");
 				
-				Util.ensurePath(outBonus);
+				Util.ensurePath(outPath);
 				
 				var bonusEntryExists = false;
-				if (FileSystem.exists(outBonus)){
-					var xml = new Fast(Util.xmlify(File.getContent(outBonus)));
-					if (xml.hasNode.bonus){
-						for (bonusNode in xml.nodes.bonus){
-							var bid = U.xml_name(bonusNode.x);
-							if (bid == mapID){
-								bonusEntryExists = true;
-								break;
-							}
-						}
-						if (!bonusEntryExists){
-							xml.x.addChild(Util.xmlify(baseBonus));
-							var baseBonusStr = Printer.print(xml.x, true);
-							
-							baseBonusStr = Util.killBlankLines(baseBonusStr);
-							
-							baseBonusStr = Util.uCat('<?xml version="1.0" encoding="utf-8" ?>\n<data>\n', baseBonusStr);
-							File.saveContent(outBonus, baseBonusStr);
+				if (!FileSystem.exists(outBonus)){
+					var newStr = '<?xml version="1.0" encoding="utf-8" ?>\n<data>\n</data>';
+					File.saveContent(outBonus, newStr);
+				}
+				
+				var xml = new Fast(Util.xmlify(File.getContent(outBonus)));
+				if (xml.hasNode.bonus){
+					for (bonusNode in xml.nodes.bonus){
+						var bid = U.xml_name(bonusNode.x);
+						if (bid == mapID){
+							bonusEntryExists = true;
+							break;
 						}
 					}
+				}
+				
+				if (!bonusEntryExists){
+					xml.x.addChild(Util.xmlify(baseBonus));
+					var baseBonusStr = Printer.print(xml.x, true);
+					
+					baseBonusStr = Util.killBlankLines(baseBonusStr);
+					
+					baseBonusStr = Util.uCat('<?xml version="1.0" encoding="utf-8" ?>\n<data>\n', baseBonusStr);
+					File.saveContent(outBonus, baseBonusStr);
 				}
 				
 				File.saveBytes(outPng, PNGEncoder.encode(basePng));
@@ -309,8 +337,7 @@ class StartState extends FlxUIState
 		openSubState(popup);
 	}
 	
-	private function onLoadBattle(){
-		
+	private function getBattleList():Array<String>{
 		var path = Util.safePath(saveData.modPath, "maps");
 		if (FileSystem.exists(path) && FileSystem.isDirectory(path)){
 			var stuff = FileSystem.readDirectory(path);
@@ -326,19 +353,28 @@ class StartState extends FlxUIState
 				}
 			}
 			
-			var popup = new TypePopup(culled, "", function(str:String, category:String){
-				
-				loadMap(str);
-				
-			});
+			if (culled.length == 0) return null;
 			
-			openSubState(popup);
+			return culled;
 		}
+		return null;
+	}
+	
+	private function onLoadBattle()
+	{
+		var culled = getBattleList();
+		
+		var popup = new TypePopup(culled, "", function(str:String, category:String){
+			
+			loadMap(str);
+			
+		});
+		
+		openSubState(popup);
 		
 	}
 	
-	private function onLoadProject(){
-		
+	private function getProjectList():Array<String>{
 		var modPath = saveData.modPath;
 		
 		var basePath = "";
@@ -362,20 +398,41 @@ class StartState extends FlxUIState
 				}
 			}
 			
-			if (culled.length != 0){
-				var lastBit = Util.getLastFolder(modPath);
-				var popup = new TypePopup(culled, lastBit, function(str:String, category:String){
-					
-					modPath = Util.safePath(basePath, str);
-					saveData.modPath = modPath;
-					saveStuff();
-					
-				});
-				openSubState(popup);
-			}
-			else{
-				Util.alert(this, "Error!", "You don't have any projects yet!");
-			}
+			if (culled.length == 0) return null;
+			
+			return culled;
+		}
+		
+		return null;
+	}
+	
+	private function onLoadProject(){
+		
+		var modPath = saveData.modPath;
+		var basePath = "";
+		
+		if (FileSystem.exists(modPath) && FileSystem.isDirectory(modPath)){
+			basePath = Util.getParentDir(modPath);
+		}
+		else{
+			basePath = UU.getDefaultPath("mods");
+		}
+		
+		var culled = getProjectList();
+			
+		if (culled != null){
+			var lastBit = Util.getLastFolder(modPath);
+			var popup = new TypePopup(culled, lastBit, function(str:String, category:String){
+				
+				modPath = Util.safePath(basePath, str);
+				saveData.modPath = modPath;
+				saveStuff();
+				
+			});
+			openSubState(popup);
+		}
+		else{
+			Util.alert(this, "Error!", "You don't have any projects yet!");
 		}
 		
 	}

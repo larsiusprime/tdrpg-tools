@@ -9,6 +9,7 @@ import com.leveluplabs.tdrpg.ItemIndex;
 import com.leveluplabs.tdrpg.enums.ItemClass;
 import com.leveluplabs.tdrpg.enums.TerrainType;
 import firetongue.FireTongue;
+import firetongue.TSV;
 import flash.display.BitmapData;
 import flash.geom.Matrix;
 import flash.geom.Point;
@@ -41,6 +42,7 @@ class DataFetcher
 	public var devPath(default, null):String = "";
 	public var devPath2(default, null):String = "";
 	public var modPath(default, null):String = "";
+	public var mapID(default, null):String = "";
 	public var installPath(default, null):String = "";
 	
 	public var projectData:ProjectData;
@@ -69,6 +71,7 @@ class DataFetcher
 		devPath = saveData.devPath;
 		devPath2 = saveData.devPath2;
 		modPath = saveData.modPath;
+		mapID = saveData.mapID;
 		installPath = saveData.installPath;
 		refresh();
 	}
@@ -84,6 +87,57 @@ class DataFetcher
 	public function setPath(str:String):Void
 	{
 		interpretPath(str);
+	}
+	
+	public function getStrMaps():Map<String,Map<String,String>>
+	{
+		
+		var titleMap = getStrMap("$" + mapID.toUpperCase() + "_TITLE", "maps.tsv");
+		var blurbMap = getStrMap("$" + mapID.toUpperCase() + "_TEXT", "maps.tsv");
+		var map = new Map<String,Map<String,String>>();
+		map.set("title", titleMap);
+		map.set("blurb", blurbMap);
+		return map;
+	}
+	
+	private function getStrMap(flag:String, file:String):Map<String,String>
+	{
+		var map = new Map<String,String>();
+		var path = Util.safePath(modPath, "_append/locales");
+		
+		var locs = tongue.locales.copy();
+		if(FileSystem.exists(path)){
+			var ls = readDirectory(path);
+			
+			for (loc in locs){
+				var filePath = Util.safePath(path, loc + "/" + file);
+				var found = false;
+				if (FileSystem.exists(filePath)){
+					var rawTSV = File.getContent(filePath);
+					var tsv = new TSV(rawTSV);
+					for (row in 0...tsv.grid.length){
+						for (col in 0...tsv.grid[row].length){
+							if (tsv.grid[row][0] == flag){
+								var val = tsv.grid[row][1];
+								if(val != "" && val != null){
+									map.set(loc, val);
+									found = true;
+								}
+							}
+						}
+					}
+				}
+				if (!found){
+					map.set(loc, "");
+				}
+			}
+		}else{
+			for (loc in locs){
+				map.set(loc, "");
+			}
+		}
+		
+		return map;
 	}
 	
 	public function getItems(code:String):{names:Array<String>,labels:Array<String>}
@@ -562,7 +616,19 @@ class DataFetcher
 			var enemies = Util.getFast(file);
 			if (enemies.hasNode.enemy_data && enemies.node.enemy_data.hasNode.enemy){
 				for (enemy in enemies.node.enemy_data.nodes.enemy){
-					_enemyTypes.push(U.xml_name(enemy.x));
+					var hide:Bool = U.xml_bool(enemy.x, "hide", false);
+					var stationary = false;
+					if (enemy.hasNode.type){
+						for (typeNode in enemy.nodes.type){
+							var typeVal = U.xml_str(typeNode.x, "value", true);
+							if (typeVal == "stationary"){
+								stationary = true;
+							}
+						}
+					}
+					if(!hide && !stationary){
+						_enemyTypes.push(U.xml_name(enemy.x));
+					}
 				}
 			}
 		}

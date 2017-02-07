@@ -18,7 +18,7 @@ class TextWidget extends FlxUIGroup
 	public var input:FlxUIInputText;
 	public var label:FlxUIText;
 	
-	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, DefaultValue:String="")
+	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, DefaultValue:String="", Height:Float=0)
 	{
 		super(X, Y);
 		

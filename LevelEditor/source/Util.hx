@@ -1,4 +1,5 @@
 package;
+import firetongue.TSV;
 import flash.display.BitmapData;
 import flixel.FlxObject;
 import flixel.FlxState;
@@ -95,6 +96,57 @@ class Util
 		
 		return arr;
 	}
+	
+	public static function appendToTSV(tsvData:String, flag:String, value:String):String{
+		
+		var tsv = new TSV(tsvData);
+		
+		var found = false;
+		for (row in tsv.grid){
+			if (row[0] == flag){
+				row[1] = value;
+				found = true;
+			}
+		}
+		
+		if (!found){
+			tsv.grid.push([flag, value]);
+		}
+		
+		var str = "";
+		for (i in 0...tsv.fields.length){
+			var field = tsv.fields[i];
+			str = Util.uCat(str, field);
+			if (i != tsv.fields.length - 1){
+				str = Util.uCat(str, "\t");
+			}
+		}
+		
+		var lastChar = Unifill.uCharCodeAt(str, Unifill.uLength(str) - 1);
+		
+		if(lastChar != 10 && lastChar != 13){
+			str = Util.uCat(str, "\n");
+		}
+		
+		for (row in 0...tsv.grid.length){
+			if (tsv.grid[row].length == 0) continue;
+			for (col in 0...tsv.grid[row].length){
+				str = Util.uCat(str, tsv.grid[row][col]);
+				if (col != tsv.grid[row].length - 1){
+					str = Util.uCat(str, "\t");
+				}
+			}
+			if (row != tsv.grid.length - 1){
+				var lastChar = Unifill.uCharCodeAt(str, Unifill.uLength(str) - 1);
+				if(lastChar != 10 && lastChar != 13){
+					str = Util.uCat(str, "\n");
+				}
+			}
+		}
+		
+		return str;
+	}
+	
 	
 	public static function isLineBlank(str:String){
 		var i:Int;
