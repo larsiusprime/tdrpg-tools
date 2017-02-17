@@ -23,7 +23,7 @@ class OpenflTextWidget extends FlxUIGroup
 	public var input:TextField;
 	public var label:FlxUIText;
 	
-	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, DefaultValue:String="", H:Float=0, font:String="verdana.ttf", Multiline:Bool=true, WordWrap:Bool=true, Align:TextFormatAlign=TextFormatAlign.LEFT, Size:Int=12)
+	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, DefaultValue:String="", H:Float=0, font:String="verdana.ttf", Multiline:Bool=true, WordWrap:Bool=true, Align:TextFormatAlign=TextFormatAlign.LEFT, Size:Int=12, AlphaNumeric:Bool=false, LowerCase:Bool=false)
 	{
 		super(X, Y);
 		
@@ -37,6 +37,13 @@ class OpenflTextWidget extends FlxUIGroup
 		input.width = Std.int(W*0.9);
 		input.height = H;
 		input.text = DefaultValue;
+		if (AlphaNumeric){
+			if(LowerCase){
+				input.restrict = "abcdefghijklmnopqrstuvwxyz1234567890";
+			}else{
+				input.restrict = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+			}
+		}
 		
 		FlxG.stage.addChild(input);
 		

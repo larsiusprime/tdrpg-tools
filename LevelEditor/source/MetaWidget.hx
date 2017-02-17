@@ -211,12 +211,12 @@ class MetaWidget extends FlxUIGroup
 		
 		X += dx;
 		
-		rewardsButton1 = new ButtonWidget(X, Y-10, 140, 110, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
+		rewardsButton1 = new ButtonWidget(X, Y-15, 140, 120, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
 		add(rewardsButton1);
 		
 		X += dx + 50;
 		
-		rewardsButton2 = new ButtonWidget(X, Y-10, 140, 110, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
+		rewardsButton2 = new ButtonWidget(X, Y-15, 140, 120, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
 		add(rewardsButton2);
 	}
 	

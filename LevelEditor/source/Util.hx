@@ -54,11 +54,13 @@ class Util
 		dq1.tilesPerSquare = 2;
 		dq1.squaresWide = 15;
 		dq1.squaresTall = 14;
+		dq1.dqFolder = "DefendersQuest";
 		
 		dq2.tilesetStyle = "dq2";
 		dq2.tilesPerSquare = 1;
 		dq2.squaresWide = 23;
 		dq2.squaresTall = 15;
+		dq2.dqFolder = "DefendersQuestII";
 	}
 	
 	public static function abc2num(str:String):Int{
@@ -160,7 +162,7 @@ class Util
 					if (culled.indexOf(editorID) == -1){
 						culled.push(editorID);
 						names.push(itemClass + "_" + itemType+"_" + itemLevel);
-						labels.push(itemClass + "_" + itemType+"_" + itemLevel);
+						labels.push(Util.stripID(editorID));
 					}
 				}
 			}
@@ -343,23 +345,18 @@ class Util
 	
 	public static function appendToTSV(tsvData:String, flag:String, value:String, value2:String=null):String{
 		
-		trace("appendToTSV");
-		trace(tsvData);
-		trace(":::"+flag + "," + value+"," + value2);
-		
 		if (tsvData == null || tsvData == ""){
 			var str = Util.uCat(flag, "\t");
 			str = Util.uCat(str, value);
-			str = Util.uCat(str, "\t");
 			if (value2 != null){
-				str = Util.uCat(str, value2);
 				str = Util.uCat(str, "\t");
+				str = Util.uCat(str, value2);
 			}
 			str = Util.uCat(str, "\n");
 			return str;
 		}
 		
-		var tsv = new TSV(tsvData);
+		var tsv = new NoFieldTSV(tsvData);
 		
 		if (tsv.grid == null){
 			tsv.grid = [];
@@ -376,9 +373,6 @@ class Util
 			}
 		}
 		
-		trace("tsv.grid = " + tsv.grid);
-		trace("found = " + found);
-		
 		if (!found){
 			if(value2 == null){
 				tsv.grid.push([flag, value]);
@@ -392,7 +386,7 @@ class Util
 		
 	public static function removeFromTSV(tsvData:String, flag:String):String{
 		
-		var tsv = new TSV(tsvData);
+		var tsv = new NoFieldTSV(tsvData);
 		
 		var found = false;
 		for (i in 0...tsv.grid.length){
@@ -506,12 +500,12 @@ class Util
 	
 	public static function fixID(str:String):String{
 		str = stripID(str);
-		str = Util.getModID() + "_" + str;
+		str = Util.getModID() + "~" + str;
 		return str;
 	}
 	
 	public static function stripID(str:String){
-		var modID = Util.getModID()+"_";
+		var modID = Util.getModID()+"~";
 		if (str.indexOf(modID) == 0){
 			var ulen = Unifill.uLength(str);
 			var otherlen = Unifill.uLength(modID);

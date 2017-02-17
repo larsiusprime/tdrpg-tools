@@ -896,7 +896,7 @@ class MapLayer extends FlxUIGroup
 			var sigil = sigils[i];
 			if (sigil.x != -1 && sigil.y != -1){
 				var sprite = sigilGroup.members[i];
-				sprite.loadGraphic("*assets/images/sigils.png",true,48,48);
+				sprite.loadGraphic("*assets/gfx/_hd/editor/sigils.png",true,48,48);
 				sprite.animation.frameIndex = i;
 				if(sprite.graphic != null){
 					var S = THE_SCALE / (sprite.graphic.height/2);

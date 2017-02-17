@@ -27,7 +27,7 @@ class TextPopup extends FlxUISubState
 	private var existing:String;
 	private var callback:String->Void;
 	
-	public function new(Value:String, Label:String, Callback:String->Void) 
+	public function new(Value:String, Label:String, Callback:String->Void, AlphaNumeric:Bool=false, LowerCase:Bool=false) 
 	{
 		super(0xB0000000);
 		
@@ -39,7 +39,7 @@ class TextPopup extends FlxUISubState
 		back.y = Std.int((FlxG.height - back.height) / 2);
 		add(back);
 		
-		var value = new OpenflTextWidget(0, 0, 300, Label, Value, 32, "verdana.ttf", false, false, TextFormatAlign.CENTER, 18);
+		var value = new OpenflTextWidget(0, 0, 300, Label, Value, 32, "verdana.ttf", false, false, TextFormatAlign.CENTER, 18, AlphaNumeric, LowerCase);
 		value.input.setSelection(0, value.input.length);
 		//value.input.dispatchEvent(new FocusEvent(FocusEvent.FOCUS_IN, false, false, value.input, false));
 		FlxG.stage.focus = value.input;

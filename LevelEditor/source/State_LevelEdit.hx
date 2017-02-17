@@ -69,6 +69,8 @@ class State_LevelEdit extends FlxUIState
 	public function new(saveData_:SaveData)
 	{
 		saveData = saveData_;
+		Util.dataFetcher.loadMapID(saveData);
+		
 		super();
 	}
 	
@@ -1214,7 +1216,7 @@ class State_LevelEdit extends FlxUIState
 			
 			}
 			
-		});
+		}, true, true);
 		
 		openSubState(popup);
 	}
@@ -1267,6 +1269,7 @@ class State_LevelEdit extends FlxUIState
 	private function exportData(path:String, newID:String){
 		
 		saveData.mapID = newID;
+		Util.dataFetcher.loadMapID(saveData);
 		
 		lastSavePath = "";
 		
@@ -1333,8 +1336,14 @@ class State_LevelEdit extends FlxUIState
 				File.saveContent(locPath, "");
 			}
 			var tsvData = File.getContent(locPath);
+			if (locale == "en-US"){
+				trace("flag = (" + flag + ") value = (" + map.get(locale) + ")");
+			}
 			tsvData = Util.appendToTSV(tsvData, flag, map.get(locale));
 			File.saveContent(locPath, tsvData);
+			if(locale == "en-US"){
+				trace("tsvData now = \n(" + tsvData+")");
+			}
 		}
 	}
 	

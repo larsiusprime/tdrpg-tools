@@ -67,6 +67,14 @@ class DataFetcher
 		load(saveData);
 	}
 	
+	public function loadModPath(saveData:SaveData){
+		modPath = saveData.modPath;
+	}
+	
+	public function loadMapID(saveData:SaveData){
+		mapID = saveData.mapID;
+	}
+	
 	public function load(saveData:SaveData){
 		devPath = saveData.devPath;
 		devPath2 = saveData.devPath2;
@@ -91,8 +99,8 @@ class DataFetcher
 	
 	public function getStrMaps():Map<String,Map<String,String>>
 	{
-		var titleMap = getStrMap("$" + mapID.toUpperCase() + "_TITLE", "maps.tsv");
-		var blurbMap = getStrMap("$" + mapID.toUpperCase() + "_TEXT", "maps.tsv");
+		var titleMap = getStrMap("$" + mapID.toUpperCase() + "_TITLE", "maps.tsv",1);
+		var blurbMap = getStrMap("$" + mapID.toUpperCase() + "_TEXT", "maps.tsv",1);
 		var map = new Map<String,Map<String,String>>();
 		map.set("title", titleMap);
 		map.set("blurb", blurbMap);
@@ -123,6 +131,7 @@ class DataFetcher
 		var path = Util.safePath(modPath, "_append/locales");
 		
 		var locs = tongue.locales.copy();
+		var notExist = false;
 		if(FileSystem.exists(path)){
 			var ls = readDirectory(path);
 			
@@ -131,7 +140,7 @@ class DataFetcher
 				var found = false;
 				if (FileSystem.exists(filePath)){
 					var rawTSV = File.getContent(filePath);
-					var tsv = new TSV(rawTSV);
+					var tsv = new NoFieldTSV(rawTSV);
 					for (row in 0...tsv.grid.length){
 						for (col in 0...tsv.grid[row].length){
 							
@@ -146,16 +155,36 @@ class DataFetcher
 					}
 				}
 				if (!found){
-					map.set(loc, "");
+					notExist = true;
+					map.set(loc, "???");
 				}
 			}
 		}else{
 			for (loc in locs){
-				map.set(loc, "");
+				notExist = true;
+				map.set(loc, "???");
 			}
 		}
 		
+		if (notExist){
+			writeLocaleStringMap(map, path, file, flag);
+		}
+		
 		return map;
+	}
+	
+	public function writeLocaleStringMap(map:Map<String,String>, path:String, file:String, flag:String){
+		for (locale in map.keys()){
+			var locPath = Util.safePath(path, locale);
+			Util.ensurePath(locPath);
+			locPath = Util.safePath(locPath, file);
+			if (!FileSystem.exists(locPath)){
+				File.saveContent(locPath, "");
+			}
+			var tsvData = File.getContent(locPath);
+			tsvData = Util.appendToTSV(tsvData, flag, map.get(locale));
+			File.saveContent(locPath, tsvData);
+		}
 	}
 	
 	public function getItems(code:String):{names:Array<String>,labels:Array<String>}
@@ -428,10 +457,12 @@ class DataFetcher
 		var hasDev2 = devPath2 != "" && devPath2 != null;
 		
 		var hasInstall = installPath != "" && installPath != null;
+		
 		#if tdrpg_haxe
 		if(dLibrary == null){
 			dLibrary = cast lime.Assets.libraries.get("default");
 		}
+		
 		xLibrary = new AssetLibraryX(modPath, dLibrary);
 		xLibrary.xExists = getExists;
 		xLibrary.xGetBytes = getBytes;

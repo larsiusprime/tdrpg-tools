@@ -48,7 +48,7 @@ class ModUtil
 			var outGfxPath = Util.safePath(modPath, "_merge/xml");
 			Util.ensurePath(outGfxPath);
 			var outGfx = Util.safePath(modPath, "_merge/xml/graphics.xml");
-			var baseGraphics:String = Assets.getText("*assets/levels/graphics.xml");
+			var baseGraphics:String = BakedAssets.getTxt("graphics.xml");
 			File.saveContent(outGfx, baseGraphics);
 		}
 		

@@ -70,6 +70,9 @@ class State_Start extends FlxUIState
 		add(loadProject);
 		
 		initInstallPath(init);
+		
+		FlxG.autoPause = false;
+		FlxG.mouse.useSystemCursor = true;
 	}
 	
 	private function makeText(){
@@ -155,14 +158,27 @@ class State_Start extends FlxUIState
 		saveData.save();
 		saveStuff();
 		
-		var popup = new TextPopup("untitled", "Item ID", function(str:String){
+		Util.dataFetcher.loadModPath(saveData);
+		
+		var popup = new TextPopup("item0", "Item ID", function(str:String){
 			
 			var basePath = Util.safePath(saveData.modPath, "_append/xml");
 			Util.ensurePath(basePath);
 			
 			var itemNode = Util.loadItemNode(str);
 			
-			if (itemNode != null){
+			if (Util.stripID(str).toLowerCase() == Util.getModID().toLowerCase()){
+				
+				var popup = new YesPopup("Error!", "An item may not have the same ID as your project (\"" + str + "\")", function(){
+					
+					onNewItem();
+					
+				});
+				
+				openSubState(popup);
+				
+			}
+			else if (itemNode != null){
 				
 				var popup = new YesNoPopup("Confirm overwrite", "An existing item was found with ID \""+str+"\"\nOverwrite it?", function(b:Bool){
 					
@@ -180,7 +196,7 @@ class State_Start extends FlxUIState
 				
 			}
 			
-		});
+		}, true, true);
 		
 		openSubState(popup);
 	}
@@ -220,16 +236,37 @@ class State_Start extends FlxUIState
 		var itemEntry = Util.xmlify('<weapon type="sword" lvl="$fixID" bonus="1" name="$nameFlag" cost="1" description="$descFlag" editor_id="$fixID"/>');
 		var itemOut = Util.appendToXML(itemRaw, itemEntry);
 		
+		var bigIcon = Assets.getBitmapData("*assets/gfx/_hd/editor/weapon_sword_big.png");
+		var smallIcon = Assets.getBitmapData("*assets/gfx/_hd/editor/weapon_sword.png");
+		
+		var baseImgPath = Util.safePath(saveData.modPath, "gfx/_hd/items/custom");
+		
+		Util.ensurePath(baseImgPath);
+		
+		var bigPath = Util.safePath(baseImgPath, fixID+"_big.png");
+		var smallPath = Util.safePath(baseImgPath, fixID+".png");
+		
+		//save custom graphics
+		var bytes = PNGEncoder.encode(bigIcon);
+		File.saveBytes(bigPath, bytes);
+		
+		bytes = PNGEncoder.encode(smallIcon);
+		File.saveBytes(smallPath, bytes);
+		
+		//save data
 		File.saveContent(itemPath, itemOut);
+		
+		Util.dataFetcher.loadModPath(saveData);
+		
 		FlxG.switchState(new State_ItemEdit(theID));
 	}
 	
 	private function initInstallPath(callback:Void->Void){
 		
 		if (saveData.installPath == "" || saveData.installPath == null){
-			saveData.installPath = Util.fixDoubleSlash(Util.joinPath([System.applicationDirectory, "assets"]));
+			saveData.installPath = System.applicationDirectory;
 			
-			if (testInstallPath(saveData.installPath)){
+			if (!testInstallPath(saveData.installPath)){
 				saveData.installPath = "";
 			}
 		}
@@ -250,12 +287,21 @@ class State_Start extends FlxUIState
 			testPath = Util.getParentDir(testPath);
 		}
 		
-		var isInstallPath = false;
-		if(FileSystem.exists(testPath) && FileSystem.isDirectory(testPath)){
+		UU.debugLog("testPath = " + testPath,true);
+		
+		if (FileSystem.exists(testPath) && FileSystem.isDirectory(testPath)){
+			
 			var files = FileSystem.readDirectory(testPath);
+			UU.debugLog("files = " + files,true);
 			for (file in files){
-				if (file.indexOf("DefendersQuest") != -1 && file.indexOf(".exe") != -1){
-					return true;
+				if (file.indexOf("DefendersQuest") != -1){
+					var fullFilePath = Util.safePath(testPath, file);
+					UU.debugLog("fullFilePath = " + fullFilePath, true);
+					if (FileSystem.exists(fullFilePath) && FileSystem.isDirectory(fullFilePath) == false)
+					{
+						UU.debugLog("FOUND DQ!!!", true);
+						return true;
+					}
 				}
 			}
 		}
@@ -265,10 +311,12 @@ class State_Start extends FlxUIState
 	private function saveInstallPath(path:String){
 		
 		if (Util.pathEndsInAssets(path) == false){
-			path = Util.joinPath([path, "assets"]);
+			path = Util.fixDoubleSlash(Util.joinPath([path, "assets"]));
 		}
 		
 		saveData.installPath = path;
+		
+		UU.debugLog("installPath = " + path, true);
 		
 		if (Util.dataFetcher == null){
 			Util.dataFetcher = new DataFetcher(saveData);
@@ -282,6 +330,9 @@ class State_Start extends FlxUIState
 	private function detectInstallPath(path:String="", message:String="", finished:Void->Void)
 	{
 		var isInstallPath = testInstallPath(path);
+		
+		UU.debugLog("a   is install path = " + isInstallPath, true);
+		
 		if (isInstallPath){
 			saveInstallPath(path);
 			if (finished != null){
@@ -311,16 +362,35 @@ class State_Start extends FlxUIState
 		
 		var modPath = UU.getDefaultPath("mods");
 		
+		var subPath = Util.getLastFolder(Util.getParentDir(modPath));
+		var sub2Path = Util.getLastFolder(Util.getParentDir(Util.getParentDir(modPath)));
+		var sub3Path = Util.getLastFolder(Util.getParentDir(Util.getParentDir(Util.getParentDir(modPath))));
+		
+		var newPath = modPath;
+		
+		//If default Documents\LevelEditor directory detected, make it point to the DefendersQuest mod directory instead
+		if (subPath == "LevelEditor" && sub2Path == "LevelUpLabs" && sub3Path == "Documents"){
+			
+			var ppPath = Util.getParentDir(Util.getParentDir(modPath));
+			
+			newPath = Util.safePath(ppPath, Util.dq1.dqFolder);
+			newPath = Util.safePath(newPath, Util.getLastFolder(modPath));
+			
+		}
+		
+		modPath = newPath;
+		
 		var name = "";
 		var title = "";
 		
-		var popup = new TextPopup("untitled", "Project name", function(str:String){
+		var popup = new TextPopup("untitled", "Project ID", function(str:String){
 			if (str == null || str == ""){
-				Util.alert(this, "Error!", "Project name can't be blank!");
+				Util.alert(this, "Error!", "Project ID can't be blank!");
 			}else{
 				name = str;
 				modPath = Util.safePath(modPath, str);
-				var popup = new TextPopup(str, "Project title", function(str:String){
+				
+				var popup = new TextPopup(str, "Project Title", function(str:String){
 					
 					title = str;
 					var success = ModUtil.exportMod(name, title, modPath, Util.dq1.dqString, Util.dq1.dqVersion, false);
@@ -332,6 +402,7 @@ class State_Start extends FlxUIState
 								saveData.modPath = modPath;
 								saveStuff();
 								refreshText();
+								
 							}else{
 								
 							}
@@ -343,17 +414,20 @@ class State_Start extends FlxUIState
 						saveData.modPath = modPath;
 						saveStuff();
 						refreshText();
+						
 					}
 					
 				});
 				openSubState(popup);
 			}
 			
-		});
+		},true, true);
 		openSubState(popup);
 	}
 	
 	private function doLoadItem(itemID:String){
+		
+		Util.dataFetcher.loadModPath(saveData);
 		
 		FlxG.switchState(new State_ItemEdit(itemID));
 		
@@ -368,23 +442,33 @@ class State_Start extends FlxUIState
 		
 		saveStuff();
 		
+		Util.dataFetcher.loadMapID(saveData);
+		
 		FlxG.switchState(new State_LevelEdit(saveData));
 		
 	}
 	
 	private function onNewBattle(){
 		
-		trace('new battle');
-		var popup = new TextPopup("untitled", "Battle ID", function(str:String){
+		var popup = new TextPopup("battle0", "Battle ID", function(str:String){
 		
 			var mapID = Util.fixID(Utf8Ext.toLowerCase(str));
 			var outXml = Util.safePath(saveData.modPath, "maps/"+mapID+ ".xml");
 			
-			trace('outXml = ' + outXml);
+			trace("str = " + str + " mod = " + Util.getModID());
 			
-			if (FileSystem.exists(outXml)){
+			if (Util.stripID(str).toLowerCase() == Util.getModID().toLowerCase()){
 				
-				trace("exists");
+				var popup = new YesPopup("Error!", "A battle may not have the same ID as your project (\"" + str + "\")", function(){
+					
+					onNewBattle();
+					
+				});
+				
+				openSubState(popup);
+				
+			}
+			else if (FileSystem.exists(outXml)){
 				
 				var popup = new YesNoPopup("Confirm overwrite", "An existing battle was found with ID \""+str+"\"\nOverwrite it?", function(b:Bool){
 					
@@ -403,7 +487,7 @@ class State_Start extends FlxUIState
 				
 			}
 			
-		});
+		},true, true);
 		
 		openSubState(popup);
 	}
@@ -414,12 +498,13 @@ class State_Start extends FlxUIState
 		
 		var dqString = Utf8Ext.toLowerCase(Util.dq1.dqString);
 		
-		var basePng:BitmapData = Assets.getBitmapData("*assets/levels/" + dqString + ".png");
-		var baseXml:String = Assets.getText("*assets/levels/" + dqString + ".xml");
+		var basePng:BitmapData = BakedAssets.getBMP(dqString+".png");
+		var baseXml:String = BakedAssets.getTxt(dqString + ".xml");
 		
 		var mapID = Utf8Ext.toLowerCase(str);
 		
-		var baseBonus:String = Assets.getText("*assets/levels/bonus.xml");
+		var baseBonus:String = BakedAssets.getTxt("bonus.xml");
+		
 		baseBonus = Util.uReplace(baseBonus, "$ID$", mapID, false);
 		
 		if (basePng != null && baseXml != null && baseBonus != null){
@@ -494,6 +579,8 @@ class State_Start extends FlxUIState
 					}
 				}
 			}
+			
+			trace("culled = " + culled);
 			
 			if (culled.length == 0) return null;
 			
@@ -595,6 +682,7 @@ class State_Start extends FlxUIState
 	private function saveStuff(){
 		saveData.save();
 		Util.dataFetcher.projectData = new ProjectData(saveData.modPath);
+		Util.dataFetcher.loadModPath(saveData);
 		refreshText();
 	}
 	

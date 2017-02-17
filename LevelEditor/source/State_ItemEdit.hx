@@ -72,6 +72,7 @@ class State_ItemEdit extends FlxUIState
 	{
 		itemID = Util.fixID(theID);
 		itemLoadID = Util.fixID(theID);
+		
 		super();
 	}
 	
@@ -108,8 +109,6 @@ class State_ItemEdit extends FlxUIState
 		var itemNode:Fast = Util.loadItemNode(itemID);
 		
 		var isNew = false;
-		
-		trace("load item " + itemID);
 		
 		var specialStr:String = "";
 		if (itemNode != null){
@@ -192,8 +191,8 @@ class State_ItemEdit extends FlxUIState
 		var box2Btn = new ButtonWidget(box2.x-2, box2.y+box2.height+2, box2.width+4, 60, "Small icon", "Change...", onChangeSmallIcon);
 		add(box2Btn);
 		
-		bigIcon = new FlxSprite(box.x + 2, box.y + 2, "*assets/images/" + itemClass + "_" + itemType + "_big.png");
-		smallIcon = new FlxSprite(box2.x + 2, box2.y + 2, "*assets/images/" + itemClass + "_" + itemType+".png");
+		bigIcon = new FlxSprite(box.x + 2, box.y + 2, "*assets/gfx/_hd/editor/" + itemClass + "_" + itemType + "_big.png");
+		smallIcon = new FlxSprite(box2.x + 2, box2.y + 2, "*assets/gfx/_hd/editor/" + itemClass + "_" + itemType+".png");
 		bigIcon.scale.set(2, 2);
 		smallIcon.scale.set(2, 2);
 		bigIcon.updateHitbox();
@@ -245,6 +244,7 @@ class State_ItemEdit extends FlxUIState
 		fixItemType();
 		
 		var itemPath = Util.safePath(Util.dataFetcher.modPath, "gfx/_hd/items/custom");
+		
 		if (FileSystem.exists(itemPath)){
 			var bigPath = Util.safePath(itemPath, itemID + "_big.png");
 			var smallPath = Util.safePath(itemPath, itemID + ".png");
@@ -275,11 +275,11 @@ class State_ItemEdit extends FlxUIState
 	
 	private function onSaveAs(){
 		
-		var popup = new TextPopup(itemID, "Item ID", function(str:String){
+		var popup = new TextPopup(Util.stripID(itemID), "Item ID", function(str:String){
 			
 			str = Utf8Ext.toLowerCase(str);
 			
-			var node = Util.loadItemNode(str);
+			var node = Util.loadItemNode(Util.fixID(str));
 			
 			if (node != null){
 				
@@ -305,7 +305,7 @@ class State_ItemEdit extends FlxUIState
 			
 			}
 			
-		});
+		}, true, true);
 		
 		openSubState(popup);
 		
@@ -464,13 +464,10 @@ class State_ItemEdit extends FlxUIState
 			if (el.has.editor_id){
 				var elID:String = U.xml_str(el.x, "editor_id", true);
 				
-				trace(elID + " VS " + itemLoadID);
 				if (elID == itemLoadID){
 					
 					//remove clashing item entries if found
 					itemXML.x.removeChild(el.x);
-					
-					trace("KILL");
 				}
 			}
 		}
@@ -541,14 +538,14 @@ class State_ItemEdit extends FlxUIState
 	
 	private function onID(){
 		
-		var popup = new TextPopup(Util.stripID(itemID), "Item Identifier", function(str:String){
+		var popup = new TextPopup(Util.stripID(itemID), "Item ID", function(str:String){
 			
 			itemLevel = str;
 			itemID = Util.fixID(str);
 			levelBtn.button.label.text = str;
 			dirty = true;
 			
-		});
+		}, true, true);
 		openSubState(popup);
 	}
 	
@@ -599,10 +596,10 @@ class State_ItemEdit extends FlxUIState
 		}
 		typeBtn.button.label.text = types[0];
 		if (!hasArtBig){
-			bigIcon.loadGraphic("*assets/images/" + itemClass + "_" + itemType+"_big.png");
+			bigIcon.loadGraphic("*assets/gfx/_hd/editor/" + itemClass + "_" + itemType+"_big.png");
 		}
 		if (!hasArt){
-			smallIcon.loadGraphic("*assets/images/" + itemClass + "_" + itemType+".png");
+			smallIcon.loadGraphic("*assets/gfx/_hd/editor/" + itemClass + "_" + itemType+".png");
 		}
 		getStatWidget();
 		
@@ -625,7 +622,6 @@ class State_ItemEdit extends FlxUIState
 	
 	private function onItemType(){
 		var types = getItemTypes();
-		trace("types = " + types);
 		if (types == null) return;
 		var popup = new TypePopup(types, itemType, function(str:String, category:String){
 			

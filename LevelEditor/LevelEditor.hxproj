@@ -19,6 +19,7 @@
     <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,7" />
     <class path="T:\git\zame-haxe-stringutils" />
     <class path="T:\git\flixel-editors" />
+    <class path="T:\git\crashdumper" />
     <class path="T:\git\tdrpg-haxe\code" />
     <class path="C:\HaxeToolkit\haxe\lib\actuate\1,8,6" />
     <class path="T:\git\flixel" />
@@ -38,7 +39,7 @@
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="unifill=0.4.1&#xA;hscript=2.0.7&#xA;zame-haxe-stringutils=0.0.0&#xA;flixel-editors=0.0.0&#xA;tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;fireglyph=0.0.0&#xA;firetongue=2.0.0&#xA;monologue-reader=0.0.0&#xA;safeparse=0.0.0&#xA;haxeui-core=0.0.0&#xA;haxeui-openfl=0.0.0&#xA;HXCPP_QUIET&#xA;no-traces&#xA;openfl-next&#xA;tools=2.9.9&#xA;NAPE_NO_INLINE&#xA;FLX_NO_DEBUG&#xA;SHOW_FPS&#xA;no-compilation&#xA;NAPE_RELEASE_BUILD&#xA;native&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;openfl-native&#xA;FLX_NO_SOUND_TRAY&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="unifill=0.4.1&#xA;hscript=2.0.7&#xA;zame-haxe-stringutils=0.0.0&#xA;flixel-editors=0.0.0&#xA;crashdumper=0.0.1&#xA;tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;fireglyph=0.0.0&#xA;firetongue=2.0.0&#xA;monologue-reader=0.0.0&#xA;safeparse=0.0.0&#xA;haxeui-core=0.0.0&#xA;haxeui-openfl=0.0.0&#xA;openfl-next&#xA;network-sandbox&#xA;SHOW_FPS&#xA;native&#xA;openfl-native&#xA;HXCPP_QUIET&#xA;no-traces&#xA;tools=2.9.9&#xA;HXCPP_CHECK_POINTER&#xA;HXCPP_STACK_TRACE&#xA;NAPE_NO_INLINE&#xA;crashdumper&#xA;FLX_NO_DEBUG&#xA;HXCPP_STACK_LINE&#xA;no-compilation&#xA;NAPE_RELEASE_BUILD&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;FLX_NO_SOUND_TRAY&#xA;safeMode&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

@@ -164,7 +164,7 @@ class SigilWidget extends FlxUIGroup
 	private function makeSigil(i:Int,H:Float):FlxUISprite
 	{
 		var spr = new FlxUISprite();
-		spr.loadGraphic("*assets/images/sigils.png", true, 48, 48);
+		spr.loadGraphic("*assets/gfx/_hd/editor/sigils.png", true, 48, 48);
 		spr.scale.set(H / spr.graphic.bitmap.height, H / spr.graphic.bitmap.height);
 		spr.updateHitbox();
 		spr.antialiasing = true;
