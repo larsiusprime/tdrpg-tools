@@ -91,7 +91,6 @@ class DataFetcher
 	
 	public function getStrMaps():Map<String,Map<String,String>>
 	{
-		
 		var titleMap = getStrMap("$" + mapID.toUpperCase() + "_TITLE", "maps.tsv");
 		var blurbMap = getStrMap("$" + mapID.toUpperCase() + "_TEXT", "maps.tsv");
 		var map = new Map<String,Map<String,String>>();
@@ -100,7 +99,25 @@ class DataFetcher
 		return map;
 	}
 	
-	private function getStrMap(flag:String, file:String):Map<String,String>
+	/*
+	public function getItemStrMap(itemClass:String,itemType:String):Map<String,Map<String,String>>
+	{
+		var prefix:String = switch(itemClass){
+			case "weapon": "W";
+			case "armor": "A";
+			case "accessory": "ACC";
+			default: "U";
+		}
+		prefix += "_"+itemType.toUpperCase();
+		var title = getStrMap("$" + prefix, "items.tsv", 0);
+		var blurb = getStrMap("$" + prefix, "items.tsv", 1);
+		var map = new Map<String,Map<String,String>>();
+		map.set("title", title);
+		map.set("blurb", blurb);
+		return map;
+	}*/
+	
+	public function getStrMap(flag:String, file:String, i:Int=0):Map<String,String>
 	{
 		var map = new Map<String,String>();
 		var path = Util.safePath(modPath, "_append/locales");
@@ -117,9 +134,10 @@ class DataFetcher
 					var tsv = new TSV(rawTSV);
 					for (row in 0...tsv.grid.length){
 						for (col in 0...tsv.grid[row].length){
+							
 							if (tsv.grid[row][0] == flag){
-								var val = tsv.grid[row][1];
-								if(val != "" && val != null){
+								var val = tsv.grid[row][i];
+								if (val != "" && val != null){
 									map.set(loc, val);
 									found = true;
 								}
@@ -320,6 +338,11 @@ class DataFetcher
 		return str;
 	}
 	
+	public function getEnemyNames(){
+		if (_enemyNames == null) return null;
+		return _enemyNames.copy();
+	}
+	
 	public function getEnemyTypes(){
 		if (_enemyTypes == null) return null;
 		return _enemyTypes.copy();
@@ -328,6 +351,7 @@ class DataFetcher
 	/**********/
 	
 	private var _path:String;
+	private var _enemyNames:Array<String>;
 	private var _enemyTypes:Array<String>;
 	
 	private function get_path():String{
@@ -607,7 +631,16 @@ class DataFetcher
 		#end
 	}
 	
+	private function isIgnoreType(type:String){
+		switch(type){
+			case "hide_level", "nuke_on_kill", "no_end_damage", "max_end_hit": return true;
+			default: //blah
+		}
+		return false;
+	}
+	
 	private function loadEnemies(){
+		_enemyNames = [];
 		_enemyTypes = [];
 		
 		var file = getXMLFile("enemy");
@@ -624,10 +657,13 @@ class DataFetcher
 							if (typeVal == "stationary"){
 								stationary = true;
 							}
+							if (!isIgnoreType(typeVal) && _enemyTypes.indexOf(typeVal) == -1){
+								_enemyTypes.push(typeVal);
+							}
 						}
 					}
 					if(!hide && !stationary){
-						_enemyTypes.push(U.xml_name(enemy.x));
+						_enemyNames.push(U.xml_name(enemy.x));
 					}
 				}
 			}

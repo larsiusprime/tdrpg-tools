@@ -8,6 +8,7 @@ import openfl.geom.Rectangle;
 import unifill.Unifill;
 import WaveWidget.WaveInfo;
 import RewardsPicker.RewardStruct;
+import MapLayer.InteractiveStruct;
 
 /**
  * ...
@@ -19,6 +20,7 @@ class BattleData
 	public var ends:Map<String,IntPt>;
 	public var layers:Array<LayerData>;
 	public var waves:Array<WaveData>;
+	public var interactives:Array<InteractiveStruct>;
 	
 	public function new() 
 	{
@@ -59,6 +61,22 @@ class BattleData
 					if (a.layer > b.layer) return  1;
 					return 0;
 				});
+			}
+		}
+		
+		bd.interactives = [];
+		
+		if (xml.hasNode.features && xml.node.features.hasNode.feature){
+			for (feature in xml.node.features.nodes.feature){
+				var x:Int = U.xml_i(feature.x, "x");
+				var y:Int = U.xml_i(feature.x, "y");
+				var easy = U.xml_bool(feature.x, "easy");
+				var medium = U.xml_bool(feature.x, "medium");
+				var hard = U.xml_bool(feature.x, "hard");
+				var id:String = U.xml_str(feature.x, "id");
+				if (easy)   bd.interactives.push({x:x, y:y, name:id, difficulty:"easy"});
+				if (medium) bd.interactives.push({x:x, y:y, name:id, difficulty:"medium"});
+				if (hard)   bd.interactives.push({x:x, y:y, name:id, difficulty:"hard"});
 			}
 		}
 		
@@ -219,6 +237,11 @@ class BonusStruct
 	public static function arrayFromXML(xml:Fast):Array<BonusStruct>
 	{
 		var bonuses:Array<BonusStruct> = [];
+		
+		if (xml.hasNode.bonus == false && xml.hasNode.data){
+			xml = xml.node.data;
+		}
+		
 		if (xml.hasNode.bonus){
 			for (bonusNode in xml.nodes.bonus){
 				var bs = BonusStruct.fromXML(bonusNode);

@@ -47,7 +47,7 @@ import MetaWidget.MetaEntry;
 import RewardsPicker.RewardStruct;
 import BattleData.BonusStruct;
 
-class LevelEditState extends FlxUIState
+class State_LevelEdit extends FlxUIState
 {
 	public static var dq1:Settings;
 	public static var dq2:Settings;
@@ -119,13 +119,19 @@ class LevelEditState extends FlxUIState
 		//super.getRequest(id, sender, data, params);
 		switch(id){
 			case "items":
+				
 				var code:String = cast data;
-				var items = dataFetcher.getItems(code);
-				//var items = {names:["a", "b", "c"], labels:["A", "B", "C"]};
+				
+				var items = Util.getCustomItems(code);
+				
+				//var items = dataFetcher.getItems(code);
+				
 				if (items == null){
 					return {names:[""], labels:["nothing"]};
 				}
 				return items;
+				
+				
 			default: //donothing
 		}
 		return null;
@@ -186,7 +192,7 @@ class LevelEditState extends FlxUIState
 				
 			case "select_type":
 				var waveWidget:WaveWidget = cast sender;
-				var types = dataFetcher.getEnemyTypes();
+				var types = dataFetcher.getEnemyNames();
 				if (types == null){
 					alert("No game data!", "The Level editor doesn't know what enemy types exist.\n\nYou must set a path to :\n\n  - a mod's root directory\n  - the 'asset' folder in the game's install directory\n  - the 'asset' folder in the game's source code directory\n\nTo do this, select the 'Set Path' button and select one of these.\n\nNOTE: If you select a mod path, you will afterwards need to supply one of the other two.");
 				}
@@ -222,6 +228,7 @@ class LevelEditState extends FlxUIState
 	private var titleBtn:FlxUIButton;
 	private var blurbBtn:FlxUIButton;
 	private var menu:FlxUIButton;
+	private var delete:FlxUIButton;
 	
 	private var saveData:SaveData;
 	private var dataFetcher:DataFetcher;
@@ -515,6 +522,10 @@ class LevelEditState extends FlxUIState
 		for (i in 0...layers[0].sigils.length){
 			layers[0].forceSigil(i, state.sigils[i].x, state.sigils[i].y);
 		}
+		
+		if (preview != null){
+			updatePreview();
+		}
 	}
 	
 	private function killRedos(){
@@ -593,6 +604,7 @@ class LevelEditState extends FlxUIState
 		
 		layers = [];
 		
+		var lastLayer = null;
 		for (layer in bData.layers){
 			if (layer.layer == 0){
 				makeMapLayer(0xFF000000, 0, layer.value, false, "");
@@ -604,9 +616,19 @@ class LevelEditState extends FlxUIState
 			var copyBmp = bmps[layer.layer];
 			ml.sprite.graphic.bitmap.copyPixels(copyBmp, copyBmp.rect, new Point());
 			ml.clearBlack();
+			lastLayer = layer;
 		}
 		
 		layers[0].hasSigils = true;
+		
+		if (bData.interactives.length > 0){
+			var color = FlxColor.WHITE;
+			makeMapLayer(color, lastLayer.layer + 1, bData.interactives[0].name, true, "interactive");
+			var layer = layers[layers.length - 1];
+			for (interactive in bData.interactives){
+				layer.interactiveList.push({x:interactive.x, y:interactive.y, difficulty:interactive.difficulty, name:interactive.name});
+			}
+		}
 		
 		refreshLayers();
 		
@@ -661,9 +683,10 @@ class LevelEditState extends FlxUIState
 		menu = addBtn(0, 5, "Main Menu", onMainMenu);
 		menu.x = FlxG.width - menu.width - 5;
 		
-		saveAs = addBtn(menu.x, menu.y + menu.height + 5, "Save As", onExport);
+		saveAs = addBtn(menu.x, menu.y + menu.height + 5, "Save As", onSaveAs);
 		save = addBtn(saveAs.x, saveAs.y + saveAs.height + 5, "Save", onSave);
-		titleBtn = addBtn(save.x, save.y + save.height + 5, "Title...", onTitle);
+		delete = addBtn(saveAs.x, save.y + save.height + 5, "Delete", onDelete);
+		titleBtn = addBtn(save.x, delete.y + delete.height + 5, "Title...", onTitle);
 		blurbBtn = addBtn(titleBtn.x, titleBtn.y + titleBtn.height + 5, "Blurb...", onBlurb);
 		
 		meta = {
@@ -673,6 +696,9 @@ class LevelEditState extends FlxUIState
 		
 		var isBonus = false;
 		var thisBD:BonusStruct = null;
+		
+		dataFetcher.projectData.loadBonus();
+		
 		for (bd in dataFetcher.projectData.bonusData){
 			if (bd.id == saveData.mapID){
 				isBonus = true;
@@ -711,7 +737,6 @@ class LevelEditState extends FlxUIState
 		}
 		
 		locStrs = dataFetcher.getStrMaps();
-		trace("locStrs = " + locStrs);
 		
 		refreshWaves();
 		
@@ -765,7 +790,7 @@ class LevelEditState extends FlxUIState
 		var a = layer.layer;
 		var b = layer.layer + i;
 		
-		if (b > 0 && b < layer.length){
+		if (b > 0 && b < layers.length){
 			var layerB = layers[b];
 			if (layerB.isLast && layerB.interactive != ""){
 				return;
@@ -884,15 +909,45 @@ class LevelEditState extends FlxUIState
 			function(str:String, category:String){
 				makeMapLayerFromTileset(str, layers.length, category);
 				
+				var layer = layers[layers.length - 1];
+				
 				refreshLayers();
 				if (interactiveI != -1){
 					//if there was an interactives layer already, keep it on top
 					onMoveLayer(layers[layers.length - 1], -1);
 				}
+				
 				refreshLayers(true);
 				composite();
 				
 				dirty = true;
+				
+				if (category == "art"){
+					layer.interactive = "";
+					layer.art = str;
+				}
+				else if (category == "interactive"){
+					layer.art = "";
+					layer.interactive = str;
+				}
+				else{
+					layer.art = "";
+					layer.interactive = "";
+					layer.drawColor = dataFetcher.getTileColor(str);
+					layer.value = str;
+					if (category == "water"){
+						layer.isWater = true;
+					}
+					else{
+						layer.isWater = false;
+					}
+				}
+				refreshLayers();
+				composite();
+				
+				dirty = true;
+				
+				
 			}
 		);
 		
@@ -1034,9 +1089,57 @@ class LevelEditState extends FlxUIState
 		openSubState(popup);
 	}
 	
+	private function onDelete(){
+		var popup = new YesNoPopup("Delete map '" + saveData.mapID + "'?", "Are you sure?", function(f:Bool){
+			
+			if (f){
+				doDelete();
+			}
+			
+		});
+		openSubState(popup);
+	}
+	
+	private function doDelete(){
+		
+		var path = Util.stripExtension(lastSavePath);
+		
+		var pathPng = Util.uCat(path, ".png");
+		var pathXml = Util.uCat(path, ".xml");
+		
+		if (FileSystem.exists(pathPng)){
+			FileSystem.deleteFile(pathPng);
+		}
+		if (FileSystem.exists(pathXml)){
+			FileSystem.deleteFile(pathXml);
+		}
+		
+		var basePath = Util.dataFetcher.modPath;
+		
+		if (meta.infos[0].isBonus){
+			
+			deleteBonus();
+			
+			var bonusPath = Util.uCat(basePath, "/_append/xml/bonus.xml");
+			Util.ensurePath(bonusPath);
+			
+			File.saveContent(bonusPath, getBonusString());
+		}
+		
+		var localePath = Util.safePath(basePath, "/_append/locales");
+		Util.ensurePath(localePath);
+		
+		deleteLocaleStrings("title", localePath, "$"+saveData.mapID.toUpperCase()+"_TITLE");
+		deleteLocaleStrings("blurb", localePath, "$"+saveData.mapID.toUpperCase()+"_TEXT");
+		
+		refreshSavePath();
+		
+		onMainMenu();
+	}
+	
 	private function onSave(){
 		if (lastSavePath != ""){
-			exportData(lastSavePath);
+			exportData(lastSavePath, saveData.mapID);
 			dirty = false;
 		}
 	}
@@ -1065,7 +1168,7 @@ class LevelEditState extends FlxUIState
 					if (str == "yes"){
 						onSave();
 					}
-					FlxG.switchState(new StartState());
+					FlxG.switchState(new State_Start());
 				}
 				
 			});
@@ -1073,18 +1176,43 @@ class LevelEditState extends FlxUIState
 			openSubState(popup);
 			
 		}else{
-			FlxG.switchState(new StartState());
+			FlxG.switchState(new State_Start());
 		}
 		
 	}
 	
-	private function onExport()
+	private function onSaveAs()
 	{
-		var popup = new TextPopup(saveData.mapID, "Battle ID", function(str:String){
+		var stripID = Util.stripID(saveData.mapID);
+		
+		var popup = new TextPopup(stripID, "Battle ID", function(str:String){
+			
+			var strip = str;
+			str = Util.fixID(str);
 			
 			var path = Util.safePath(saveData.modPath, "maps");
 			path = Util.safePath(path, str + ".xml");
-			exportData(path);
+			
+			if (FileSystem.exists(path)){
+				
+				var popup = new YesNoPopup("Confirm overwrite", "An existing battle was found with ID \""+strip+"\"\nOverwrite it?", function(b:Bool){
+					
+					if (b){
+						
+						exportData(path, str);
+						FlxG.switchState(new State_LevelEdit(saveData));
+						
+					}
+					
+				});
+				
+				openSubState(popup);
+				
+			}else{
+			
+				exportData(path, str);
+			
+			}
 			
 		});
 		
@@ -1093,6 +1221,7 @@ class LevelEditState extends FlxUIState
 	
 	private var _mapBmp:BitmapData = null;
 	private function getMapBitmap():BitmapData{
+		
 		var W = Std.int(layers[0].sprite.graphic.bitmap.width);
 		var H = Std.int(layers[0].sprite.graphic.bitmap.height);
 		
@@ -1135,7 +1264,10 @@ class LevelEditState extends FlxUIState
 		return img;
 	}
 	
-	private function exportData(path:String){
+	private function exportData(path:String, newID:String){
+		
+		saveData.mapID = newID;
+		
 		lastSavePath = "";
 		
 		if (FileSystem.isDirectory(path)){
@@ -1156,7 +1288,7 @@ class LevelEditState extends FlxUIState
 		var basePath = Util.dataFetcher.modPath;
 		
 		if (meta.infos[0].isBonus){
-			saveBonusData();
+			saveBonusData(newID);
 			
 			var bonusPath = Util.uCat(basePath, "/_append/xml/bonus.xml");
 			Util.ensurePath(bonusPath);
@@ -1166,10 +1298,29 @@ class LevelEditState extends FlxUIState
 		var localePath = Util.safePath(basePath, "/_append/locales");
 		Util.ensurePath(localePath);
 		
-		writeLocaleStrings("title", localePath, "$"+saveData.mapID.toUpperCase()+"_TITLE");
-		writeLocaleStrings("blurb", localePath, "$"+saveData.mapID.toUpperCase()+"_TEXT");
+		writeLocaleStrings("title", localePath, "$"+newID.toUpperCase()+"_TITLE");
+		writeLocaleStrings("blurb", localePath, "$"+newID.toUpperCase()+"_TEXT");
 		
 		refreshSavePath();
+	}
+	
+	private function deleteLocaleStrings(id:String, path:String, flag:String){
+		
+		//ensure the entry exists so we can cleanly remove it:
+		writeLocaleStrings(id, path, flag);
+		
+		var map = locStrs.get(id);
+		for (locale in map.keys()){
+			var locPath = Util.safePath(path, locale);
+			Util.ensurePath(locPath);
+			locPath = Util.safePath(locPath, "maps.tsv");
+			if (!FileSystem.exists(locPath)){
+				File.saveContent(locPath, "");
+			}
+			var tsvData = File.getContent(locPath);
+			tsvData = Util.removeFromTSV(tsvData, flag);
+			File.saveContent(locPath, tsvData);
+		}
 	}
 	
 	private function writeLocaleStrings(id:String, path:String, flag:String){
@@ -1179,7 +1330,7 @@ class LevelEditState extends FlxUIState
 			Util.ensurePath(locPath);
 			locPath = Util.safePath(locPath, "maps.tsv");
 			if (!FileSystem.exists(locPath)){
-				File.saveContent(locPath, "flag\tcontent\tcomment\n");
+				File.saveContent(locPath, "");
 			}
 			var tsvData = File.getContent(locPath);
 			tsvData = Util.appendToTSV(tsvData, flag, map.get(locale));
@@ -1187,10 +1338,10 @@ class LevelEditState extends FlxUIState
 		}
 	}
 	
-	private function saveBonusData(){
+	private function saveBonusData(newID:String){
 		var exists = false;
 		for (bd in Util.dataFetcher.projectData.bonusData){
-			if (bd.id == saveData.mapID){
+			if (bd.id == newID){
 				exists = true;
 			}
 		}
@@ -1201,8 +1352,8 @@ class LevelEditState extends FlxUIState
 			newBonus.starsColor = "blue";
 			newBonus.starsPlus = 0;
 			newBonus.starsPlusColor = "blue";
-			newBonus.id = saveData.mapID;
-			newBonus.title = saveData.mapID;
+			newBonus.id = newID;
+			newBonus.title = newID;
 			newBonus.description = "";
 			newBonus.matchRewards([metaWidget.rewards1, metaWidget.rewards2]);
 			Util.dataFetcher.projectData.bonusData.push(newBonus);
@@ -1217,6 +1368,19 @@ class LevelEditState extends FlxUIState
 			str += tab;
 		}
 		return tab;
+	}
+	
+	private function deleteBonus(){
+		for (b in dataFetcher.projectData.bonusData){
+			
+			if (b.id == saveData.mapID){
+				
+				dataFetcher.projectData.bonusData.remove(b);
+				return;
+				
+			}
+			
+		}
 	}
 	
 	private function getBonusString():String
@@ -1253,10 +1417,14 @@ class LevelEditState extends FlxUIState
 			saveStr = Util.uCat(saveStr, bonusStr);
 		}
 		
+		saveStr = Util.uCat(saveStr, "</data>");
+		
 		var save_xml:Xml = Xml.parse(saveStr);
 		
 		var outputstr = Printer.print(save_xml,true);
 		var outputstr = '<?xml version="1.0" encoding="utf-8" ?>\n' + outputstr;
+		
+		outputstr = Util.fixXMLDoubleData(outputstr);
 		
 		return outputstr;
 	}
@@ -1499,7 +1667,7 @@ class LevelEditState extends FlxUIState
 					hintText.y = layers[i].sprite.y + layers[i].sprite.height + 20;
 				}
 				else{
-					if(hintText.text == layers[i].value || hintText.text == layers[i].art){
+					if(hintText.text.indexOf(layers[i].value) == 0 || hintText.text.indexOf(layers[i].art) == 0){
 						hintText.visible = false;
 					}
 				}
@@ -1563,7 +1731,11 @@ class LevelEditState extends FlxUIState
 		if (category == "interactive"){
 			l.art = "";
 			l.interactive = value;
-			l.currDifficulty = meta.difficulty;
+			if(meta != null){
+				l.currDifficulty = meta.difficulty;
+			}else{
+				l.currDifficulty = "easy";
+			}
 		}
 		
 		if (category == "water"){

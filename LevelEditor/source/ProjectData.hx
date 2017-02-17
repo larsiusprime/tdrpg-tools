@@ -21,11 +21,10 @@ class ProjectData
 		loadBonus();
 	}
 	
-	private function loadBonus()
+	public function loadBonus()
 	{
 		bonusData = [];
 		var bonusPath = Util.safePath(path, "_append/xml/bonus.xml");
-		
 		if (FileSystem.exists(bonusPath))
 		{
 			var xmlString:String = File.getContent(bonusPath);

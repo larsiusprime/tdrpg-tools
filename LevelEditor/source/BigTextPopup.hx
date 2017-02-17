@@ -62,10 +62,19 @@ class BigTextPopup extends FlxUISubState
 		button.y = back.y + back.height - (button.height + 5);
 		add(button);
 		
+		var cancel = Util.makeBtn(Std.int(button.x), Std.int(button.y), "Cancel", function(){
+			callback = null;
+			close();
+		});
+		add(cancel);
+		
 		var clipboard  = Util.makeBtn(0, 0, "Paste from clipboard", onClipboard, 100, 50);
 		clipboard.x = button.x;
-		clipboard.y = button.y - clipboard.height - 5;
+		clipboard.y = button.y + button.height - clipboard.height;
 		add(clipboard);
+		
+		button.x -= button.width;
+		cancel.x += cancel.width;
 	}
 	
 	private function onClipboard(){

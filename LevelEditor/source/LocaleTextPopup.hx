@@ -21,13 +21,9 @@ class LocaleTextPopup extends BigTextPopup
 		locCallback = Callback;
 		texts = Texts;
 		
-		trace("texts = " + texts);
-		
 		currLocale = locale;
 		
 		var Value = Texts.get(locale);
-		
-		trace("Value = " + Value);
 		
 		super(Value, Label, function(str:String){onClick(str); }, locale);
 		
@@ -99,7 +95,7 @@ class LocaleTextPopup extends BigTextPopup
 			if (btn.name == locale){
 				btn.alpha = 1.0;
 			}else{
-				btn.alpha = 0.5;
+				btn.alpha = 0.25;
 			}
 		}
 		

@@ -23,6 +23,11 @@ class ButtonWidget extends FlxUIGroup
 		callback = null;
 	}
 	
+	public function labelOnTop(){
+		label.y = button.y;
+		button.y = label.y + label.height;
+	}
+	
 	public function new(X:Float, Y:Float, W:Float, H:Float, textLabel:String, buttonLabel:String, Callback:Void->Void) 
 	{
 		super(X, Y);

@@ -1,4 +1,5 @@
 package;
+import flash.events.FocusEvent;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.ui.FlxUI;
@@ -11,6 +12,8 @@ import flixel.addons.ui.FlxUISubState;
 import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.util.FlxColor;
 import flixel.text.FlxText.FlxTextBorderStyle;
+import openfl.events.TextEvent;
+import openfl.text.TextFormatAlign;
 import org.zamedev.lib.Utf8Ext;
 import unifill.Unifill;
 
@@ -36,7 +39,10 @@ class TextPopup extends FlxUISubState
 		back.y = Std.int((FlxG.height - back.height) / 2);
 		add(back);
 		
-		var value = new TextWidget(0, 0, 300, Label, Value);
+		var value = new OpenflTextWidget(0, 0, 300, Label, Value, 32, "verdana.ttf", false, false, TextFormatAlign.CENTER, 18);
+		value.input.setSelection(0, value.input.length);
+		//value.input.dispatchEvent(new FocusEvent(FocusEvent.FOCUS_IN, false, false, value.input, false));
+		FlxG.stage.focus = value.input;
 		add(value);
 		
 		value.x = Std.int((FlxG.width - value.width) / 2);
@@ -50,6 +56,16 @@ class TextPopup extends FlxUISubState
 		button.x = Std.int((FlxG.width - button.width) / 2);
 		button.y = back.y + back.height - (button.height + 5);
 		add(button);
+		
+		var cancel = Util.makeBtn(Std.int(button.x), Std.int(button.y), "Cancel", function(){
+			callback = null;
+			close();
+		});
+		
+		add(cancel);
+		
+		button.x -= button.width;
+		cancel.x += cancel.width;
 	}
 	
 	private function onClick(str:String){

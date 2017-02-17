@@ -18,7 +18,7 @@ class NumberWidget extends FlxUIGroup
 	public var stepper:FlxUINumericStepper;
 	public var label:FlxUIText;
 	
-	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, StepSize:Float=1, DefaultValue:Float=0, Min:Float=-999, Max:Float=999, Decimals:Int=0)
+	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, StepSize:Float=1, DefaultValue:Float=0, Min:Float=-999, Max:Float=999, Decimals:Int=0, IsPercent:Bool=false)
 	{
 		super(X, Y);
 		
@@ -27,6 +27,7 @@ class NumberWidget extends FlxUIGroup
 		field.color = FlxColor.BLACK;
 		
 		stepper = new FlxUINumericStepper(0, 0, StepSize, DefaultValue, Min, Max, Decimals, FlxUINumericStepper.STACK_HORIZONTAL, field, null, null, false);
+		stepper.isPercent = IsPercent;
 		
 		add(stepper);
 		label = new FlxUIText(0, 0, stepper.width, Label, 12);

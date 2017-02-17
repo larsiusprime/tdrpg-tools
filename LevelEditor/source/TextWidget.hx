@@ -37,5 +37,7 @@ class TextWidget extends FlxUIGroup
 		label.alignment = FlxTextAlign.CENTER;
 		label.y = input.y;
 		add(label);
+		
+		input.hasFocus = true;
 	}
 }

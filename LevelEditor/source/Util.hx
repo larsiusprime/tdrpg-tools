@@ -3,6 +3,8 @@ import firetongue.TSV;
 import flash.display.BitmapData;
 import flixel.FlxObject;
 import flixel.FlxState;
+import flixel.FlxSubState;
+import flixel.addons.ui.FlxUI;
 import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUICheckBox;
 import flixel.addons.ui.FlxUIGroup;
@@ -15,12 +17,15 @@ import flixel.addons.ui.FlxUIText;
 import flixel.addons.ui.U;
 import flixel.addons.ui.interfaces.IFlxUIState;
 import flixel.util.FlxColor;
+import haxe.Utf8;
 import haxe.xml.Fast;
+import haxe.xml.Printer;
 import lime.ui.FileDialog;
 import lime.ui.FileDialogType;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
 import sys.FileSystem;
+import sys.io.File;
 import unifill.CodePoint;
 import unifill.Unifill;
 import flixel.text.FlxText.FlxTextAlign;
@@ -97,22 +102,314 @@ class Util
 		return arr;
 	}
 	
-	public static function appendToTSV(tsvData:String, flag:String, value:String):String{
+	public static function fixXMLDoubleData(str:String):String
+	{
+		while (Unifill.uIndexOf(str, "<data>\n<data>") != -1)
+		{
+			str = Util.uSplitReplace(str, "<data>\n<data>", "<data>\n");
+		}
+		return str;
+	}
+
+	public static function loadItemNode(itemID:String):Fast
+	{
+		var modPath = Util.dataFetcher.modPath;
+		var itemPath = Util.safePath(modPath, "_append/xml/items.xml");
+		
+		if (FileSystem.exists(itemPath) == false) return null;
+		
+		var itemStr:String = File.getContent(itemPath);
+		var itemXML:Fast = new Fast(Util.xmlify(itemStr));
+		
+		var itemNode:Fast = null;
+		for (el in itemXML.elements){
+			if (el.has.editor_id){
+				var editorID:String = U.xml_str(el.x, "editor_id", true);
+				if (editorID == itemID){
+					itemNode = el;
+					break;
+				}
+			}
+		}
+		
+		return itemNode;
+	}
+	
+	public static function getCustomItems(code:String):{names:Array<String>,labels:Array<String>}
+	{
+		var names:Array<String> = [];
+		var labels:Array<String> = [];
+		
+		#if tdrpg_haxe
+		
+		var culled = [];
+		
+		var path = Util.safePath(dataFetcher.modPath, "_append/xml/items.xml");
+		if (FileSystem.exists(path) && !FileSystem.isDirectory(path)){
+			
+			var file = File.getContent(path);
+			var itemXML = new Fast(Util.xmlify(file));
+			
+			for (element in itemXML.elements){
+				if (element.has.editor_id){
+					var editorID:String = U.xml_str(element.x, "editor_id", true);
+					var itemClass:String = element.x.nodeName;
+					var itemType:String = U.xml_str(element.x, "type", true);
+					var itemLevel:String = U.xml_str(element.x, "lvl", true);
+					
+					if (culled.indexOf(editorID) == -1){
+						culled.push(editorID);
+						names.push(itemClass + "_" + itemType+"_" + itemLevel);
+						labels.push(itemClass + "_" + itemType+"_" + itemLevel);
+					}
+				}
+			}
+		}
+		
+		
+		/*
+		var classes:Array<ItemClass> = itemIndex.getClasses();
+		for (ic in classes){
+			var types = itemIndex.getTypes(ic);
+			if (types == null) continue;
+			var l = types.length;
+			for (i in 0...l){
+				var type = types[i];
+				var items:Array<Item> = itemIndex.getItems(ic, type);
+				if (items == null) continue;
+				for (i in 0...items.length){
+					var item = items[i];
+					if (item == null) continue;
+					var pass = true;
+					if (code == "unique"){
+						if (item.unique == false){
+							pass = false;
+						}
+					}
+					if (pass){
+						names.push(item.itemClass + "_" + item.itemType+"_" + item.level);
+						labels.push(item.name);
+					}
+				}
+			}
+		}*/
+		
+		#end
+		
+		return {names:names, labels:labels};
+	}
+	
+	public static function getItemList():Array<String>{
+		var culled = [];
+		
+		var path = Util.safePath(dataFetcher.modPath, "_append/xml/items.xml");
+		if (FileSystem.exists(path) && !FileSystem.isDirectory(path)){
+			
+			var file = File.getContent(path);
+			var itemXML = new Fast(Util.xmlify(file));
+			
+			for (element in itemXML.elements){
+				if (element.has.editor_id){
+					var editorID:String = U.xml_str(element.x, "editor_id", true);
+					if (culled.indexOf(editorID) == -1){
+						culled.push(Util.stripID(editorID));
+					}
+				}
+			}
+			
+			if (culled.length == 0) return null;
+			
+			return culled;
+		}
+		return null;
+	}
+	
+	/*public static function xmlSneakyQuotes(str:String):String{
+		
+		var inQuotes:Bool = false;
+		var quoteString:Int = 0;
+		var dblQuote:Int = 0x22;
+		var sinQuote:Int = 0x27;
+		//var lBracket:Int = 0x7B;
+		//var rBracket:Int = 0x7D;
+		var quotI:Int = 0;
+		
+		var quotArr:Array<Int> = [0x26, 0x71, 0x75, 0x6F, 0x74];
+		
+		var buffer:Array<Int> = [];
+		
+		var firstQuoteI:Int = -1;
+		var lastQuoteI:Int = -1;
+		
+		Utf8.iter(str, function(char:Int){
+			
+			if (!inQuotes){
+				if (char == dblQuote){
+					inQuotes = true;
+					quoteString = dblQuote;
+				}else if (char == sinQuote){
+					inQuotes = false;
+					quoteString = sinQuote;
+				}
+			}else{
+				if (char == quoteString){
+					inQuotes = false;
+				}else{
+					
+					if (char == quotArr[quotI])
+					{
+						quotI++;
+					}
+					
+					if (quotI == 4)
+					{
+						
+					}
+				}
+			}
+			
+			
+		});
+		
+	}*/
+	
+	public static function escapeXML(str:String):String{
+		
+		if (Unifill.uIndexOf(str, "&") != -1){
+			unescapeXML(str);	//if we have ANY ampersands, unescape everything first so we're starting from a clean place
+		}
+		
+		str = uSplitReplace(str, "&", "&amp;");
+		str = uSplitReplace(str, '"', "&quot;");
+		str = uSplitReplace(str, "<", "&lt;");
+		str = uSplitReplace(str, ">", "&gt;");
+		str = uSplitReplace(str, "'", "&apos;");
+		
+		return str;
+	}
+	
+	public static function unescapeXML(xmlData:String):String{
+		
+		var str = "";
+		
+		xmlData = uSplitReplace(xmlData, "&quot;", '"');
+		xmlData = uSplitReplace(xmlData, "&lt;", '<');
+		xmlData = uSplitReplace(xmlData, "&gt;", '>');
+		xmlData = uSplitReplace(xmlData, "&apos;", "'");
+		xmlData = uSplitReplace(xmlData, "&amp;", "&");
+		
+		return str;
+	}
+	
+	public static function appendToXMLCheap(xmlData:String, xmlString:String):String
+	{
+		xmlData = killBlankLines(xmlData);
+		
+		var xmlArr = Unifill.uSplit(xmlData, "\n");
+		
+		if (xmlArr != null){
+			if (xmlArr[xmlArr.length - 1].indexOf("</data>") != -1){
+				xmlArr.insert(xmlArr.length-1, xmlString);
+			}
+		}
+		
+		if (xmlArr[0] != '<?xml version="1.0" encoding="utf-8" ?>'){
+			xmlArr.insert(0, '<?xml version="1.0" encoding="utf-8" ?>');
+		}
+		
+		var xmlOut = "";
+		for (i in 0...xmlArr.length){
+			var bit = xmlArr[i];
+			xmlOut = uCat(xmlOut, bit);
+			if (i != xmlArr.length - 1){
+				xmlOut = uCat(xmlOut, "\n");
+			}
+		}
+		
+		return xmlOut;
+	}
+	
+	public static function appendToXML(xmlData:String, xmlEntry:Xml):String
+	{
+		var theXML = xmlify(xmlData);
+		
+		theXML.addChild(xmlEntry);
+		
+		var xmlOut = Printer.print(theXML, true);
+		xmlOut = killBlankLines(xmlOut);
+		
+		return xmlOut;
+	}
+	
+	public static function appendToTSV(tsvData:String, flag:String, value:String, value2:String=null):String{
+		
+		trace("appendToTSV");
+		trace(tsvData);
+		trace(":::"+flag + "," + value+"," + value2);
+		
+		if (tsvData == null || tsvData == ""){
+			var str = Util.uCat(flag, "\t");
+			str = Util.uCat(str, value);
+			str = Util.uCat(str, "\t");
+			if (value2 != null){
+				str = Util.uCat(str, value2);
+				str = Util.uCat(str, "\t");
+			}
+			str = Util.uCat(str, "\n");
+			return str;
+		}
 		
 		var tsv = new TSV(tsvData);
+		
+		if (tsv.grid == null){
+			tsv.grid = [];
+		}
 		
 		var found = false;
 		for (row in tsv.grid){
 			if (row[0] == flag){
 				row[1] = value;
 				found = true;
+				if (value2 != null && row.length > 1){
+					row[2] = value2;
+				}
 			}
 		}
 		
+		trace("tsv.grid = " + tsv.grid);
+		trace("found = " + found);
+		
 		if (!found){
-			tsv.grid.push([flag, value]);
+			if(value2 == null){
+				tsv.grid.push([flag, value]);
+			}else{
+				tsv.grid.push([flag, value, value2]);
+			}
 		}
 		
+		return printTSV(tsv);
+	}
+		
+	public static function removeFromTSV(tsvData:String, flag:String):String{
+		
+		var tsv = new TSV(tsvData);
+		
+		var found = false;
+		for (i in 0...tsv.grid.length){
+			var j = tsv.grid.length - i - 1;
+			var row = tsv.grid[j];
+			if(row != null && row.length > 0){
+				if (row[0] == flag){
+					tsv.grid.splice(j, 1);
+				}
+			}
+		}
+		
+		return printTSV(tsv);
+	}
+	
+	
+	public static function printTSV(tsv:TSV):String{
 		var str = "";
 		for (i in 0...tsv.fields.length){
 			var field = tsv.fields[i];
@@ -147,7 +444,6 @@ class Util
 		return str;
 	}
 	
-	
 	public static function isLineBlank(str:String){
 		var i:Int;
 		for (i in 0...str.length){
@@ -170,6 +466,8 @@ class Util
 				if (!isLineBlank(lines[i])){
 					newLines.push(lines[i]);
 				}
+			}else{
+				newLines.push(lines[i]);
 			}
 		}
 		var sb:StringBuf = new StringBuf();
@@ -204,6 +502,28 @@ class Util
 		if(path != null && path != "" && !isFile){
 			FileSystem.createDirectory(path);
 		}
+	}
+	
+	public static function fixID(str:String):String{
+		str = stripID(str);
+		str = Util.getModID() + "_" + str;
+		return str;
+	}
+	
+	public static function stripID(str:String){
+		var modID = Util.getModID()+"_";
+		if (str.indexOf(modID) == 0){
+			var ulen = Unifill.uLength(str);
+			var otherlen = Unifill.uLength(modID);
+			var sub = Unifill.uSubstr(str, otherlen, ulen - otherlen);
+			return sub;
+		}
+		return str;
+	}
+	
+	
+	public static function getModID():String{
+		return getLastFolder(dataFetcher.modPath).toLowerCase();
 	}
 	
 	public static function matchRewards(a:RewardStruct, b:RewardStruct){
@@ -307,11 +627,14 @@ class Util
 		return radios;
 	}
 	
-	public static function makeBox(W:Int, H:Int, Col:FlxColor = null):FlxUIGroup{
-		var top    = new FlxUILine(0, 0,     LineAxis.HORIZONTAL, W, 2, FlxColor.BLACK);
-		var left   = new FlxUILine(0, 0,     LineAxis.VERTICAL  , H, 2, FlxColor.BLACK);
-		var bottom = new FlxUILine(0, H - 2, LineAxis.HORIZONTAL, W, 2, FlxColor.BLACK);
-		var right  = new FlxUILine(W - 2, 0, LineAxis.VERTICAL  , H, 2, FlxColor.BLACK);
+	public static function makeBox(Wf:Float, Hf:Float, Col:FlxColor = null, Line:FlxColor = FlxColor.BLACK):FlxUIGroup{
+		var W = Std.int(Wf);
+		var H = Std.int(Hf);
+		
+		var top    = new FlxUILine(0, 0,     LineAxis.HORIZONTAL, W, 2, Line);
+		var left   = new FlxUILine(0, 0,     LineAxis.VERTICAL  , H, 2, Line);
+		var bottom = new FlxUILine(0, H - 2, LineAxis.HORIZONTAL, W, 2, Line);
+		var right  = new FlxUILine(W - 2, 0, LineAxis.VERTICAL  , H, 2, Line);
 		var g = new FlxUIGroup();
 		if (Col != null){
 			var s = new FlxUISprite(0, 0);
@@ -362,6 +685,16 @@ class Util
 		}
 	}
 	
+	public static function openPopup(sub:FlxSubState)
+	{
+		var state = FlxUI.getLeafUIState();
+		if (Std.is(state, FlxState)){
+			cast(state, FlxState).openSubState(sub);
+		}else if (Std.is(state, FlxSubState)){
+			cast(state, FlxSubState).openSubState(sub);
+		}
+	}
+	
 	public static function fixSlashes(str:String):String
 	{
 		var slash:String = getSlash();
@@ -392,6 +725,25 @@ class Util
 		var slash:String = "/";
 		if (os == "win" || os == "windows") { slash = "\\";}
 		return slash;
+	}
+	
+	public static function uSplitReplace(s:String, substr:String, by:String):String{
+		if (Unifill.uIndexOf(s, substr) == -1) return s;
+		
+		var arr = Unifill.uSplit(s, substr);
+		
+		if (arr == null || arr.length < 2) return s;
+		
+		var sb:StringBuf = new StringBuf();
+		for (i in 0...arr.length){
+			var bit = arr[i];
+			sb.add(bit);
+			if (i != arr.length - 1){
+				sb.add(by);
+			}
+		}
+		
+		return sb.toString();
 	}
 	
 	public static function uReplace(s:String, substr:String, by:String, recursive:Bool=true):String
@@ -481,6 +833,10 @@ class Util
 		var str = sb.toString();
 		str = fixDoubleSlash(str);
 		return str;
+	}
+	
+	public static function xmlHead():String{
+		return '<?xml version="1.0" encoding="utf-8" ?>';
 	}
 	
 	public static function uCat(a:String, b:String):String{

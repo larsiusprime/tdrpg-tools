@@ -59,7 +59,7 @@ class RewardsPicker extends FlxUISubState
 	
 	private function makeBonus(){
 		
-		var W:Int = Std.int(FlxG.width * 0.5);
+		var W:Int = Std.int(FlxG.width * 0.75);
 		var H:Int = Std.int(FlxG.height * 0.25);
 		
 		var back = Util.makeBox(W, H, FlxColor.WHITE);
@@ -96,7 +96,7 @@ class RewardsPicker extends FlxUISubState
 		}
 		
 		var WW = Std.int((W / 5) - 10);
-		var HH = Std.int(H / 3);
+		var HH = Std.int(H  * 0.5);
 		
 		var YY = Y + Std.int(H / 3);
 		goalBtn = new ButtonWidget(X + 5, YY, WW, HH, criterionLabel, criterion, onCriterion);
@@ -121,6 +121,18 @@ class RewardsPicker extends FlxUISubState
 		accept.x = back.x + Std.int((back.width - accept.width) / 2);
 		accept.y = back.y + back.height - accept.height - 5;
 		add(accept);
+		
+		var cancel = Util.makeBtn(0, 0, "Cancel", onCancel);
+		cancel.x = accept.x;
+		cancel.y = accept.y;
+		add(cancel);
+		
+		accept.x -= accept.width;
+		cancel.x += cancel.width;
+	}
+	
+	private function onCancel(){
+		close();
 	}
 	
 	private function onAccept(){
@@ -223,7 +235,7 @@ class RewardsPicker extends FlxUISubState
 					var itemValue = theBtn.label.text;
 					
 					var parent:IFlxUIState = cast _parentState;
-					var itemDetails:{names:Array<String>,labels:Array<String>} = parent.getRequest("items", null, "unique", null);
+					var itemDetails:{names:Array<String>,labels:Array<String>} = parent.getRequest("items", null, "", null);
 					var labels = [];
 					
 					for (i in 0...itemDetails.names.length){
@@ -236,14 +248,23 @@ class RewardsPicker extends FlxUISubState
 						labels.push(choice.
 					}*/
 					
-					var popup = new TypePopup(choices, itemValue, 
-						function(str:String, category:String)
-						{
-							theBtn.label.text = str;
-						}
-					,labels);
+					if(choices.length > 0){
 					
-					openSubState(popup);
+						var popup = new TypePopup(choices, itemValue, 
+							function(str:String, category:String)
+							{
+								theBtn.label.text = str;
+							}
+						,labels);
+						
+						openSubState(popup);
+						
+					}else {
+						
+						Util.alert(this, "No items defined!", "You haven't defined any items! Create some in the item editor.");
+						
+					}
+					
 			}
 		}
 	}

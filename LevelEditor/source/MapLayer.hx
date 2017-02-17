@@ -521,6 +521,8 @@ class MapLayer extends FlxUIGroup
 			checkDoodad.visible = false;
 		}
 		
+		updateButtons();
+		
 		return Value;
 	}
 	
@@ -766,7 +768,6 @@ class MapLayer extends FlxUIGroup
 					hard:false
 				};
 				list.push(thing);
-				trace("struct.difficulty = " + struct.difficulty);
 				switch(struct.difficulty){
 					case "easy": thing.easy = true;
 					case "medium","med","normal": thing.medium = true;
@@ -789,10 +790,10 @@ class MapLayer extends FlxUIGroup
 	
 	private function canSigilBeDeleted(j:Int){
 		
-		if (j <= LevelEditState.END_I - 2){
+		if (j <= State_LevelEdit.END_I - 2){
 			//it's a start index
 			var count = 0;
-			for (i in 0...LevelEditState.END_I-1){
+			for (i in 0...State_LevelEdit.END_I-1){
 				if (sigils[i].x != -1 && sigils[i].y != -1){
 					count++;
 				}
@@ -807,7 +808,7 @@ class MapLayer extends FlxUIGroup
 			//it's an end index
 			
 			//Can't delete the default mcguffin position!
-			if (j == LevelEditState.END_I -1) return false;
+			if (j == State_LevelEdit.END_I -1) return false;
 		}
 		return true;
 	}

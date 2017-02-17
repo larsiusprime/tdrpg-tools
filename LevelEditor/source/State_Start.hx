@@ -26,7 +26,7 @@ import unifill.Unifill;
  * ...
  * @author 
  */
-class StartState extends FlxUIState
+class State_Start extends FlxUIState
 {
 	private var saveData:SaveData;
 	private var screen:FlxObject;
@@ -38,6 +38,8 @@ class StartState extends FlxUIState
 	private var loadProject:FlxUIButton;
 	private var newBattle:FlxUIButton;
 	private var loadBattle:FlxUIButton;
+	private var newItem:FlxUIButton;
+	private var loadItem:FlxUIButton;
 	
 	public function new() 
 	{
@@ -114,22 +116,112 @@ class StartState extends FlxUIState
 				loadBattle.visible = true;
 			}
 		}
+		
+		if (loadItem != null){
+			if (getItemList() == null){
+				loadItem.visible = false;
+			}else{
+				loadItem.visible = true;
+			}
+		}
 	}
 	
 	private function initBattleButtons(){
 		if (loadBattle == null && (loadProject != null) && (saveData.modPath != "" && saveData.modPath != null)){
 			newBattle = Util.makeBtn(0, 0, "New battle", onNewBattle);
 			loadBattle = Util.makeBtn(0, 0, "Load battle", onLoadBattle);
+			newItem = Util.makeBtn(0, 0, "New Item", onNewItem);
+			loadItem = Util.makeBtn(0, 0, "Load Item", onLoadItem);
 			
 			newBattle.x = loadProject.x;
 			loadBattle.x = loadProject.x;
+			newItem.x = newBattle.x;
+			loadItem.x = newBattle.x;
 			
 			newBattle.y = loadProject.y + loadProject.height + 10;
 			loadBattle.y = newBattle.y + newBattle.height + 10;
+			newItem.y = loadBattle.y + loadBattle.height + 10;
+			loadItem.y = newItem.y + newItem.height + 10;
 			
-			add(newBattle);
 			add(loadBattle);
+			add(newBattle);
+			add(newItem);
+			add(loadItem);
 		}
+	}
+	
+	private function onNewItem(){
+		
+		saveData.save();
+		saveStuff();
+		
+		var popup = new TextPopup("untitled", "Item ID", function(str:String){
+			
+			var basePath = Util.safePath(saveData.modPath, "_append/xml");
+			Util.ensurePath(basePath);
+			
+			var itemNode = Util.loadItemNode(str);
+			
+			if (itemNode != null){
+				
+				var popup = new YesNoPopup("Confirm overwrite", "An existing item was found with ID \""+str+"\"\nOverwrite it?", function(b:Bool){
+					
+					if (b){
+						makeNewItem(str);
+					}
+					
+				});
+				
+				openSubState(popup);
+				
+			}else{
+				
+				makeNewItem(str);
+				
+			}
+			
+		});
+		
+		openSubState(popup);
+	}
+	
+	private function makeNewItem(str:String){
+		var basePath = Util.safePath(saveData.modPath, "_append/xml");
+		Util.ensurePath(basePath);
+		var itemPath = Util.safePath(basePath, "items.xml");
+		
+		if (FileSystem.exists(itemPath) == false){
+			var baseItem = '<?xml version="1.0" encoding="utf-8" ?>\n<data>\n</data>';
+			File.saveContent(itemPath, baseItem);
+		}
+		
+		var itemXML = new Fast(Util.xmlify(File.getContent(itemPath)));
+		
+		var theID = str;
+		
+		var fixID = Util.fixID(theID);
+		
+		var nameFlag = "$ITM_CUSTOM_" + fixID.toUpperCase() + "_NAME";
+		var descFlag = "$ITM_CUSTOM_" + fixID.toUpperCase() + "_DESCRIPTION";
+		
+		for (el in itemXML.elements){
+			if (el.has.editor_id){
+				var editorID = U.xml_str(el.x, "editor_id", true);
+				if (editorID == theID){
+					
+					itemXML.x.removeChild(el.x);
+					
+				}
+			}
+		}
+		
+		var itemRaw = Printer.print(itemXML.x, true);
+		
+		var itemEntry = Util.xmlify('<weapon type="sword" lvl="$fixID" bonus="1" name="$nameFlag" cost="1" description="$descFlag" editor_id="$fixID"/>');
+		var itemOut = Util.appendToXML(itemRaw, itemEntry);
+		
+		File.saveContent(itemPath, itemOut);
+		FlxG.switchState(new State_ItemEdit(theID));
 	}
 	
 	private function initInstallPath(callback:Void->Void){
@@ -261,80 +353,130 @@ class StartState extends FlxUIState
 		openSubState(popup);
 	}
 	
+	private function doLoadItem(itemID:String){
+		
+		FlxG.switchState(new State_ItemEdit(itemID));
+		
+	}
+	
 	private function loadMap(mapID:String){
+		
+		mapID = Util.fixID(mapID);
 		
 		saveData.mapID = mapID;
 		saveData.save();
 		
 		saveStuff();
 		
-		FlxG.switchState(new LevelEditState(saveData));
+		FlxG.switchState(new State_LevelEdit(saveData));
 		
 	}
 	
 	private function onNewBattle(){
 		
+		trace('new battle');
 		var popup = new TextPopup("untitled", "Battle ID", function(str:String){
+		
+			var mapID = Util.fixID(Utf8Ext.toLowerCase(str));
+			var outXml = Util.safePath(saveData.modPath, "maps/"+mapID+ ".xml");
 			
-			var dqString = Utf8Ext.toLowerCase(Util.dq1.dqString);
+			trace('outXml = ' + outXml);
 			
-			var basePng:BitmapData = Assets.getBitmapData("*assets/levels/" + dqString + ".png");
-			var baseXml:String = Assets.getText("*assets/levels/" + dqString + ".xml");
-			
-			var mapID = Utf8Ext.toLowerCase(str);
-			
-			var baseBonus:String = Assets.getText("*assets/levels/bonus.xml");
-			baseBonus = Util.uReplace(baseBonus, "$ID$", mapID, false);
-			
-			if (basePng != null && baseXml != null && baseBonus != null){
-				var outPng = Util.safePath(saveData.modPath, "maps/"+mapID + ".png");
-				var outXml = Util.safePath(saveData.modPath, "maps/"+mapID + ".xml");
+			if (FileSystem.exists(outXml)){
 				
-				var maps = Util.safePath(saveData.modPath, "maps");
+				trace("exists");
 				
-				Util.ensurePath(maps);
-				
-				var outBonus = Util.safePath(saveData.modPath, "_append/xml/bonus.xml");
-				var outPath = Util.safePath(saveData.modPath, "_append/xml");
-				
-				Util.ensurePath(outPath);
-				
-				var bonusEntryExists = false;
-				if (!FileSystem.exists(outBonus)){
-					var newStr = '<?xml version="1.0" encoding="utf-8" ?>\n<data>\n</data>';
-					File.saveContent(outBonus, newStr);
-				}
-				
-				var xml = new Fast(Util.xmlify(File.getContent(outBonus)));
-				if (xml.hasNode.bonus){
-					for (bonusNode in xml.nodes.bonus){
-						var bid = U.xml_name(bonusNode.x);
-						if (bid == mapID){
-							bonusEntryExists = true;
-							break;
-						}
+				var popup = new YesNoPopup("Confirm overwrite", "An existing battle was found with ID \""+str+"\"\nOverwrite it?", function(b:Bool){
+					
+					if (b){
+						makeNewBattle(mapID);
 					}
-				}
-				
-				if (!bonusEntryExists){
-					xml.x.addChild(Util.xmlify(baseBonus));
-					var baseBonusStr = Printer.print(xml.x, true);
 					
-					baseBonusStr = Util.killBlankLines(baseBonusStr);
-					
-					baseBonusStr = Util.uCat('<?xml version="1.0" encoding="utf-8" ?>\n<data>\n', baseBonusStr);
-					File.saveContent(outBonus, baseBonusStr);
-				}
+				});
 				
-				File.saveBytes(outPng, PNGEncoder.encode(basePng));
-				File.saveContent(outXml, baseXml);
+				openSubState(popup);
+				
 			}
+			else{
 			
-			loadMap(mapID);
+				makeNewBattle(mapID);
+				
+			}
 			
 		});
 		
 		openSubState(popup);
+	}
+
+	private function makeNewBattle(str:String){
+		
+		str = Util.fixID(str);
+		
+		var dqString = Utf8Ext.toLowerCase(Util.dq1.dqString);
+		
+		var basePng:BitmapData = Assets.getBitmapData("*assets/levels/" + dqString + ".png");
+		var baseXml:String = Assets.getText("*assets/levels/" + dqString + ".xml");
+		
+		var mapID = Utf8Ext.toLowerCase(str);
+		
+		var baseBonus:String = Assets.getText("*assets/levels/bonus.xml");
+		baseBonus = Util.uReplace(baseBonus, "$ID$", mapID, false);
+		
+		if (basePng != null && baseXml != null && baseBonus != null){
+			var outPng = Util.safePath(saveData.modPath, "maps/"+mapID + ".png");
+			var outXml = Util.safePath(saveData.modPath, "maps/"+mapID + ".xml");
+			
+			var maps = Util.safePath(saveData.modPath, "maps");
+			
+			Util.ensurePath(maps);
+			
+			var outBonus = Util.safePath(saveData.modPath, "_append/xml/bonus.xml");
+			var outPath = Util.safePath(saveData.modPath, "_append/xml");
+			
+			Util.ensurePath(outPath);
+			
+			var bonusEntryExists = false;
+			if (!FileSystem.exists(outBonus)){
+				var newStr = '<?xml version="1.0" encoding="utf-8" ?>\n<data>\n</data>';
+				File.saveContent(outBonus, newStr);
+			}
+			
+			var xml = new Fast(Util.xmlify(File.getContent(outBonus)));
+			
+			if (!xml.hasNode.bonus && xml.hasNode.data){
+				xml = xml.node.data;
+			}
+			
+			if (xml.hasNode.bonus){
+				for (bonusNode in xml.nodes.bonus){
+					var bid = U.xml_name(bonusNode.x);
+					if (bid == mapID){
+						bonusEntryExists = true;
+						break;
+					}
+				}
+			}
+			
+			if (!bonusEntryExists){
+				xml.x.addChild(Util.xmlify(baseBonus));
+				var baseBonusStr = Printer.print(xml.x, true);
+				
+				baseBonusStr = Util.killBlankLines(baseBonusStr);
+				
+				baseBonusStr = Util.uCat('<?xml version="1.0" encoding="utf-8" ?>\n', baseBonusStr);
+				
+				File.saveContent(outBonus, baseBonusStr);
+			}
+			
+			File.saveBytes(outPng, PNGEncoder.encode(basePng));
+			File.saveContent(outXml, baseXml);
+		}
+		
+		loadMap(mapID);
+	}
+	
+	private function getItemList():Array<String>{
+		return Util.getItemList();
 	}
 	
 	private function getBattleList():Array<String>{
@@ -347,7 +489,7 @@ class StartState extends FlxUIState
 					if (thing.indexOf(".xml") != -1){
 						var map = Util.stripExtension(thing);
 						if (stuff.indexOf(map + ".png") != -1){
-							culled.push(map);
+							culled.push(Util.stripID(map));
 						}
 					}
 				}
@@ -358,6 +500,19 @@ class StartState extends FlxUIState
 			return culled;
 		}
 		return null;
+	}
+	
+	private function onLoadItem()
+	{
+		var culled = getItemList();
+		
+		var popup = new TypePopup(culled, "", function(str:String, category:String){
+			
+			doLoadItem(str);
+			
+		});
+		
+		openSubState(popup);
 	}
 	
 	private function onLoadBattle()

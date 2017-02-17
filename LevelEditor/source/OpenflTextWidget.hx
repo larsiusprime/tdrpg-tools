@@ -12,6 +12,7 @@ import flixel.text.FlxText.FlxTextAlign;
 import flixel.text.FlxText.FlxTextBorderStyle;
 import openfl.text.TextField;
 import openfl.text.TextFieldType;
+import openfl.text.TextFormatAlign;
 
 /**
  * ...
@@ -22,19 +23,20 @@ class OpenflTextWidget extends FlxUIGroup
 	public var input:TextField;
 	public var label:FlxUIText;
 	
-	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, DefaultValue:String="", H:Float=0, font:String="verdana.ttf")
+	public function new(X:Float = 0, Y:Float = 0, W:Int, Label:String, DefaultValue:String="", H:Float=0, font:String="verdana.ttf", Multiline:Bool=true, WordWrap:Bool=true, Align:TextFormatAlign=TextFormatAlign.LEFT, Size:Int=12)
 	{
 		super(X, Y);
 		
 		input = new TextField();
-		input.setTextFormat(new TextFormat("assets/fonts/" + font, 12, FlxColor.BLACK));
+		input.setTextFormat(new TextFormat("assets/fonts/" + font, Size, FlxColor.BLACK, null, null, null, null, null, Align));
 		input.type = TextFieldType.INPUT;
 		input.background = true;
 		input.border = true;
-		input.wordWrap = true;
-		input.multiline = true;
+		input.wordWrap = WordWrap;
+		input.multiline = Multiline;
 		input.width = Std.int(W*0.9);
 		input.height = H;
+		input.text = DefaultValue;
 		
 		FlxG.stage.addChild(input);
 		

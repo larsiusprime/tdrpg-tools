@@ -45,7 +45,7 @@ class YesNoPopup extends FlxUISubState
 		title.x = back.x;
 		title.y = Std.int(back.y + 5);
 		
-		message.x = Std.int((FlxG.width - back.width) / 2);
+		message.x = back.x + Std.int((back.width - message.width) / 2);
 		message.y = back.y + Std.int((back.height-message.height) / 2);
 		
 		add(title);

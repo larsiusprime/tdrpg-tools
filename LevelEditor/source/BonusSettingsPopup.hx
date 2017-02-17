@@ -79,6 +79,15 @@ class BonusSettingsPopup extends FlxUISubState
 		button.x = Std.int((FlxG.width - button.width) / 2);
 		button.y = back.y + back.height - (button.height + 5);
 		add(button);
+		
+		var cancel = Util.makeBtn(Std.int(button.x), Std.int(button.y), "Cancel", function(){
+			callback = null;
+			close();
+		});
+		add(cancel);
+		
+		button.x -= button.width;
+		cancel.x += cancel.width;
 	}
 	
 	private function onClick(s:Float,sc:String,sp:Float,spc:String){

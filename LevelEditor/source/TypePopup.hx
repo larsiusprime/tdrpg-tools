@@ -37,6 +37,10 @@ class TypePopup extends FlxUISubState
 		var buttonWidth = 250;
 		var buttonHeight = 32;
 		
+		if (array.length == 2){
+			array.push("");
+		}
+		
 		var offY = 0;
 		var totalHeight = (buttonHeight + 5) * array.length;
 		if (totalHeight > FlxG.height){
@@ -54,9 +58,11 @@ class TypePopup extends FlxUISubState
 		var furthestRight:Float = 0;
 		var furthestLeft:Float = 999999;
 		
+		
 		var j = 0;
 		var category = "";
 		for (str in array){
+			
 			if (str.indexOf(":") != -1){
 				if (i > 0)
 				{
@@ -88,6 +94,9 @@ class TypePopup extends FlxUISubState
 					btn.label.text = Utf8Ext.toUpperCase(btn.label.text);
 				}
 				
+				if (str == ""){
+					btn.alpha = 0;
+				}
 				
 				switch(i){
 					case 1:
@@ -105,7 +114,9 @@ class TypePopup extends FlxUISubState
 				if (btn.x < furthestLeft){
 					furthestLeft = btn.x;
 				}
+				
 				i++;
+				
 				if (i >= 4){
 					buttons.push(group);
 					group = new FlxUIGroup();
@@ -121,7 +132,9 @@ class TypePopup extends FlxUISubState
 		var emptySpace = (FlxG.width - furthestRight);
 		offX = Std.int(emptySpace / 2);
 		
-		list = new FlxUIList(offX, offY, buttons, FlxG.width, (FlxG.height - (offY * 2)), "<X> more...", FlxUIList.STACK_VERTICAL, 5);
+		var bottomBuffer = ((offY * 2) + 50);
+		
+		list = new FlxUIList(offX, offY, buttons, (FlxG.width-furthestRight), (FlxG.height - bottomBuffer), "<X> more...", FlxUIList.STACK_VERTICAL, 5);
 		add(list);
 		
 		var nxb:FlxUIButton = cast list.nextButton;
@@ -133,6 +146,14 @@ class TypePopup extends FlxUISubState
 		new FlxTimer().start(0.25, function(f:FlxTimer){
 			wait = false;
 		});
+		
+		var cancel = Util.makeBtn(0, FlxG.height - 50, "Cancel", function(){
+			callback = null;
+			close();
+		});
+		
+		cancel.x = Std.int((FlxG.width - cancel.width) / 2);
+		add(cancel);
 	}
 	
 	override public function update(elapsed:Float):Void 

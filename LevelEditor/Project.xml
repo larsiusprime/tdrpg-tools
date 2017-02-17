@@ -55,6 +55,10 @@
 		<haxelib name="safeparse"/>
 	</section>
 	
+	
+    <haxelib name="haxeui-core" />
+    <haxelib name="haxeui-openfl" />
+	
 	<!--Disable the Flixel core debugger. Automatically gets set whenever you compile in release mode!-->
 	<haxedef name="FLX_NO_DEBUG" unless="debug" />
 	<haxedef name="no-traces" unless="debug" />

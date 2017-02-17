@@ -58,6 +58,8 @@ class MetaWidget extends FlxUIGroup
 		Util.matchRewards(rewards2, r2);
 		rewardsButton1.button.label.text = getRewardText(1);
 		rewardsButton2.button.label.text = getRewardText(2);
+		rewardsButton1.button.autoCenterLabel();
+		rewardsButton2.button.autoCenterLabel();
 	}
 	
 	public function syncBonus(bd:BonusStruct){
@@ -90,6 +92,10 @@ class MetaWidget extends FlxUIGroup
 		difficulty.selectedId  = meta.difficulty;
 		endlessLevelup.stepper.value = info.endlessLevelup;
 		endless.checked = info.isEndless;
+		endless.callback = function(){
+			endlessLevelup.visible = endless.checked;
+		};
+		endlessLevelup.visible = endless.checked;
 		isBonus.checked = info.isBonus;
 		firstWait.stepper.value = info.firstWait;
 		
@@ -191,7 +197,8 @@ class MetaWidget extends FlxUIGroup
 		isBonus = Util.makeCheckbox(X, Y-10, "Is bonus level", onChange);
 		add(isBonus);
 		
-		bonusSettings = new ButtonWidget(X, Y+10, 100, 90, "Bonus settings", "...", onChangeBonusSettings);
+		bonusSettings = new ButtonWidget(X, Y + 5, 100, 90, "Unlocks at", "...", onChangeBonusSettings);
+		bonusSettings.labelOnTop();
 		add(bonusSettings);
 		
 		X += dx + 25;
@@ -204,12 +211,12 @@ class MetaWidget extends FlxUIGroup
 		
 		X += dx;
 		
-		rewardsButton1 = new ButtonWidget(X, Y, 140, 90, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
+		rewardsButton1 = new ButtonWidget(X, Y-10, 140, 110, "reward 1", getRewardText(1) , onChangeRewards.bind(1));
 		add(rewardsButton1);
 		
 		X += dx + 50;
 		
-		rewardsButton2 = new ButtonWidget(X, Y, 140, 90, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
+		rewardsButton2 = new ButtonWidget(X, Y-10, 140, 110, "reward 2", getRewardText(2) , onChangeRewards.bind(2));
 		add(rewardsButton2);
 	}
 	
@@ -288,9 +295,11 @@ class MetaWidget extends FlxUIGroup
 			if (i == 1){
 				rewards1 = reward;
 				rewardsButton1.button.label.text = getRewardText(1);
+				rewardsButton1.button.autoCenterLabel();
 			}else{
 				rewards2 = reward;
 				rewardsButton2.button.label.text = getRewardText(2);
+				rewardsButton2.button.autoCenterLabel();
 			}
 			onRewardChange([rewards1, rewards2]);
 		});
