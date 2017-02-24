@@ -59,8 +59,13 @@
 		<haxelib name="firetongue"/>
 		<haxelib name="monologue-reader"/>
 		<haxelib name="safeparse"/>
+		<haxelib name="steamwrap"/>
 	</section>
 	
+	<section if="steam">
+		<setenv name="STEAM_APP_ID" value="218410"/>
+		<set name="APP_FILE" value="LevelEditor"/>
+	</section>
 	
     <haxelib name="haxeui-core" />
     <haxelib name="haxeui-openfl" />

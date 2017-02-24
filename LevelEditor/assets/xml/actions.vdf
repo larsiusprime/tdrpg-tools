@@ -1,0 +1,246 @@
+"In Game Actions"
+{
+	"actions"
+	{
+		"EditorControls"
+		{
+			"title"					"#edit_title"
+			"Button"
+			{
+				"edit_click"		"#edit_click, mouse_button LEFT"
+			}
+			"StickPadGyro"
+			{
+				"edit_mouse"
+				{
+					"title"			"#edit_mouse"
+					"input_mode"	"absolute_mouse"
+				}
+			}
+		}
+		"BattleControls"
+		{
+			"title"					"#battle_title"
+			"Button"
+			{
+				"up"				"#battle_up"
+				"down"				"#battle_down"
+				"left"				"#battle_left"
+				"right"				"#battle_right"
+				"tile_up"			"#battle_tile_up"
+				"tile_down"			"#battle_tile_down"
+				"tile_left"			"#battle_tile_left"
+				"tile_right"		"#battle_tile_right"
+				"battle_menu_up"	"#battle_menu_up"
+				"battle_menu_down"	"#battle_menu_down"
+				"battle_menu_left"	"#battle_menu_left"
+				"battle_menu_right"	"#battle_menu_right"
+				"select"			"#battle_select"
+				"back"				"#battle_back"
+				"defenders"			"#battle_defenders"
+				"spells"			"#battle_spells"
+				"speed_plus"		"#battle_speed_plus"
+				"speed_minus"		"#battle_speed_minus"
+				"pause"				"#battle_pause"
+				"pause_only"		"#battle_pause_only"
+				"menu"				"#battle_menu"
+				"cycle_previous"	"#battle_cycle_previous"
+				"cycle_next"		"#battle_cycle_next"
+				"spell_spam"		"#battle_spell_spam"
+				"class_0"			"#battle_class_0"
+				"class_1"			"#battle_class_1"
+				"class_2"			"#battle_class_2"
+				"class_3"			"#battle_class_3"
+				"class_4"			"#battle_class_4"
+				"class_5"			"#battle_class_5"
+				"character_0"		"#battle_character_0"
+				"character_1"		"#battle_character_1"
+				"character_2"		"#battle_character_2"
+				"character_3"		"#battle_character_3"
+				"character_4"		"#battle_character_4"
+				"character_5"		"#battle_character_5"
+				"spell_0"			"#battle_spell_0"
+				"spell_1"			"#battle_spell_1"
+				"spell_2"			"#battle_spell_2"
+				"spell_3"			"#battle_spell_3"
+				"spell_4"			"#battle_spell_4"
+				"spell_5"			"#battle_spell_5"
+				"battle_nevermind"	"#battle_nevermind"
+				"battle_click"		"#battle_click, mouse_button LEFT"
+				"battle_menu_digitize"	"#battle_menu_digitize"
+			}
+			"StickPadGyro"
+			{
+				"free_move"
+				{
+					"title"			"#battle_free_move_joystick"
+					"input_mode"	"absolute_mouse"
+				}
+				"free_move_mouse"
+				{
+					"title"			"#battle_free_move_mouse"
+					"input_mode"	"absolute_mouse"
+				}
+			}
+		}
+		
+		"MapControls"
+		{
+			"title"					"#map_title"
+			"StickPadGyro"
+			{
+				"move_map"
+				{
+					"title"			"#map_move"
+					"input_mode"	"absolute_mouse"
+				}
+				"scroll_map"
+				{
+					"title"			"#map_scroll"
+					"input_mode"	"absolute_mouse"
+				}
+				"map_move_mouse"
+				{
+					"title"			"#map_move_mouse"
+					"input_mode"	"absolute_mouse"
+				}
+			}
+			"Button"
+			{
+				"map_select"		"#map_select"
+				"map_exit"			"#map_exit"
+				"map_menu"			"#map_menu"
+				"map_journal"		"#map_journal"
+				"move_left"			"#move_left"
+				"move_right"		"#move_right"
+				"move_up"			"#move_up"
+				"move_down"			"#move_down"
+				"map_mouse_click"	"#map_mouse_click"
+				"map_nevermind"		"#map_nevermind"
+			}
+		}
+		
+		"MenuControls"
+		{
+			"title"					"#menu_title"
+			"StickPadGyro"
+			{
+				"menu_move"
+				{
+					"title"			"#menu_move"
+					"input_mode"	"joystick_move"
+				}
+				"menu_move_mouse"
+				{
+					"title"			"#menu_move_mouse"
+					"input_mode"	"absolute_mouse"
+				}
+			}
+			"Button"
+			{
+				"menu_up"			"#menu_up"
+				"menu_down"			"#menu_down"
+				"menu_left"			"#menu_left"
+				"menu_right"		"#menu_right"
+				"menu_select"		"#menu_select"
+				"menu_cancel"		"#menu_cancel"
+				"menu_thing_1"		"#menu_thing_1"
+				"menu_thing_2"		"#menu_thing_2"
+				"menu_thing_3"		"#menu_thing_3"
+				"menu_menu"			"#menu_menu"
+				"menu_mouse_click"	"#menu_mouse_click"
+				"menu_nevermind"	"#menu_nevermind"
+			}
+		}
+	}
+	"localization"
+	{
+		"english"
+		{
+			"battle_title"				"Battle controls"
+			"battle_up"					"Cursor up"
+			"battle_down"				"Cursor down"
+			"battle_left"				"Cursor left"
+			"battle_right"				"Cursor right"
+			"battle_tile_up"			"Tile up"
+			"battle_tile_down"			"Tile down"
+			"battle_tile_left"			"Tile left"
+			"battle_tile_right"			"Tile right"
+			"battle_menu_up"			"Menu up"
+			"battle_menu_down"			"Menu down"
+			"battle_menu_left"			"Menu left"
+			"battle_menu_right"			"Menu right"
+			"battle_select"				"Select"
+			"battle_back"				"Back"
+			"battle_defenders"			"Defenders"
+			"battle_spells"				"Spells"
+			"battle_speed_plus"			"Increase speed"
+			"battle_speed_minus"		"Decrease speed"
+			"battle_pause"				"Pause (toggle)"
+			"battle_menu"				"Menu"
+			"battle_free_move_mouse"	"Move finger cursor"
+			"battle_free_move_joystick" "Move finger cursor + navigate menu"
+			"battle_cycle_previous"		"Previous defender"
+			"battle_cycle_next"			"Next defender"
+			"battle_spell_spam"			"Spell repeat"
+			"battle_class_0"			"Class 1"
+			"battle_class_1"			"Class 2"
+			"battle_class_2"			"Class 3"
+			"battle_class_3"			"Class 4"
+			"battle_class_4"			"Class 5"
+			"battle_class_5"			"Class 6"
+			"battle_character_0"		"Character 1"
+			"battle_character_1"		"Character 2"
+			"battle_character_2"		"Character 3"
+			"battle_character_3"		"Character 4"
+			"battle_character_4"		"Character 5"
+			"battle_character_5"		"Character 6"
+			"battle_spell_0"			"Spell 1"
+			"battle_spell_1"			"Spell 2"
+			"battle_spell_2"			"Spell 3"
+			"battle_spell_3"			"Spell 4"
+			"battle_spell_4"			"Spell 5"
+			"battle_spell_5"			"Spell 6"
+			"battle_pause_only"			"Pause (only)"
+			"battle_nevermind"			"Nevermind"
+			"battle_click"				"Click finger cursor"
+			"battle_menu_digitize"		"Menu 'DPAD' navigation"
+			
+			"map_title"					"Map controls"
+			"map_scroll"				"Scroll map"
+			"map_move"					"Move location"
+			"map_select"				"Select"
+			"map_exit"					"Exit"
+			"map_menu"					"Options Menu"
+			"map_journal"				"Journal"
+			"map_move_mouse"			"Move finger cursor"
+			"map_mouse_click"			"Click finger cursor"
+			"map_nevermind"				"Nevermind"
+			
+			"menu_title"				"Menu controls"
+			"menu_move"					"Analog movement"
+			"menu_move_mouse"			"Move finger cursor"
+			"menu_up"					"Cursor up"
+			"menu_down"					"Cursor down"
+			"menu_left"					"Cursor left"
+			"menu_right"				"Cursor right"
+			"menu_select"				"Select"
+			"menu_cancel"				"Cancel"
+			"menu_thing_1"				"Menu choice 1"
+			"menu_thing_2"				"Menu choice 2"
+			"menu_thing_3"				"Menu choice 3"
+			"menu_menu"					"Menu"
+			"menu_mouse_click"			"Click finger cursor"
+			"menu_nevermind"			"Nevermind"
+			
+			"move_up"					"Move up"
+			"move_down"					"Move down"
+			"move_left"					"Move left"
+			"move_right"				"Move right"
+			
+			"edit_title"				"Editor controls"
+			"edit_mouse"				"Move mouse cursor"
+			"edit_click"				"Click"
+		}   
+	}       
+}          

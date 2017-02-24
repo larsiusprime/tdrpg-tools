@@ -1,4 +1,6 @@
 package;
+import com.leveluplabs.tdrpg.FileUtils;
+import com.leveluplabs.tdrpg.Popup_MyMods.ModInfo;
 import com.leveluplabs.tdrpg.UU;
 import flash.display.BitmapData;
 import flixel.FlxG;
@@ -12,12 +14,14 @@ import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.addons.util.PNGEncoder;
 import flixel.util.FlxColor;
 import flixel.text.FlxText.FlxTextAlign;
+import haxe.io.Bytes;
 import haxe.xml.Fast;
 import haxe.xml.Printer;
 import lime.system.System;
 import lime.ui.FileDialogType;
 import openfl.Assets;
 import org.zamedev.lib.Utf8Ext;
+import steamwrap.api.Steam;
 import sys.FileSystem;
 import sys.io.File;
 import unifill.Unifill;
@@ -33,9 +37,11 @@ class State_Start extends FlxUIState
 	
 	private var installText:FlxUIText;
 	private var projectText:FlxUIText;
+	private var currProjectText:FlxUIText;
 	
 	private var newProject:FlxUIButton;
 	private var loadProject:FlxUIButton;
+	private var renameProject:FlxUIButton;
 	private var newBattle:FlxUIButton;
 	private var loadBattle:FlxUIButton;
 	private var newItem:FlxUIButton;
@@ -56,18 +62,22 @@ class State_Start extends FlxUIState
 		
 		saveData = new SaveData();
 		
-		newProject = Util.makeBtn(0, 0, "New Project", onNewProject);
-		loadProject = Util.makeBtn(0, 0, "Load Project", onLoadProject);
+		newProject = Util.makeBtn(0, 0, "New Project", onNewProject, 150);
+		loadProject = Util.makeBtn(0, 0, "Load Project", onLoadProject, 150);
+		renameProject = Util.makeBtn(0, 0, "Change Project ID", onRenameProject, 150); 
 		
 		screen = new FlxObject(0, 0, FlxG.width, FlxG.height);
 		
 		Util.center(screen, newProject, true, true);
 		Util.center(screen, loadProject, true, true);
+		Util.center(screen, renameProject, true, true);
 		
 		loadProject.y += newProject.height + 10;
+		renameProject.y = loadProject.y + loadProject.height + 10;
 		
 		add(newProject);
 		add(loadProject);
+		add(renameProject);
 		
 		initInstallPath(init);
 		
@@ -78,12 +88,16 @@ class State_Start extends FlxUIState
 	private function makeText(){
 		installText = Util.makeTxt(0, 0, FlxG.width, "...");
 		projectText = Util.makeTxt(0, 20, FlxG.width, "...");
+		currProjectText = Util.makeTxt(0, 40, FlxG.width, "...");
+		currProjectText.size += 8;
 		
 		installText.alignment = flixel.text.FlxTextAlign.CENTER;
 		projectText.alignment = flixel.text.FlxTextAlign.CENTER;
+		currProjectText.alignment = flixel.text.FlxTextAlign.CENTER;
 		
 		add(installText);
 		add(projectText);
+		add(currProjectText);
 	}
 	
 	private function init(){
@@ -99,6 +113,7 @@ class State_Start extends FlxUIState
 	private function refreshText(){
 		installText.text = "Game directory: (" +saveData.installPath+")";
 		projectText.text = "Project directory: (" + saveData.modPath + ")";
+		currProjectText.text = "Current Project: " + Util.getModID() + "";
 		
 		initBattleButtons();
 		
@@ -127,21 +142,28 @@ class State_Start extends FlxUIState
 				loadItem.visible = true;
 			}
 		}
+		
+		var modID = Util.getModID();
+		if (modID != null && modID != ""){
+			renameProject.visible = true;
+		}else{
+			renameProject.visible = false;
+		}
 	}
 	
 	private function initBattleButtons(){
 		if (loadBattle == null && (loadProject != null) && (saveData.modPath != "" && saveData.modPath != null)){
-			newBattle = Util.makeBtn(0, 0, "New battle", onNewBattle);
-			loadBattle = Util.makeBtn(0, 0, "Load battle", onLoadBattle);
-			newItem = Util.makeBtn(0, 0, "New Item", onNewItem);
-			loadItem = Util.makeBtn(0, 0, "Load Item", onLoadItem);
+			newBattle = Util.makeBtn(0, 0, "New battle", onNewBattle, 150);
+			loadBattle = Util.makeBtn(0, 0, "Load battle", onLoadBattle, 150);
+			newItem = Util.makeBtn(0, 0, "New Item", onNewItem, 150);
+			loadItem = Util.makeBtn(0, 0, "Load Item", onLoadItem, 150);
 			
-			newBattle.x = loadProject.x;
-			loadBattle.x = loadProject.x;
+			newBattle.x = renameProject.x;
+			loadBattle.x = newBattle.x;
 			newItem.x = newBattle.x;
 			loadItem.x = newBattle.x;
 			
-			newBattle.y = loadProject.y + loadProject.height + 10;
+			newBattle.y = renameProject.y + renameProject.height + 10;
 			loadBattle.y = newBattle.y + newBattle.height + 10;
 			newItem.y = loadBattle.y + loadBattle.height + 10;
 			loadItem.y = newItem.y + newItem.height + 10;
@@ -287,19 +309,14 @@ class State_Start extends FlxUIState
 			testPath = Util.getParentDir(testPath);
 		}
 		
-		UU.debugLog("testPath = " + testPath,true);
-		
 		if (FileSystem.exists(testPath) && FileSystem.isDirectory(testPath)){
 			
 			var files = FileSystem.readDirectory(testPath);
-			UU.debugLog("files = " + files,true);
 			for (file in files){
 				if (file.indexOf("DefendersQuest") != -1){
 					var fullFilePath = Util.safePath(testPath, file);
-					UU.debugLog("fullFilePath = " + fullFilePath, true);
 					if (FileSystem.exists(fullFilePath) && FileSystem.isDirectory(fullFilePath) == false)
 					{
-						UU.debugLog("FOUND DQ!!!", true);
 						return true;
 					}
 				}
@@ -316,8 +333,6 @@ class State_Start extends FlxUIState
 		
 		saveData.installPath = path;
 		
-		UU.debugLog("installPath = " + path, true);
-		
 		if (Util.dataFetcher == null){
 			Util.dataFetcher = new DataFetcher(saveData);
 		}
@@ -330,8 +345,6 @@ class State_Start extends FlxUIState
 	private function detectInstallPath(path:String="", message:String="", finished:Void->Void)
 	{
 		var isInstallPath = testInstallPath(path);
-		
-		UU.debugLog("a   is install path = " + isInstallPath, true);
 		
 		if (isInstallPath){
 			saveInstallPath(path);
@@ -356,6 +369,235 @@ class State_Start extends FlxUIState
 			});
 			openSubState(popup);
 		}
+	}
+	
+	private function onRenameProject(){
+		
+		var modID = Util.getModID();
+		var modPath = saveData.modPath;
+		
+		var popup = new TextPopup(modID, "Project ID", function(str:String){
+			if (str == null || str == ""){
+				Util.alert(this, "Error!", "Project ID can't be blank!");
+			}else if (str == modID){
+				//do nothing, no change
+			}
+			else if(Util.checkProjectIDIsUnique(str) == false){
+				
+				var popup = new YesPopup("ID is not unique!", "Another mod on Steam already has the project ID \"" + str + "\", please pick another one.", function(){
+					onRenameProject();
+				});
+				openSubState(popup);
+				
+			}
+			else{
+				
+				var newPath = Util.safePath(modPath, str);
+				
+				var settingsPath = UU.fixDoubleSlash(newPath + UU.getSlash() + "settings.xml");
+				
+				if (FileSystem.exists(settingsPath))
+				{
+					var popup = new YesNoPopup("Confirm overwrite", "An existing project was found at path\n" + newPath + "\nOverwrite it?", function(b:Bool){
+						doDeleteProject(str);
+						doRenameProject(str);
+					});
+					
+					openSubState(popup);
+				}
+				else
+				{
+					doRenameProject(str);
+				}
+				
+			}
+			
+		},true, true);
+		openSubState(popup);
+	}
+	
+	private function doDeleteProject(name:String){
+		
+		var newPath = Util.safePath(saveData.modPath, name);
+		var settingsPath = Util.safePath(newPath, "settings.xml");
+		if (FileSystem.exists(settingsPath)){
+			UU.clearDirectory(newPath);
+		}
+	}
+	
+	private function doRenameProject(newName:String){
+		
+		var oldName = Util.getModID();
+		var basePath = Util.getParentDir(saveData.modPath);
+		var oldPath = Util.safePath(basePath, oldName);
+		var newPath = Util.safePath(basePath, newName);
+		
+		var settingsPath = Util.safePath(newPath, "settings.xml");
+		
+		var content = 0;
+		if (FileSystem.exists(newPath))
+		{
+			var contents = FileSystem.readDirectory(newPath);
+			content = contents == null ? 0 : contents.length;
+		}
+		else
+		{
+			UU.createDirectoryRecursive(newPath, UU.getOS());
+		}
+		
+		if (content == 0)
+		{
+			var result = UU.copyDirectory(oldPath, newPath);
+			trace("result = " + result);
+			if (result > 0){
+				var oldSettings = Util.safePath(oldPath, "settings.xml");
+				trace("oldSettings = " + oldSettings);
+				if (FileSystem.exists(oldSettings)){
+					trace("clear old path");
+					UU.clearDirectory(oldPath);
+				}
+				fixProjectIDs(newPath, oldName, newName);
+			}
+			
+			saveData.modPath = newPath;
+			saveStuff();
+		}
+		else{
+			openSubState(new YesPopup("Error!", "Couldn't rename the project because the destination directory \"" + newPath +"\" was not emptied"));
+		}
+	}
+	
+	private function fixProjectIDs(newPath:String, oldID:String, newID:String){
+		
+		//Fix settings file
+		var settingsPath:String = Util.safePath(newPath, "settings.xml");
+		var settings:Fast = UU.getModSettings(settingsPath);
+		if (settings != null){
+			var modInfo:ModInfo = ModInfo.fromXML(settings);
+			modInfo.id = newID;
+			UU.saveModSettings(modInfo, newPath);
+		}
+		
+		var oldPrefix = Util.uCat(oldID,"~");
+		var newPrefix = Util.uCat(newID,"~");
+		
+		//Fix item image names
+		var itemsPath:String = Util.safePath(newPath, "gfx/_hd/items/custom");
+		renameFiles(oldPrefix, newPrefix, itemsPath);
+		
+		//Fix map file names
+		var mapsPath:String = Util.safePath(newPath, "maps");
+		renameFiles(oldPrefix, newPrefix, mapsPath);
+		
+		//Fix item xml contents
+		var itemXMLPath:String = Util.safePath(newPath, "_append/xml/items.xml");
+		renameTextFileContents(oldPrefix, newPrefix, itemXMLPath);
+		
+		//Fix bonux xml contents
+		var bonusXMLPath:String = Util.safePath(newPath, "_append/xml/bonus.xml");
+		renameTextFileContents(oldPrefix, newPrefix, bonusXMLPath);
+		
+		//Fix locale contents
+		var localePath:String = Util.safePath(newPath, "_append/locales");
+		if(FileSystem.exists(localePath)){
+			var locStuff = FileUtils.getAllFilesFromDir(localePath, true, false);
+			for (thing in locStuff){
+				if (thing.indexOf(".tsv") != -1){
+					renameTextFileContents(oldPrefix, newPrefix, thing);
+				}
+			}
+		}
+	}
+	
+	private function renameTextFileContents(oldPrefix:String, newPrefix:String, path:String):Bool{
+		
+		if (FileSystem.exists(path)){
+			
+			var str:String = File.getContent(path);
+			
+			var oldLower = Utf8Ext.toLowerCase(oldPrefix);
+			var newLower = Utf8Ext.toLowerCase(newPrefix);
+			var oldUpper = Utf8Ext.toUpperCase(oldPrefix);
+			var newUpper = Utf8Ext.toUpperCase(newPrefix);
+			
+			str = UU.uSplitReplace(str, oldPrefix, newPrefix);
+			str = UU.uSplitReplace(str, oldLower, newLower);
+			str = UU.uSplitReplace(str, oldUpper, newUpper);
+			
+			File.saveContent(path, str);
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	private function renameFiles(oldPrefix:String, newPrefix:String, dir:String):Bool{
+		
+		if (FileSystem.exists(dir)){
+			var stuff = FileUtils.getAllFilesFromDir(dir, false);
+			for (thing in stuff){
+				var newName = fixFilePrefix(oldPrefix, newPrefix, thing);
+				var newFilename = Util.safePath(dir, newName);
+				var oldFilename = Util.safePath(dir, thing);
+				var success = renameFile(oldFilename, newFilename);
+				if (!success){
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	private function renameFile(oldName:String, newName:String):Bool{
+		
+		if (!FileSystem.exists(oldName)) return false;
+		
+		var bytes = File.getBytes(oldName);
+		
+		try
+		{
+			File.saveBytes(newName, bytes);
+		}
+		catch (msg:Dynamic){
+			return false;
+		}
+		
+		if (FileSystem.exists(newName))
+		{
+			var test = File.getBytes(newName);
+			
+			if (bytes.compare(test) == 0)
+			{
+				FileSystem.deleteFile(oldName);
+				if (!FileSystem.exists(oldName))
+				{
+					return true;
+				}
+			}
+			else
+			{
+				FileSystem.deleteFile(newName);
+				return false;
+			}
+		}
+		return false;
+	}
+	
+	private function deleteFile(path:String):Bool{
+		if (FileSystem.exists(path) && !FileSystem.isDirectory(path)){
+			FileSystem.deleteFile(path);
+			return true;
+		}
+		return false;
+	}
+	
+	private function fixFilePrefix(oldID:String, newID:String, name:String):String{
+		if (Unifill.uIndexOf(name, oldID) != -1){
+			name = UU.uSplitReplace(name, oldID, newID);
+		}
+		return name;
 	}
 	
 	private function onNewProject(){
@@ -384,9 +626,20 @@ class State_Start extends FlxUIState
 		var title = "";
 		
 		var popup = new TextPopup("untitled", "Project ID", function(str:String){
+			
 			if (str == null || str == ""){
 				Util.alert(this, "Error!", "Project ID can't be blank!");
-			}else{
+			}
+			else if(Util.checkProjectIDIsUnique(str) == false){
+				
+				var popup = new YesPopup("ID is not unique!", "Another mod on Steam already has the project ID \"" + str + "\", please pick another one.", function(){
+					onNewProject();
+				});
+				openSubState(popup);
+				
+			}
+			else{
+				
 				name = str;
 				modPath = Util.safePath(modPath, str);
 				
@@ -394,10 +647,12 @@ class State_Start extends FlxUIState
 					
 					title = str;
 					var success = ModUtil.exportMod(name, title, modPath, Util.dq1.dqString, Util.dq1.dqVersion, false);
+					
 					if (!success){
 						var popup = new YesNoPopup("Confirm overwrite", "An existing project was found at path\n" + modPath + "\nOverwrite basic settings?", function(b:Bool){
 							
-							if(b){
+							if (b){
+								
 								ModUtil.exportMod(name, title, modPath, Util.dq1.dqString, Util.dq1.dqVersion, true);
 								saveData.modPath = modPath;
 								saveStuff();
@@ -454,8 +709,6 @@ class State_Start extends FlxUIState
 		
 			var mapID = Util.fixID(Utf8Ext.toLowerCase(str));
 			var outXml = Util.safePath(saveData.modPath, "maps/"+mapID+ ".xml");
-			
-			trace("str = " + str + " mod = " + Util.getModID());
 			
 			if (Util.stripID(str).toLowerCase() == Util.getModID().toLowerCase()){
 				
@@ -579,8 +832,6 @@ class State_Start extends FlxUIState
 					}
 				}
 			}
-			
-			trace("culled = " + culled);
 			
 			if (culled.length == 0) return null;
 			

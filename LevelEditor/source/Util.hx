@@ -1,6 +1,8 @@
 package;
+import com.leveluplabs.tdrpg.UU;
 import firetongue.TSV;
 import flash.display.BitmapData;
+import flixel.FlxG;
 import flixel.FlxObject;
 import flixel.FlxState;
 import flixel.FlxSubState;
@@ -16,19 +18,31 @@ import flixel.addons.ui.FlxUISubState;
 import flixel.addons.ui.FlxUIText;
 import flixel.addons.ui.U;
 import flixel.addons.ui.interfaces.IFlxUIState;
+import flixel.input.actions.FlxAction.FlxActionAnalog;
+import flixel.input.actions.FlxAction.FlxActionDigital;
+import flixel.input.actions.FlxActionInput;
+import flixel.input.actions.FlxActionManager;
 import flixel.util.FlxColor;
 import haxe.Utf8;
 import haxe.xml.Fast;
 import haxe.xml.Printer;
 import lime.ui.FileDialog;
 import lime.ui.FileDialogType;
+import lime.ui.Mouse;
+import lime.ui.Window;
+import openfl.Assets;
+import openfl.Lib;
+import openfl.events.Event;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
+import steamwrap.api.Steam;
 import sys.FileSystem;
 import sys.io.File;
 import unifill.CodePoint;
 import unifill.Unifill;
 import flixel.text.FlxText.FlxTextAlign;
+import flixel.input.actions.FlxActionInput.FlxInputDevice;
+import flixel.input.actions.FlxActionInput.FlxInputDeviceID;
 import flixel.addons.ui.FlxUILine.LineAxis;
 import RewardsPicker.RewardStruct;
 
@@ -55,12 +69,150 @@ class Util
 		dq1.squaresWide = 15;
 		dq1.squaresTall = 14;
 		dq1.dqFolder = "DefendersQuest";
+		dq1.APP_ID = 218410;
 		
 		dq2.tilesetStyle = "dq2";
 		dq2.tilesPerSquare = 1;
 		dq2.squaresWide = 23;
 		dq2.squaresTall = 15;
 		dq2.dqFolder = "DefendersQuestII";
+		dq2.APP_ID = 0;
+		
+		try{
+			if (!Steam.active){
+				initSteam();
+			}
+		}catch (msg:Dynamic){
+			
+		}
+	}
+	
+	private static function initSteam(){
+		
+		Steam.init(Util.dq1.APP_ID);
+		cacheSteamProjectIDs();
+		FlxG.stage.addEventListener(Event.ENTER_FRAME, onEnterFrame, false, 0, true);
+		
+		FlxG.gamepads.globalDeadZone = 0.15;
+		
+		//Main.OMNI.actionManager = new FlxActionManager();
+		var actionManager = new FlxActionManager();
+		FlxG.inputs.add(actionManager);
+		
+		/*
+		actionManager.deviceConnected.add(Main.onDeviceConnected);
+		actionManager.deviceDisconnected.add(Main.onDeviceDisconnected);
+		actionManager.inputsChanged.add(Main.onInputsChanged);
+		*/
+		
+		var vdfText:String = Assets.getText("assets/xml/actions.vdf");
+		actionManager.initSteam(steamwrap.data.ControllerConfig.fromVDF(vdfText), onActionDigital, onActionAnalog);
+		var setIndex = actionManager.getSetIndex("EditorControls");
+		trace("setIndex = " + setIndex);
+		actionManager.activateSet(setIndex, FlxInputDevice.ALL, FlxInputDeviceID.ALL);
+		
+		//steamwrap.api.Steam.whenGamepadTextInputDismissed = Main.onSteamSoftKeyboardClose;
+		
+		return true;
+	}
+	
+	private static function onActionDigital(d:FlxActionDigital){
+		trace("digital " + d.name);
+	}
+	
+	private static function onActionAnalog(a:FlxActionAnalog){
+		trace("analog " + a.name);
+	}
+	
+	private static function onEnterFrame(e:Event){
+		if (Steam.active){
+			Steam.onEnterFrame();
+		}
+	}
+	
+	
+	public static function checkProjectIDIsUnique(str:String):Bool
+	{
+		trace(str + " VS " + projectIDsOnSteam);
+		if (projectIDsOnSteam.indexOf(str) != -1){
+			return false;
+		}
+		return true;
+	}
+	
+	
+	private static var projectIDsOnSteam:Array<String> = null;
+	private static function cacheSteamProjectIDs():Void
+	{
+		trace("cachesteamprojectIds");
+		projectIDsOnSteam = [];
+		
+		if (!Steam.active) return;
+		
+		Steam.whenQueryUGCRequestSent = onSteamQuery;
+		
+		var appID = Util.dq1.APP_ID;
+		var queryType = EUGCQuery.RankedByVote;
+		var matchingType = EUGCMatchingUGCType.All;
+		var queryHandle:String = Steam.ugc.createQueryAllUGCRequest(queryType, matchingType, appID, appID, 1);
+		
+		Steam.ugc.setReturnKeyValueTags(queryHandle, true);
+		
+		Steam.ugc.sendQueryUGCRequest(queryHandle);
+		
+	}
+	
+	private static function onSteamQuery(result:SteamUGCQueryCompleted):Void
+	{
+		var handle = result.handle;
+		var num = result.numResultsReturned;
+		var tot = result.totalMatchingResults;
+		
+		for (i in 0...num){
+			
+			var numTags = Steam.ugc.getQueryUGCNumKeyValueTags(handle, i);
+			var details = Steam.ugc.getQueryUGCResult(handle, i);
+			
+			for(tagi in 0...numTags){
+				var keyValue = Steam.ugc.getQueryUGCKeyValueTag(handle, i, tagi);
+				if(keyValue != null && keyValue.length == 2){
+					var key = keyValue[0];
+					var value = keyValue[1];
+					if (key == "project_id"){
+						projectIDsOnSteam.push(value);
+					}
+				}
+			}
+		}
+		
+		trace("projectIDsOnSteam = " + projectIDsOnSteam);
+		
+		Steam.ugc.releaseQueryUGCRequest(handle);
+	}
+	
+	public static function getFixedModPath():String
+	{
+		var modPath = UU.getDefaultPath("mods");
+		
+		var subPath = Util.getLastFolder(Util.getParentDir(modPath));
+		var sub2Path = Util.getLastFolder(Util.getParentDir(Util.getParentDir(modPath)));
+		var sub3Path = Util.getLastFolder(Util.getParentDir(Util.getParentDir(Util.getParentDir(modPath))));
+		
+		var newPath = modPath;
+		
+		//If default Documents\LevelEditor directory detected, make it point to the DefendersQuest mod directory instead
+		if (subPath == "LevelEditor" && sub2Path == "LevelUpLabs" && sub3Path == "Documents"){
+			
+			var ppPath = Util.getParentDir(Util.getParentDir(modPath));
+			
+			newPath = Util.safePath(ppPath, Util.dq1.dqFolder);
+			newPath = Util.safePath(newPath, Util.getLastFolder(modPath));
+			
+		}
+		
+		modPath = newPath;
+		
+		return modPath;
 	}
 	
 	public static function abc2num(str:String):Int{

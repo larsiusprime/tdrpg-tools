@@ -15,6 +15,7 @@ class Settings
 	public var squaresTall:Int = 14;
 	public var tilePixelsTall:Int = 40;
 	public var tilePixelsWide:Int = 40;
+	public var APP_ID:Int = 218410;
 	
 	public function new() 
 	{

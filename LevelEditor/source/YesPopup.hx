@@ -25,7 +25,7 @@ class YesPopup extends FlxUISubState
 
 	private var callback:Void->Void;
 	
-	public function new(Title:String, Message:String, Callback:Void->Void) 
+	public function new(Title:String, Message:String, ?Callback:Void->Void) 
 	{
 		super(0xB0000000);
 		
@@ -61,7 +61,9 @@ class YesPopup extends FlxUISubState
 	}
 	
 	private function onClick(){
-		callback();
+		if(callback != null){
+			callback();
+		}
 		callback = null;
 		close();
 	}

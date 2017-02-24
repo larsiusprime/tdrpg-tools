@@ -31,15 +31,18 @@
     <class path="T:\git\firetongue" />
     <class path="T:\git\monologue-reader" />
     <class path="T:\git\safeparse" />
+    <class path="T:\git\steamwrap" />
+    <class path="T:\git\hxcpp" />
     <class path="T:\git\haxeui-core" />
     <class path="T:\git\haxeui-openfl" />
     <class path="source" />
     <class path="T:\git\openfl\extern" />
+    <class path="T:\git\steamwrap\steamwrap" />
     <class path="export\windows\neko\release\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="unifill=0.4.1&#xA;hscript=2.0.7&#xA;zame-haxe-stringutils=0.0.0&#xA;flixel-editors=0.0.0&#xA;crashdumper=0.0.1&#xA;tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;fireglyph=0.0.0&#xA;firetongue=2.0.0&#xA;monologue-reader=0.0.0&#xA;safeparse=0.0.0&#xA;haxeui-core=0.0.0&#xA;haxeui-openfl=0.0.0&#xA;openfl-next&#xA;network-sandbox&#xA;SHOW_FPS&#xA;native&#xA;openfl-native&#xA;HXCPP_QUIET&#xA;no-traces&#xA;tools=2.9.9&#xA;HXCPP_CHECK_POINTER&#xA;HXCPP_STACK_TRACE&#xA;NAPE_NO_INLINE&#xA;crashdumper&#xA;FLX_NO_DEBUG&#xA;HXCPP_STACK_LINE&#xA;no-compilation&#xA;NAPE_RELEASE_BUILD&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;FLX_NO_SOUND_TRAY&#xA;safeMode&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="unifill=0.4.1&#xA;hscript=2.0.7&#xA;zame-haxe-stringutils=0.0.0&#xA;flixel-editors=0.0.0&#xA;crashdumper=0.0.1&#xA;tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;fireglyph=0.0.0&#xA;firetongue=2.0.0&#xA;monologue-reader=0.0.0&#xA;safeparse=0.0.0&#xA;steamwrap=2.0.0&#xA;hxcpp=3.4.0&#xA;haxeui-core=0.0.0&#xA;haxeui-openfl=0.0.0&#xA;openfl-next&#xA;network-sandbox&#xA;SHOW_FPS&#xA;native&#xA;openfl-native&#xA;HXCPP_QUIET&#xA;no-traces&#xA;tools=2.9.9&#xA;HXCPP_CHECK_POINTER&#xA;HXCPP_STACK_TRACE&#xA;NAPE_NO_INLINE&#xA;crashdumper&#xA;FLX_NO_DEBUG&#xA;HXCPP_STACK_LINE&#xA;no-compilation&#xA;NAPE_RELEASE_BUILD&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;FLX_NO_SOUND_TRAY&#xA;safeMode&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

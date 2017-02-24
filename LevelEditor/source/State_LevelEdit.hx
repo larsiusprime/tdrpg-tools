@@ -1402,6 +1402,10 @@ class State_LevelEdit extends FlxUIState
 			var bstarsPlus = b.starsPlus;
 			var bcolorPlus = b.starsPlusColor;
 			var bid = b.id;
+			
+			b.title = "$" + Utf8Ext.toUpperCase(bid) + "_TITLE";
+			b.description = "$" + Utf8Ext.toUpperCase(bid) + "_TEXT";
+			
 			var btitle = b.title;
 			var bdescription = b.description;
 			var bonusStr:String = '<bonus stars="$bstars" color="$bcolor" stars_plus="$bstarsPlus" color_plus="$bcolorPlus" id="$bid" title="$btitle" description="$bdescription">';
