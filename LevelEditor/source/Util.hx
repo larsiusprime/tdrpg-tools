@@ -194,7 +194,7 @@ class Util
 	{
 		var modPath = UU.getDefaultPath("mods");
 		
-		var subPath = Util.getLastFolder(Util.getParentDir(modPath));
+		var subPath  = Util.getLastFolder(Util.getParentDir(modPath));
 		var sub2Path = Util.getLastFolder(Util.getParentDir(Util.getParentDir(modPath)));
 		var sub3Path = Util.getLastFolder(Util.getParentDir(Util.getParentDir(Util.getParentDir(modPath))));
 		
