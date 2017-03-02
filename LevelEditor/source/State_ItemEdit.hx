@@ -474,6 +474,10 @@ class State_ItemEdit extends FlxUIState
 		
 		itemStr = Printer.print(itemXML.x, true);
 		
+		itemBonus = statWidget.stepper.value;
+		
+		itemCost = costStepper.stepper.value;
+		
 		//write new item entry to bottom of document
 		var itemEntryStr = '<$itemClass editor_id="$itemID" type="$itemType" lvl="$itemID" bonus="$itemBonus" cost="$itemCost" name="$itemName" description="$itemDescription" special=\''+theSpecial+'\'/>';
 		
@@ -573,7 +577,7 @@ class State_ItemEdit extends FlxUIState
 	
 	private function getStatWidget():NumberWidget{
 		
-		var statWidgetValue = 1.0;
+		var statWidgetValue = itemBonus;
 		if (statWidget != null){
 			statWidgetValue = statWidget.stepper.value;
 			remove(statWidget,true);

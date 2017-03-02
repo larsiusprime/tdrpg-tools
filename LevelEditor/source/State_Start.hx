@@ -20,6 +20,7 @@ import haxe.xml.Printer;
 import lime.system.System;
 import lime.ui.FileDialogType;
 import openfl.Assets;
+import openfl.Lib;
 import org.zamedev.lib.Utf8Ext;
 import steamwrap.api.Steam;
 import sys.FileSystem;
@@ -46,6 +47,8 @@ class State_Start extends FlxUIState
 	private var loadBattle:FlxUIButton;
 	private var newItem:FlxUIButton;
 	private var loadItem:FlxUIButton;
+	
+	private var versionText:FlxUIText;
 	
 	public function new() 
 	{
@@ -98,6 +101,13 @@ class State_Start extends FlxUIState
 		add(installText);
 		add(projectText);
 		add(currProjectText);
+		
+		versionText = Util.makeTxt(0, 0, FlxG.width, "0.0.0");
+		versionText.alignment = flixel.text.FlxTextAlign.CENTER;
+		versionText.y = FlxG.height - versionText.height;
+		var versionString:String = Lib.application.config.version;
+		versionText.text = "version " + versionString;
+		add(versionText);
 	}
 	
 	private function init(){
@@ -298,6 +308,24 @@ class State_Start extends FlxUIState
 				saveData.modPath = "";
 				saveData.save();
 			}
+		}else{
+			var defaultModPath = getDefaultModPath();
+			if (FileSystem.exists(defaultModPath) && FileSystem.isDirectory(defaultModPath)){
+				
+				saveData.modPath = defaultModPath;
+				
+				var projects = getProjectList();
+				if (projects != null && projects.length > 0)
+				{
+					saveData.modPath = Util.safePath(saveData.modPath, projects[0]);
+				}
+				else
+				{
+					saveData.modPath = "";
+				}
+				
+				saveData.save();
+			}
 		}
 		
 		detectInstallPath(saveData.installPath, "", callback);
@@ -448,12 +476,9 @@ class State_Start extends FlxUIState
 		if (content == 0)
 		{
 			var result = UU.copyDirectory(oldPath, newPath);
-			trace("result = " + result);
 			if (result > 0){
 				var oldSettings = Util.safePath(oldPath, "settings.xml");
-				trace("oldSettings = " + oldSettings);
 				if (FileSystem.exists(oldSettings)){
-					trace("clear old path");
 					UU.clearDirectory(oldPath);
 				}
 				fixProjectIDs(newPath, oldName, newName);
@@ -600,8 +625,7 @@ class State_Start extends FlxUIState
 		return name;
 	}
 	
-	private function onNewProject(){
-		
+	private function getDefaultModPath():String{
 		var modPath = UU.getDefaultPath("mods");
 		
 		var subPath = Util.getLastFolder(Util.getParentDir(modPath));
@@ -621,6 +645,12 @@ class State_Start extends FlxUIState
 		}
 		
 		modPath = newPath;
+		return modPath;
+	}
+	
+	private function onNewProject(){
+		
+		var modPath = getDefaultModPath();
 		
 		var name = "";
 		var title = "";
@@ -873,9 +903,18 @@ class State_Start extends FlxUIState
 		var basePath = "";
 		
 		if (FileSystem.exists(modPath) && FileSystem.isDirectory(modPath)){
-			basePath = Util.getParentDir(modPath);
+			var last = Util.getLastFolder(modPath);
+			if (last != "mods")
+			{
+				basePath = Util.getParentDir(modPath);
+			}
+			else
+			{
+				basePath = modPath;
+			}
 		}
-		else{
+		else
+		{
 			basePath = UU.getDefaultPath("mods");
 		}
 		
