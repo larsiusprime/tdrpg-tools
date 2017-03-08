@@ -4,6 +4,7 @@ import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUIText;
 import flixel.text.FlxText.FlxTextAlign;
 import flixel.util.FlxColor;
+import unifill.Unifill;
 
 /**
  * ...
@@ -11,6 +12,7 @@ import flixel.util.FlxColor;
  */
 class ButtonWidget extends FlxUIGroup
 {
+	public var value(default, set):String;
 	public var button:FlxUIButton;
 	public var label:FlxUIText;
 	public var callback:Void->Void;
@@ -21,6 +23,22 @@ class ButtonWidget extends FlxUIGroup
 		button = null;
 		label = null;
 		callback = null;
+	}
+	
+	private function set_value(str:String)
+	{
+		value = str;
+		button.label.text = str;
+		button.update(0);
+		var temp = str;
+		var failsafe = 0;
+		while ((button.label.textField.textWidth > button.width * 0.9 || button.label.textField.textHeight > button.height * 0.9) && failsafe < 999){
+			temp = Unifill.uSubstr(temp, 0, Unifill.uLength(temp) - 1);
+			button.label.text = Util.uCat(temp,"...");
+			button.update(0);
+			failsafe++;
+		}
+		return value;
 	}
 	
 	public function labelOnTop(){

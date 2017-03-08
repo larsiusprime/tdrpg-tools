@@ -42,13 +42,18 @@ class State_Start extends FlxUIState
 	
 	private var newProject:FlxUIButton;
 	private var loadProject:FlxUIButton;
-	private var renameProject:FlxUIButton;
+	
+	private var projectID:ButtonWidget;
+	private var projectTitle:ButtonWidget;
+	private var projectDescription:ButtonWidget;
+	
 	private var newBattle:FlxUIButton;
 	private var loadBattle:FlxUIButton;
 	private var newItem:FlxUIButton;
 	private var loadItem:FlxUIButton;
 	
 	private var versionText:FlxUIText;
+	private var projectIcon:IconWidget;
 	
 	public function new() 
 	{
@@ -67,20 +72,23 @@ class State_Start extends FlxUIState
 		
 		newProject = Util.makeBtn(0, 0, "New Project", onNewProject, 150);
 		loadProject = Util.makeBtn(0, 0, "Load Project", onLoadProject, 150);
-		renameProject = Util.makeBtn(0, 0, "Change Project ID", onRenameProject, 150); 
-		
+		projectID = new ButtonWidget(0, 0, 150, 64, "Project ID", "...", onChangeProjectID);
+			
 		screen = new FlxObject(0, 0, FlxG.width, FlxG.height);
 		
 		Util.center(screen, newProject, true, true);
 		Util.center(screen, loadProject, true, true);
-		Util.center(screen, renameProject, true, true);
+		Util.center(screen, projectID, true, true);
 		
-		loadProject.y += newProject.height + 10;
-		renameProject.y = loadProject.y + loadProject.height + 10;
+		newProject.y = 100;
+		loadProject.y = newProject.y + newProject.height + 10;
+		
+		projectID.x = 256;
+		projectID.y = 256;
 		
 		add(newProject);
 		add(loadProject);
-		add(renameProject);
+		add(projectID);
 		
 		initInstallPath(init);
 		
@@ -125,40 +133,53 @@ class State_Start extends FlxUIState
 		projectText.text = "Project directory: (" + saveData.modPath + ")";
 		currProjectText.text = "Current Project: " + Util.getModID() + "";
 		
+		projectID.value = Util.getModID();
+		
+		var info = Util.getModInfo(true);
+		
+		if (projectTitle != null)
+		{
+			if (info != null)
+			{
+				FlxG.bitmapLog.add(info.icon, "info.icon");
+				
+				projectTitle.value = info.title != null ? info.title : "untitled";
+				projectDescription.value = info.description != null ? info.description : "Description goes here";
+				projectIcon.value = info.icon != null ? info.icon : Util.randomIcon();
+			}
+			else
+			{
+				projectTitle.value = "untitled";
+				projectDescription.value = "Description goes here";
+			}
+		}
+		
 		initBattleButtons();
 		
 		var pl = getProjectList();
 		
 		if (loadProject != null){
-			if (getProjectList() == null){
-				loadProject.visible = false;
-			}else{
-				loadProject.visible = true;
-			}
+			activate(loadProject, getProjectList() != null);
 		}
 		
-		if(loadBattle != null){
-			if (getBattleList() == null){
-				loadBattle.visible = false;
-			}else{
-				loadBattle.visible = true;
-			}
+		if (loadBattle != null){
+			activate(loadBattle, getBattleList() != null);
 		}
 		
 		if (loadItem != null){
-			if (getItemList() == null){
-				loadItem.visible = false;
-			}else{
-				loadItem.visible = true;
-			}
+			activate(loadItem, getItemList() != null);
 		}
 		
 		var modID = Util.getModID();
-		if (modID != null && modID != ""){
-			renameProject.visible = true;
-		}else{
-			renameProject.visible = false;
-		}
+		activate(projectID,          (modID != null && modID != ""));
+		activate(projectTitle,       (modID != null && modID != ""));
+		activate(projectDescription, (modID != null && modID != ""));
+	}
+	
+	private function activate(w:IFlxUIWidget, b:Bool)
+	{
+		w.active = b;
+		w.alpha = b ? 1.0 : 0.5;
 	}
 	
 	private function initBattleButtons(){
@@ -168,20 +189,39 @@ class State_Start extends FlxUIState
 			newItem = Util.makeBtn(0, 0, "New Item", onNewItem, 150);
 			loadItem = Util.makeBtn(0, 0, "Load Item", onLoadItem, 150);
 			
-			newBattle.x = renameProject.x;
+			var projectBmp:BitmapData = null;
+			var iconPath = Util.safePath(saveData.modPath, "icon.png");
+			if (FileSystem.exists(iconPath) && !FileSystem.isDirectory(iconPath)){
+				projectBmp = BitmapData.fromFile(iconPath);
+			}
+			if (projectBmp == null){
+				projectBmp = new BitmapData(192, 192, true, FlxColor.WHITE);
+			}
+			
+			projectIcon        = new IconWidget  (32, 256, 192, 192, "Change Icon...", projectBmp, onChangeIcon);
+			
+			projectTitle       = new ButtonWidget(projectID.x, projectID.y+64 , 150, 64, "Title", "...", onChangeTitle);
+			projectDescription = new ButtonWidget(projectID.x, projectID.y+128, 150, 64, "Description", "...", onChangeDescription);
+			
+			add(projectIcon);
+			add(projectTitle);
+			add(projectDescription);
+			
+			newBattle.x = projectID.x + newBattle.width + 5;
 			loadBattle.x = newBattle.x;
 			newItem.x = newBattle.x;
 			loadItem.x = newBattle.x;
 			
-			newBattle.y = renameProject.y + renameProject.height + 10;
-			loadBattle.y = newBattle.y + newBattle.height + 10;
-			newItem.y = loadBattle.y + loadBattle.height + 10;
-			loadItem.y = newItem.y + newItem.height + 10;
+			newBattle.y = projectID.y;
+			loadBattle.y = newBattle.y + newBattle.height + 32;
+			newItem.y = loadBattle.y + loadBattle.height + 32;
+			loadItem.y = newItem.y + newItem.height + 32;
 			
 			add(loadBattle);
 			add(newBattle);
 			add(newItem);
 			add(loadItem);
+			add(projectIcon);
 		}
 	}
 	
@@ -399,7 +439,37 @@ class State_Start extends FlxUIState
 		}
 	}
 	
-	private function onRenameProject(){
+	private function onChangeDescription(){
+		var description = projectDescription.value;
+		
+		var popup = new BigTextPopup(description, "Project Description", function(str:String){
+			
+			projectDescription.value = str;
+			saveProject();
+		});
+		openSubState(popup);
+	}
+	
+	private function onChangeIcon(){
+		
+		saveProject();
+	}
+	
+	private function onChangeTitle(){
+		var title = projectTitle.value;
+		
+		var popup = new BigTextPopup(title, "Project Title", function(str:String){
+			if (str == null || str == ""){
+				Util.alert(this, "Error!", "Title can't be blank!");
+			}else{
+				projectTitle.value = str;
+				saveProject();
+			}
+		});
+		openSubState(popup);
+	}
+	
+	private function onChangeProjectID(){
 		
 		var modID = Util.getModID();
 		var modPath = saveData.modPath;
@@ -413,7 +483,7 @@ class State_Start extends FlxUIState
 			else if(Util.checkProjectIDIsUnique(str) == false){
 				
 				var popup = new YesPopup("ID is not unique!", "Another mod on Steam already has the project ID \"" + str + "\", please pick another one.", function(){
-					onRenameProject();
+					onChangeProjectID();
 				});
 				openSubState(popup);
 				
@@ -967,6 +1037,28 @@ class State_Start extends FlxUIState
 			Util.alert(this, "Error!", "You don't have any projects yet!");
 		}
 		
+	}
+	
+	private function saveProject(){
+		var title = projectTitle.value;
+		var desc = projectDescription.value;
+		var icon = projectIcon.value;
+		
+		var modPath = saveData.modPath;
+		
+		//Fix settings file
+		var settingsPath:String = Util.safePath(modPath, "settings.xml");
+		var settings:Fast = UU.getModSettings(settingsPath);
+		if (settings != null)
+		{
+			var modInfo:ModInfo = ModInfo.fromXML(settings);
+			modInfo.title = title;
+			modInfo.description = desc;
+			modInfo.icon = icon;
+			UU.saveModSettings(modInfo, modPath);
+		}
+		
+		saveStuff();
 	}
 	
 	private function saveStuff(){

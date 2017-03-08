@@ -1,4 +1,5 @@
 package;
+import com.leveluplabs.tdrpg.Popup_MyMods.ModInfo;
 import com.leveluplabs.tdrpg.UU;
 import firetongue.TSV;
 import flash.display.BitmapData;
@@ -85,6 +86,13 @@ class Util
 		}catch (msg:Dynamic){
 			
 		}
+	}
+	
+	public static function randomIcon():BitmapData
+	{
+		var b:BitmapData = new BitmapData(512, 512, true, FlxColor.BLACK);
+		b.fillRect(new Rectangle(1, 1, b.width - 2, b.height - 2), FlxColor.fromHSB(FlxG.random.int(0, 360), 1.0, 1.0, 1.0));
+		return b;
 	}
 	
 	private static function initSteam(){
@@ -803,6 +811,7 @@ class Util
 			}
 			var openFileDialog = new FileDialog();
 			openFileDialog.onSelect.add(callback);
+			openFileDialog.onCancel.add(callback.bind(null));
 			
 			try
 			{
@@ -831,7 +840,17 @@ class Util
 		}
 	}
 	
-	public static function openPopup(sub:FlxSubState)
+	public static function closePopup(state:FlxState)
+	{
+		if(state == null) state = cast FlxUI.getLeafUIState();
+		if (Std.is(state, FlxState)){
+			cast(state, FlxState).closeSubState();
+		}else if (Std.is(state, FlxSubState)){
+			cast(state, FlxSubState).closeSubState();
+		}
+	}
+	
+	public static function openPopup(sub:FlxSubState):FlxState
 	{
 		var state = FlxUI.getLeafUIState();
 		if (Std.is(state, FlxState)){
@@ -839,6 +858,7 @@ class Util
 		}else if (Std.is(state, FlxSubState)){
 			cast(state, FlxSubState).openSubState(sub);
 		}
+		return cast state;
 	}
 	
 	public static function fixSlashes(str:String):String
@@ -960,6 +980,26 @@ class Util
 		
 		//return the final string
 		return sb.toString();
+	}
+	
+	public static function getModInfo(withIcon:Bool=false):ModInfo
+	{
+		var modPath = Util.dataFetcher.modPath;
+		var settingsPath:String = Util.safePath(modPath, "settings.xml");
+		var settings:Fast = UU.getModSettings(settingsPath);
+		if (settings != null)
+		{
+			var info = ModInfo.fromXML(settings);
+			if(withIcon){
+				var iconPath:String = Util.safePath(modPath, "icon.png");
+				if (FileSystem.exists(iconPath)){ 
+					var icon = BitmapData.fromFile(iconPath);
+					info.icon = icon;
+				}
+			}
+			return info;
+		}
+		return null;
 	}
 	
 	public static function safePath(path:String, add:String):String{
