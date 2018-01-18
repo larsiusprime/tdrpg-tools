@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="bakexml" package="bakexml" version="1.0.0" company="larsiusprime" />
+	<app main="Main" file="bakexml" path="bin" />
+	
+	<source path="src" />
+	
+	<haxelib name="lime" />
+	<haxelib name="openfl" />
+	<haxelib name="tdrpg-haxe" />
+	<haxelib name="flixel-ui" />
+	<haxelib name="flixel" />
+	<haxelib name="flixel-addons" />
+	
+	<assets path="assets" exclude="*.svg" />
+	<icon path="assets/lime.svg" />
+	
+</project>

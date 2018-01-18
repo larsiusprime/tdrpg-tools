@@ -44,3 +44,9 @@ LevelEditor/dump/
 DataEditor/build/openfl/windows/cpp/
 DataEditor/build/hxwidgets/src/
 DataEditor/build/
+VitaBkgShrink/bin/
+ShrinkTile/bin/
+ScriptDumper/bin/
+CountChars/bin/
+CountBmpFontChars/bin/
+BakeXML/bin/

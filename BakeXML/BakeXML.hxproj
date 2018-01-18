@@ -4,47 +4,39 @@
   <output>
     <movie outputType="CustomBuild" />
     <movie input="" />
-    <movie path="Project.xml" />
-    <movie fps="30" />
-    <movie width="640" />
-    <movie height="480" />
+    <movie path="project.xml" />
+    <movie fps="0" />
+    <movie width="0" />
+    <movie height="0" />
     <movie version="1" />
     <movie minorVersion="0" />
     <movie platform="Lime" />
-    <movie background="ffffff" />
+    <movie background="#FFFFFF" />
+    <movie preferredSDK=";3;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,7" />
-    <class path="T:\git\zame-haxe-stringutils" />
-    <class path="T:\git\flixel-editors" />
-    <class path="T:\git\crashdumper" />
     <class path="T:\git\tdrpg-haxe\code" />
     <class path="C:\HaxeToolkit\haxe\lib\actuate\1,8,6" />
+    <class path="T:\git\firetongue" />
+    <class path="T:\git\flixel-ui" />
     <class path="T:\git\flixel" />
     <class path="T:\git\lime" />
     <class path="T:\git\openfl" />
-    <class path="T:\git\flixel-addons" />
-    <class path="T:\git\flixel-ui" />
-    <class path="T:\git\fireglyph" />
     <class path="T:\git\unifill" />
-    <class path="T:\git\firetongue" />
-    <class path="T:\git\monologue-reader" />
-    <class path="T:\git\safeparse" />
-    <class path="T:\git\steamwrap" />
-    <class path="T:\git\hxcpp" />
-    <class path="source" />
+    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,7" />
+    <class path="T:\git\flixel-addons" />
+    <class path="src" />
     <class path="T:\git\openfl\extern" />
-    <class path="T:\git\steamwrap\steamwrap" />
-    <class path="export\windows\neko\release\haxe" />
+    <class path="bin\html5\release\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="hscript=2.0.7&#xA;zame-haxe-stringutils=0.0.0&#xA;flixel-editors=0.0.0&#xA;crashdumper=0.0.1&#xA;tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;flixel-addons=2.0.0&#xA;flixel-ui=2.0.0&#xA;fireglyph=0.0.0&#xA;unifill=0.4.1&#xA;firetongue=2.0.0&#xA;monologue-reader=0.0.0&#xA;safeparse=0.0.0&#xA;steamwrap=2.0.0&#xA;hxcpp=3.4.0&#xA;openfl-next&#xA;network-sandbox&#xA;FLX_RECORD&#xA;SHOW_FPS&#xA;native&#xA;openfl-native&#xA;HXCPP_QUIET&#xA;no-traces&#xA;tools=2.9.9&#xA;HXCPP_CHECK_POINTER&#xA;HXCPP_STACK_TRACE&#xA;NAPE_NO_INLINE&#xA;crashdumper&#xA;FLX_NO_DEBUG&#xA;HXCPP_STACK_LINE&#xA;no-compilation&#xA;NAPE_RELEASE_BUILD&#xA;FLX_NO_TOUCH&#xA;lime-native&#xA;lime-vorbis&#xA;FLX_NO_SOUND_TRAY&#xA;lime-cffi&#xA;safeMode&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="tdrpg-haxe=1.2.1&#xA;actuate=1.8.6&#xA;firetongue=2.0.0&#xA;flixel-ui=2.0.0&#xA;flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;unifill=0.4.1&#xA;hscript=2.0.7&#xA;flixel-addons=2.0.0&#xA;HXCPP_QUIET&#xA;openfl-next&#xA;tools=2.9.9&#xA;no-compilation&#xA;openfl-html5&#xA;canvas&#xA;lime-html5&#xA;html5&#xA;web&#xA;html5&#xA;html&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />
-    <option enabledebug="False" />
+    <option enabledebug="True" />
     <option additional="--remap flash:openfl&#xA;--macro flixel.system.macros.FlxDefines.run()" />
   </build>
   <!-- haxelib libraries -->
@@ -53,7 +45,7 @@
   </haxelib>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="source\Main.hx" />
+    <compile path="src\Main.hx" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>

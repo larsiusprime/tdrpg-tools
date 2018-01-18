@@ -1,17 +1,18 @@
 package;
 
+import haxe.io.Bytes;
 import lime.app.Application;
 import lime.graphics.Image;
 import lime.graphics.ImageBuffer;
 import lime.graphics.opengl.GL;
 import lime.graphics.RenderContext;
 import lime.ui.Window;
-import lime.utils.ByteArray;
 import openfl.geom.Rectangle;
 import openfl.display.BitmapData;
 import openfl.display.BitmapDataChannel;
 import openfl.display.PNGEncoderOptions;
 import openfl.geom.Point;
+import openfl.utils.ByteArray;
 import sys.FileSystem;
 import sys.io.File;
 import sys.io.FileOutput;
@@ -185,6 +186,7 @@ class Main extends Application
 
 	public function writeBmp(b:BitmapData,name:String):Void
 	{
+		
 		var bytes:ByteArray = b.encode(b.rect, new PNGEncoderOptions());
 		if (bytes != null)
 		{

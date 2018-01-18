@@ -38,6 +38,10 @@ class Main extends Application
 		{
 			commandReconcile(args);
 		}
+		else if (command == "findholes")
+		{
+			commandFindHoles(args);
+		}
 		else if (command == "construct")
 		{
 			commandConstruct(args);
@@ -331,6 +335,20 @@ class Main extends Application
 	
 	/*****************/
 	
+	public function commandFindHoles(args:Array<String>)
+	{
+		var inputDir1 = args[1];
+		var inputDir2 = args[2];
+		var outputDir = args[3];
+		
+		var files1:Array<String> = getFileNames(inputDir1);
+		var files2:Array<String> = getFileNames(inputDir2);
+		
+		var holes = findHoles(files1, files2);
+		
+		writeComparisons(outputDir, holes, false);
+	}
+	
 	public function commandReconcile(args:Array<String>)
 	{
 		var inputDir1 = args[1];
@@ -357,7 +375,7 @@ class Main extends Application
 		writeComparisons(outputDir, comparisons);
 	}
 	
-	public function writeComparisons(dir:String, arr:Array<Comparison>)
+	public function writeComparisons(dir:String, arr:Array<Comparison>, changes:Bool=true, insertions:Bool=true, deletions:Bool=true)
 	{
 		var total:Metrics = {
 			wordsInserted:0,
@@ -378,46 +396,55 @@ class Main extends Application
 			
 			file += d.fields.join("\t") + "\n";
 			
-			file += "\nDELETED:\n";
-			
-			for (del in d.deleted)
+			if (deletions)
 			{
-				file += del.join("\t") + "\n";
-				metrics.wordsDeleted += countWords(del);
-			}
-			
-			file += "\nINSERTED:\n\n";
-			
-			for (ins in d.inserted)
-			{
-				file += ins.join("\t") + "\n";
-				metrics.wordsInserted += countWords(ins);
-			}
-			
-			file += "\nCHANGED:\n\n";
-			
-			for (change in d.changed.keys())
-			{
-				var list = d.changed.get(change);
-				file += change + "\n";
-				file += "  old    \t" + joinA(list, "\t") + "\n";
-				file += "  new    \t" + joinB(list, "\t") + "\n";
-				metrics.wordsChanged += countWordsChanged(list);
+				file += "\nDELETED:\n";
 				
-				for (locale in d.changedContext.keys())
+				for (del in d.deleted)
 				{
-					var arr = d.changedContext.get(locale);
-					for (i in 0...arr.length)
+					file += del.join("\t") + "\n";
+					metrics.wordsDeleted += countWords(del);
+				}
+			}
+			
+			if (insertions)
+			{
+				file += "\nINSERTED:\n\n";
+				
+				for (ins in d.inserted)
+				{
+					file += ins.join("\t") + "\n";
+					metrics.wordsInserted += countWords(ins);
+				}
+			}
+			
+			if (changes)
+			{
+				file += "\nCHANGED:\n\n";
+				
+				for (change in d.changed.keys())
+				{
+					var list = d.changed.get(change);
+					file += change + "\n";
+					file += "  old    \t" + joinA(list, "\t") + "\n";
+					file += "  new    \t" + joinB(list, "\t") + "\n";
+					metrics.wordsChanged += countWordsChanged(list);
+					
+					for (locale in d.changedContext.keys())
 					{
-						var line = arr[i];
-						if (line != null && line.length > 0)
+						var arr = d.changedContext.get(locale);
+						for (i in 0...arr.length)
 						{
-							if (line[0] == change)
+							var line = arr[i];
+							if (line != null && line.length > 0)
 							{
-								var line2 = [for (i in 1...line.length) line[i]];
-								file += "  old(" + locale+")\t" + line2.join("\t") +"\n";
-								file += "  new(" + locale+")\t\n";
-								break;
+								if (line[0] == change)
+								{
+									var line2 = [for (i in 1...line.length) line[i]];
+									file += "  old(" + locale+")\t" + line2.join("\t") +"\n";
+									file += "  new(" + locale+")\t\n";
+									break;
+								}
 							}
 						}
 					}
@@ -426,9 +453,18 @@ class Main extends Application
 			
 			file += "\nMETRICS:\n";
 			file += "\nOLD WORDS           : " + diff.totalWords;
-			file += "\nLINE INSERTED WORDS : " + metrics.wordsInserted;
-			file += "\nLINE DELETED WORDS  : " + metrics.wordsDeleted;
-			file += "\nLINE CHANGED WORDS  : " + metrics.wordsChanged;
+			if (insertions)
+			{
+				file += "\nLINE INSERTED WORDS : " + metrics.wordsInserted;
+			}
+			if (deletions)
+			{
+				file += "\nLINE DELETED WORDS  : " + metrics.wordsDeleted;
+			}
+			if (changes)
+			{
+				file += "\nLINE CHANGED WORDS  : " + metrics.wordsChanged;
+			}
 			file += "\n---------------------\n";
 			file += "\nTOTAL WORDS         : " + (diff.totalWords + metrics.wordsInserted - metrics.wordsDeleted);
 			file += "\nTOTAL *NEW* WORDS   : " + (metrics.wordsInserted + metrics.wordsChanged);
@@ -522,6 +558,28 @@ class Main extends Application
 		return str;
 	}
 	
+	public function findHoles(files1:Array<String>, files2:Array<String>):Array<Comparison>
+	{
+		var comparisons = [];
+		for (i in 0...files1.length)
+		{
+			var file = files1[i];
+			var fileSansEx = strip(file).toLowerCase();
+			for (j in 0...files2.length)
+			{
+				var other = files2[j];
+				var otherSansEx = strip(other).toLowerCase();
+				
+				if (otherSansEx == fileSansEx)
+				{
+					var comparison:Comparison = getComparison(file, other, getFile(file), getFile(other));
+					comparisons.push(comparison);
+				}
+			}
+		}
+		return comparisons;
+	}
+	
 	public function reconcile(files1:Array<String>, files2:Array<String>, locales:Array<String>, localeFiles:Array<Array<String>>):Array<Comparison>
 	{
 		var comparisons = [];
@@ -559,8 +617,10 @@ class Main extends Application
 						var context = [];
 						for (key in comparison.changed.keys())
 						{
+							if (localeFile == null || localeFile.grid == null) continue;
 							for (locArr in localeFile.grid)
 							{
+								if (locArr == null) continue;
 								var locFirst = (locArr != null && locArr.length > 0) ? locArr[0] : "";
 								if (locFirst == key)
 								{
@@ -843,7 +903,8 @@ class Main extends Application
 	{
 		var usage1:String = "usage 1: locale reconcile newdir olddir outputdir <?locale1> <?locale2> ... <?localen> ex: localereconcile new old output de fr";
 		var usage2:String = "usage 2: locale construct olddir diffdir outputdir ex: locale construct de de_trans output";
-		Sys.println(usage1 + "\n" + usage2);
+		var usage3:String = "usage 3: locale findholes dir1 dir2 outputdir ex: locale findholes en de output";
+		Sys.println(usage1 + "\n" + usage2 + "\n" + usage3);
 	}
 
 }

@@ -12,20 +12,20 @@
     <movie minorVersion="0" />
     <movie platform="Lime" />
     <movie background="#FFFFFF" />
-    <movie preferredSDK=";3;" />
+    <movie preferredSDK=";3.1.3;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\git\lime" />
-    <class path="T:\git\openfl" />
-    <class path="T:\git\unifill" />
+    <class path="C:\HaxeToolkit\haxe\lib\openfl\3,6,1" />
+    <class path="C:\HaxeToolkit\haxe\lib\lime\2,9,1" />
+    <class path="C:\HaxeToolkit\haxe\lib\actuate\1,8,6" />
     <class path="src" />
-    <class path="T:\git\openfl\extern" />
-    <class path="bin\windows\cpp\release\haxe" />
+    <class path="C:\HaxeToolkit\haxe\lib\openfl\3,6,1\extern" />
+    <class path="bin\windows\neko\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="lime=2.9.9&#xA;openfl=3.6.1&#xA;unifill=0.4.1&#xA;openfl-next&#xA;tools=2.9.9&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="openfl=3.6.1&#xA;lime=2.9.1&#xA;actuate=1.8.6&#xA;openfl-next&#xA;tools=2.9.1&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

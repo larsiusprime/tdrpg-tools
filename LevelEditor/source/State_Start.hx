@@ -73,7 +73,7 @@ class State_Start extends FlxUIState
 		newProject = Util.makeBtn(0, 0, "New Project", onNewProject, 150);
 		loadProject = Util.makeBtn(0, 0, "Load Project", onLoadProject, 150);
 		projectID = new ButtonWidget(0, 0, 150, 64, "Project ID", "...", onChangeProjectID);
-			
+		
 		screen = new FlxObject(0, 0, FlxG.width, FlxG.height);
 		
 		Util.center(screen, newProject, true, true);
