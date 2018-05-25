@@ -58,8 +58,8 @@ class MetaWidget extends FlxUIGroup
 		Util.matchRewards(rewards2, r2);
 		rewardsButton1.button.label.text = getRewardText(1);
 		rewardsButton2.button.label.text = getRewardText(2);
-		rewardsButton1.button.autoCenterLabel();
-		rewardsButton2.button.autoCenterLabel();
+		rewardsButton1.button.centerLabel();
+		rewardsButton2.button.centerLabel();
 	}
 	
 	public function syncBonus(bd:BonusStruct){
@@ -284,7 +284,7 @@ class MetaWidget extends FlxUIGroup
 		
 		var str = bonusStruct.stars + " " + bonusStruct.starsColor + "\n" + bonusStruct.starsPlus + " " + bonusStruct.starsPlusColor;
 		bonusSettings.button.label.text = str;
-		bonusSettings.button.autoCenterLabel();
+		bonusSettings.button.centerLabel();
 	}
 	
 	private function onChangeRewards(i:Int){
@@ -295,11 +295,11 @@ class MetaWidget extends FlxUIGroup
 			if (i == 1){
 				rewards1 = reward;
 				rewardsButton1.button.label.text = getRewardText(1);
-				rewardsButton1.button.autoCenterLabel();
+				rewardsButton1.button.centerLabel();
 			}else{
 				rewards2 = reward;
 				rewardsButton2.button.label.text = getRewardText(2);
-				rewardsButton2.button.autoCenterLabel();
+				rewardsButton2.button.centerLabel();
 			}
 			onRewardChange([rewards1, rewards2]);
 		});

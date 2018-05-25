@@ -722,6 +722,9 @@ class Util
 		btn.label.size = 14;
 		btn.label.color = FlxColor.BLACK;
 		btn.resize(W, H);
+		btn.label.width = W;
+		btn.label.fieldWidth = W;
+		btn.centerLabel();
 		return btn;
 	}
 	
@@ -731,7 +734,7 @@ class Util
 		cb.button.setLabelFormat("assets/fonts/verdana.ttf", 12, FlxColor.BLACK);
 		text.setFormat("assets/fonts/verdana.ttf", 12, FlxColor.BLACK);
 		var offsets = cb.button.getCenterLabelOffset();
-		cb.button.autoCenterLabel();
+		cb.button.centerLabel();
 		var noffsets = cb.button.getCenterLabelOffset();
 		cb.button.setCenterLabelOffset(offsets.x, noffsets.y);
 		cb.button.up_color = cb.button.over_color = cb.button.down_color = cb.button.down_toggle_color = cb.button.over_toggle_color = cb.button.over_toggle_color = FlxColor.BLACK;
@@ -773,7 +776,7 @@ class Util
 			cb.button.setLabelFormat("assets/fonts/verdana.ttf", 12, FlxColor.BLACK);
 			text.setFormat("assets/fonts/verdana.ttf", 12, FlxColor.BLACK);
 			var offsets = cb.button.getCenterLabelOffset();
-			cb.button.autoCenterLabel();
+			cb.button.centerLabel();
 			var noffsets = cb.button.getCenterLabelOffset();
 			cb.button.setCenterLabelOffset(offsets.x, noffsets.y);
 			cb.button.up_color = cb.button.over_color = cb.button.down_color = cb.button.down_toggle_color = cb.button.over_toggle_color = cb.button.over_toggle_color = FlxColor.BLACK;

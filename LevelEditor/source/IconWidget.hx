@@ -60,7 +60,7 @@ class IconWidget extends FlxUIGroup
 		button.label.font = "assets/fonts/verdana.ttf";
 		button.label.size = 12;
 		button.label.color = FlxColor.BLACK;
-		button.autoCenterLabel();
+		button.centerLabel();
 		
 		add(button);
 	}

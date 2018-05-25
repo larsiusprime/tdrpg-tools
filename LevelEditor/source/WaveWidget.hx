@@ -84,7 +84,7 @@ class WaveWidget extends FlxUIGroup
 	
 	public function setType(typeStr:String){
 		type.button.label.text = typeStr;
-		type.button.autoCenterLabel();
+		type.button.centerLabel();
 		if (info != null){
 			info.type = typeStr;
 		}
@@ -136,7 +136,7 @@ class WaveWidget extends FlxUIGroup
 		plusMinus.label.color = FlxColor.BLACK;
 		plusMinus.label.size = 24;
 		plusMinus.label.bold = true;
-		plusMinus.autoCenterLabel();
+		plusMinus.centerLabel();
 		add(plusMinus);
 	}
 	
