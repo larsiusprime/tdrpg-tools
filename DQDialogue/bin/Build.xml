@@ -205,10 +205,13 @@
   <file name="src/Util.cpp" >
    <depend name="include/Std.h"/>
    <depend name="include/StringBuf.h"/>
+   <depend name="include/Sys.h"/>
    <depend name="include/Util.h"/>
    <depend name="include/Xml.h"/>
+   <depend name="include/haxe/Log.h"/>
    <depend name="include/haxe/xml/Printer.h"/>
    <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
+   <depend name="include/sys/FileSystem.h"/>
    <depend name="include/sys/io/File.h"/>
    <depend name="include/unifill/CodePointIter.h"/>
    <depend name="include/unifill/Exception.h"/>
@@ -308,6 +311,8 @@
    <depend name="include/Block.h"/>
    <depend name="include/DocumentError.h"/>
    <depend name="include/Std.h"/>
+   <depend name="include/StringTools.h"/>
+   <depend name="include/Sys.h"/>
    <depend name="include/Util.h"/>
    <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
    <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>

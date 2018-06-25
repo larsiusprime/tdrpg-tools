@@ -16,17 +16,17 @@
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\git\lime" />
-    <class path="T:\git\openfl" />
-    <class path="T:\git\unifill" />
-    <class path="T:\git\firetongue" />
+    <class path="T:\git\DefendersQuest1\libs\openfl3\lime" />
+    <class path="T:\git\DefendersQuest1\libs\openfl3\openfl" />
+    <class path="T:\git\DefendersQuest1\libs\unifill" />
+    <class path="T:\git\DefendersQuest1\libs\firetongue" />
     <class path="src" />
-    <class path="T:\git\openfl\extern" />
+    <class path="T:\git\DefendersQuest1\libs\openfl3\openfl\extern" />
     <class path="bin\windows\neko\release\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="lime=2.9.9&#xA;openfl=3.6.1&#xA;unifill=0.4.1&#xA;firetongue=2.0.0&#xA;openfl-next&#xA;tools=2.9.9&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="lime=2.9.9&#xA;openfl=3.6.1&#xA;unifill=0.4.1&#xA;firetongue=2.0.0&#xA;openfl-next&#xA;tools=2.9.9&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;lime-vorbis&#xA;openfl-native&#xA;lime-cffi&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />

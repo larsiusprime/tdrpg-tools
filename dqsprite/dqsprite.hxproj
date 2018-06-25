@@ -16,22 +16,24 @@
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\Development\Git\flixel" />
-    <class path="T:\Development\Git\lime" />
-    <class path="T:\Development\Git\openfl" />
-    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,4" />
-    <class path="T:\Development\Git\flixel-editors" />
+    <class path="T:\git\flixel" />
+    <class path="T:\git\lime_gl" />
+    <class path="T:\git\openfl" />
+    <class path="T:\git\unifill" />
+    <class path="C:\HaxeToolkit\haxe\lib\hscript\2,0,7" />
+    <class path="T:\git\flixel-editors" />
     <class path="src" />
-    <class path="bin\windows\neko\haxe" />
+    <class path="T:\git\openfl\extern" />
+    <class path="bin\windows\neko\release\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="flixel=3.3.11&#xA;lime=2.7.0&#xA;openfl=3.4.0&#xA;hscript=2.0.4&#xA;flixel-editors=0.0.0&#xA;openfl-next&#xA;tools=2.7.0&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;lime-angle&#xA;openfl-native&#xA;windows&#xA;desktop&#xA;display" />
+    <option directives="flixel=4.1.1&#xA;lime=2.9.9&#xA;openfl=3.6.1&#xA;unifill=0.4.1&#xA;hscript=2.0.7&#xA;flixel-editors=0.0.0&#xA;HXCPP_QUIET&#xA;openfl-next&#xA;tools=2.9.9&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;lime-vorbis&#xA;openfl-native&#xA;lime-cffi&#xA;windows&#xA;desktop&#xA;display" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />
     <option enabledebug="True" />
-    <option additional="--remap flash:openfl&#xA;--macro flixel.system.macros.FlxDefines.run()&#xA;#--macro keep(&quot;Main&quot;)&#xA;-debug " />
+    <option additional="--remap flash:openfl&#xA;--macro flixel.system.macros.FlxDefines.run()" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
