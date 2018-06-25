@@ -182,6 +182,12 @@ class Block
 						keyLine = keyLine.uReplace(lowerName, Keyword.SPEECH);
 						break;
 					}
+					else if (keyLine.uIndexOf(lowerName) != -1)
+					{
+						keyLine = StringTools.replace(keyLine, lowerName, "");
+						parameters.push(name);
+						break;
+					}
 				}
 				
 				keyLine = keyLine.stripStuff();

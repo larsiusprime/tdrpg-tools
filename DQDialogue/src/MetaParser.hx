@@ -39,9 +39,9 @@ class MetaParser
 			
 			if (str2 == null) str2 = "";
 			
-			str = str2 + "\n\n" + str;
+			str = str2 + "\n" + str;
 			
-			trace("str = " + str);
+			File.saveContent("_output/_temp/meta_combined.txt", str);
 			
 			if (str != null && str != "")
 			{
@@ -85,7 +85,7 @@ class MetaParser
 	
 	private function processScenes(data:String)
 	{
-		return processData(data, "<plotlines></plotlines>", ["heroes","movies","pearls"]);
+		return processData(data, "<plotlines></plotlines>", ["heroes","movies","pearls","join_pearls"]);
 	}
 	
 	private function processIndex(data:String)
@@ -133,7 +133,7 @@ class MetaParser
 				{
 					switch(plottype)
 					{
-						case "pearls", "movies", "heroes":
+						case "pearls", "movies", "heroes","join_pearls":
 							var xml = Xml.parse('<plotline name="$plotline"></plotline>').firstChild();
 							xml = addCells(xml, cells, plottype);
 							document.addChild(xml);
@@ -233,8 +233,11 @@ class MetaParser
 			
 			switch(plottype)
 			{
+				case "join_pearls":
+					el = joinPearl(el, i, cell, prevCell);
+					xml.addChild(el.x);
 				case "pearls": 
-					el = addPearl(el, i, cell, prevCell, nextCell);
+					el = addPearl(el, i, cell, prevCell);
 					xml.addChild(el.x);
 				case "movies": 
 					var code:String = "";
@@ -516,18 +519,66 @@ class MetaParser
 		return el;
 	}
 	
-	private function addPearl(el:Fast, i:Int, cell:String, prevCell:String, nextCell:String):Fast
+	private function getSplit(str:String, delim:String, i:Int, _default:String):String
 	{
+		if (str.indexOf(delim) != -1)
+		{
+			var arr = str.split(delim);
+			if (arr.length >= i + 1)
+			{
+				return arr[i];
+			}
+		}
+		return _default;
+	}
+	
+	private function joinPearl(el:Fast, i:Int, cell:String, prevCell:String):Fast
+	{
+		var requirement = getSplit(cell, ">", 0, "");
+		var joins = getSplit(cell, ">", 1, "");
+		
+		if (requirement != "" && joins != "")
+		{
+			var join1 = getSplit(joins, "-", 0, "");
+			var join2 = getSplit(joins, "-", 1, "");
+			
+			if (join1 != "" && join2 != "")
+			{
+				var req = Xml.parse('<requirement type="complete_pearl" value="'+requirement+'"/>').firstChild();
+				el.node.requirements.x.addChild(req);
+				
+				var connect = Xml.parse('<action type="connect_pearls" value="$join1,$join2"/>').firstChild();
+				el.node.actions.x.addChild(connect);
+			}
+		}
+		return el;
+	}
+	
+	private function addPearl(el:Fast, i:Int, cell:String, prevCell:String):Fast
+	{
+		var origPrev = prevCell;
+		origPrev = getSplit(prevCell, "-", 1, prevCell);
+		
+		if (cell.indexOf("-") != -1)
+		{
+			prevCell = getSplit(cell, "-", 0, prevCell);
+			cell = getSplit(cell, "-", 1, cell);
+		}
+		else
+		{
+			prevCell = getSplit(prevCell, "-", 1, prevCell);
+		}
+		
 		cell = depadPearl(cell);
 		prevCell = depadPearl(prevCell);
-		nextCell = depadPearl(nextCell);
+		//nextCell = depadPearl(nextCell);
 		
 		var enable = Xml.parse('<action type="enable_pearl" value="$cell"/>').firstChild();
 		el.node.actions.x.addChild(enable);
 		
 		if (i != 0)
 		{
-			var requirement = Xml.parse('<requirement type="complete_pearl" value="$prevCell"/>').firstChild();
+			var requirement = Xml.parse('<requirement type="complete_pearl" value="$origPrev"/>').firstChild();
 			el.node.requirements.x.addChild(requirement);
 			
 			var connect = Xml.parse('<action type="connect_pearls" value="$prevCell,$cell"/>').firstChild();

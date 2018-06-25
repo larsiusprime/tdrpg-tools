@@ -2,6 +2,7 @@ package;
 import haxe.xml.Printer;
 import org.zamedev.lib.Utf8Ext;
 import sys.io.File;
+import sys.FileSystem;
 import unifill.CodePoint;
 using unifill.Unifill;
 /**
@@ -24,6 +25,17 @@ class Util
 		return s;
 	}
 	
+	public static function getOS():String
+	{
+		#if (cpp || neko)
+		return Sys.systemName().toLowerCase();
+		#end
+		#if windows
+		return "win";
+		#end
+		return "";
+	}
+	
 	public static function saveXML(fileName:String, xml:Xml, ?xmlString:String)
 	{
 		if (xmlString != null)
@@ -42,6 +54,12 @@ class Util
 		'    THIS IS A GENERATED FILE, DO NOT EDIT IT DIRECTLY!\n' +
 		'-->\n' + 
 		Printer.print(wrap, true);
+		
+		var parentFolder = getParentFolder(fileName, getOS());
+		if(FileSystem.exists(parentFolder) == false)
+		{
+			createDirectoryRecursive(parentFolder,getOS());
+		}
 		
 		File.saveContent(fileName, content);
 	}
@@ -210,5 +228,65 @@ class Util
 		
 		//return the final string
 		return sb.toString();
+	}
+	
+	public static function createDirectoryRecursive(path:String, os:String):Bool
+	{
+		#if sys
+		if (path == "" || path == "/" || path == "\\")
+		{
+			return false;
+		}
+		try
+		{
+			FileSystem.createDirectory(path);
+		}
+		catch (msg:Dynamic)
+		{
+			trace("FAIL : " + msg);
+			return false;
+		}
+		return true;
+		#end
+		return false;
+	}
+	
+	public static function getParentFolder(path:String,os:String):String
+	{
+		path = enforceSlashRule(path, os);
+		var slash:String = getSlash(os);
+		var i:Int = Unifill.uLastIndexOf(path, slash);
+		if (i != -1)
+		{
+			path = Unifill.uSubstr(path, 0, i);
+		}
+		return path;
+	}
+	
+	public static function enforceSlashRule(path:String, os:String):String
+	{
+		if (os == "win" || os == "windows")
+		{
+			path = uReplace(path, "/", "\\");
+		}
+		else
+		{
+			path = uReplace(path, "\\", "/");
+		}
+		return path;
+	}
+	
+	public static function getSlash(os:String = ""):String
+	{
+		if (os == "")
+		{
+			#if windows
+				os = "win";
+			#end
+		}
+		
+		var slash:String = "/";
+		if (os == "win" || os == "windows") { slash = "\\"; }
+		return slash;
 	}
 }
