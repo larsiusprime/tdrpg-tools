@@ -17,7 +17,7 @@ TileProcess can be scripted to generate arbitrary output. So you can use it for 
 
 
 # PathFindingTest (moved!)
-PathFindingTest has now become an official [HaxeFlixel](http://github.com/HaxeFlixel) demo, [Heatmap Pathfinding](https://github.com/HaxeFlixel/flixel-demos/tree/dev/Flixel%20Features/HeatmapPathfinding)
+PathFindingTest has now become an official [HaxeFlixel](http://github.com/HaxeFlixel) demo, [Heatmap Pathfinding](https://github.com/HaxeFlixel/flixel-demos/tree/dev/Features/HeatmapPathfinding)
 
 (The version in this repo is now obsolete)
 
