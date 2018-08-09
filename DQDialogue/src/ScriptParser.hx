@@ -45,13 +45,36 @@ class ScriptParser
 		
 		logDir = outDir + "logs/";
 		
+		var found = false;
 		var str = "";
 		var inFile = inDir + "script.txt";
 		if (FileSystem.exists(inFile))
 		{
 			str = File.getContent(inFile);
+			found = true;
 		}
 		else
+		{
+			var inFiles = FileSystem.readDirectory(inDir + "/script");
+			inFiles.sort(function(a:String, b:String):Int{
+				if (a < b) return -1;
+				if (a > b) return  1;
+				return 0;
+			});
+			Sys.println("inFiles = " + inFiles);
+			for (file in inFiles){
+				var theFile = inDir + "script/" + file;
+				Sys.println("what about " + theFile + " " + FileSystem.exists(theFile) + " " + FileSystem.isDirectory(theFile));
+				if (FileSystem.exists(theFile) && FileSystem.isDirectory(theFile) == false)
+				{
+					found = true;
+					var fileStr = File.getContent(theFile);
+					str += "COMMENT\n" + "*************************\nFrom file \"" + file+"\"\n*************************\n\n" + fileStr + "\n\n";
+				}
+			}
+		}
+		
+		if(!found)
 		{
 			ScriptParser.error(0, 0, "could not find input file \"" + inFile+"\"!");
 			return;
@@ -70,6 +93,8 @@ class ScriptParser
 		if (!FileSystem.exists(tempDir)) FileSystem.createDirectory(tempDir);
 		var tempFile = tempDir + "meta.txt";
 		var metaContent = processMeta();
+		
+		File.saveContent(tempDir + "script.txt", str);
 		
 		var nameDir = outDir + "/locales/"+Locale+"/";
 		if (!FileSystem.exists(nameDir)) FileSystem.createDirectory(nameDir);
@@ -503,7 +528,7 @@ class ScriptParser
 	private function getMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
 	{
 		return 
-'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
+'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + att("sort", Std.string(scene.number)) + '>' +
 lineData +
 '</scene>';
 	}
@@ -511,7 +536,7 @@ lineData +
 	private function getTutMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
 	{
 		return
-'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + '>' +
+'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + att("sort", Std.string(scene.number)) + '>' +
 lineData +
 '</scene>';
 	}
@@ -600,8 +625,6 @@ lineData +
 			lineData.tsv += flag + "\t" + content + "\n";
 			
 			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) +"/>";
-			
-			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
 		}
 		return lineData;
 	}
@@ -615,8 +638,6 @@ lineData +
 			lineData.tsv += flag +"\t" + content + "\n";
 			
 			lineData.xml += "<tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
-			
-			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", flag) +"/>";
 		}
 		return lineData;
 	}
@@ -639,8 +660,6 @@ lineData +
 			lineData.tsv += flag + "\t" + content + "\n";
 			
 			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
-			
-			//lineData.xml += "\n    <line " + att("character", speaker) + att("text", flag) +"/>";
 		}
 		return lineData;
 	}
@@ -682,8 +701,6 @@ lineData +
 			}
 			
 			lineData.xml += "<tut " + att("title", title) + att("text", flag) + "/>";
-			
-			//lineData.xml += "\n    <line " + att("character", "", true) + att("text", content) +"/>";
 		}
 		return lineData;
 	}
@@ -725,7 +742,7 @@ lineData +
 	public static function att(name:String, value:String, forceEmpty:Bool=false):String
 	{
 		if (!forceEmpty && (value == null || value == "")) return "";
-		return name + '="' + value + '" ';				//' fart="value"'
+		return name + '="' + value + '" ';
 	}
 }
 

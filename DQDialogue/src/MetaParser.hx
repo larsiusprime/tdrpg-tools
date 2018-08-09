@@ -133,7 +133,7 @@ class MetaParser
 				{
 					switch(plottype)
 					{
-						case "pearls", "movies", "heroes","join_pearls":
+						case "pearls", "movies", "heroes", "join_pearls":
 							var xml = Xml.parse('<plotline name="$plotline"></plotline>').firstChild();
 							xml = addCells(xml, cells, plottype);
 							document.addChild(xml);
@@ -372,7 +372,7 @@ class MetaParser
 			
 			if (i == cells.length - 1)
 			{
-				var dummy = Xml.parse('<element next="none" name="dummy"><requirements><requirement type="complete_pearl" value="impossible"/></requirements><actions/></element>').firstChild();
+				var dummy = Xml.parse('<element next="none" name="dummy"><requirements><requirement type="fulfill_pearl" value="impossible"/></requirements><actions/></element>').firstChild();
 				xml.addChild(dummy);
 			}
 		}
@@ -398,7 +398,7 @@ class MetaParser
 			
 			if (i != 0)
 			{
-				var requirement = Xml.parse('<requirement type="complete_pearl" value="$prevCell"/>').firstChild();
+				var requirement = Xml.parse('<requirement type="fulfill_pearl" value="$prevCell"/>').firstChild();
 				el.node.requirements.x.addChild(requirement);
 				
 				var connect = Xml.parse('<action type="connect_pearls" value="$prevCell,$cell"/>').firstChild();
@@ -409,7 +409,7 @@ class MetaParser
 			
 			if (i == cells.length - 1)
 			{
-				var dummy = Xml.parse('<element next="none" name="dummy"><requirements><requirement type="complete_pearl" value="impossible"/></requirements><actions/></element>').firstChild();
+				var dummy = Xml.parse('<element next="none" name="dummy"><requirements><requirement type="fulfill_pearl" value="impossible"/></requirements><actions/></element>').firstChild();
 				xml.addChild(dummy);
 			}
 		}
@@ -469,7 +469,7 @@ class MetaParser
 			else if(introOutro == 1)
 			{
 				var pearl = depadPearl(theCell);
-				var requirement = Xml.parse('<requirement type="complete_pearl" value="$pearl"/>').firstChild();
+				var requirement = Xml.parse('<requirement type="fulfill_pearl" value="$pearl"/>').firstChild();
 				el.node.requirements.x.addChild(requirement);
 			}
 		}
@@ -544,7 +544,7 @@ class MetaParser
 			
 			if (join1 != "" && join2 != "")
 			{
-				var req = Xml.parse('<requirement type="complete_pearl" value="'+requirement+'"/>').firstChild();
+				var req = Xml.parse('<requirement type="fulfill_pearl" value="'+requirement+'"/>').firstChild();
 				el.node.requirements.x.addChild(req);
 				
 				var connect = Xml.parse('<action type="connect_pearls" value="$join1,$join2"/>').firstChild();
@@ -578,7 +578,7 @@ class MetaParser
 		
 		if (i != 0)
 		{
-			var requirement = Xml.parse('<requirement type="complete_pearl" value="$origPrev"/>').firstChild();
+			var requirement = Xml.parse('<requirement type="fulfill_pearl" value="$origPrev"/>').firstChild();
 			el.node.requirements.x.addChild(requirement);
 			
 			var connect = Xml.parse('<action type="connect_pearls" value="$prevCell,$cell"/>').firstChild();

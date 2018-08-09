@@ -21,6 +21,7 @@ class Scene
 	public var pearlID:String;
 	public var townID:String;
 	public var blocks:Array<Block>;
+	public var sortID:Int;
 	
 	public function new(Blocks:Array<Block>, endBlock:Int=0, SceneNumber:Int=0)
 	{

@@ -48,6 +48,7 @@ class Block
 			case "character": value = getParameter_GENERIC(0, name);
 			case "name": value = getParameter_GENERIC(1, name);
 			case "class": value = getParameter_GENERIC(2, name);
+			              //value = value.uReplace(" ", "_");
 			default: value = "";
 		}
 		return value;
