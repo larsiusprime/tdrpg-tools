@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
 	
-	<meta title="xbr" package="ImageProcess2" version="1.0.0" company="larsiusprime" />
+	<meta title="waifu2x" package="ImageProcess2" version="1.0.0" company="larsiusprime" />
 	<app main="Main" file="waifu2x" path="bin" />
+	
+	<window background="#808080" fps="60" />
+	<window width="800" height="600" unless="mobile" />
+	<window orientation="landscape" vsync="false" antialiasing="0" if="cpp" />
 	
 	<source path="src" />
 	

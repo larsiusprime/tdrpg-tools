@@ -6,7 +6,8 @@ import lime.graphics.ImageBuffer;
 import lime.graphics.opengl.GL;
 import lime.graphics.RenderContext;
 import lime.ui.Window;
-import lime.utils.ByteArray;
+import openfl.display.Sprite;
+import openfl.utils.ByteArray;
 import openfl.display.BitmapData;
 import openfl.display.BitmapDataChannel;
 import openfl.display.PNGEncoderOptions;
@@ -21,7 +22,7 @@ import sys.io.Process;
  * @author larsiusprime
  */
 
-class Main extends Application 
+class Main extends Sprite 
 {
 
 	public function new() 
@@ -41,6 +42,7 @@ class Main extends Application
 		}
 		var input:String = args[0];
 		var output:String = args[1];
+		var cwd = Sys.getCwd();
 		var scale:Int = 2;
 		if (FileSystem.exists(input))
 		{
@@ -74,8 +76,8 @@ class Main extends Application
 			
 			writeBmp(matte, matteFile);
 			
-			Sys.command("waifu2xscript", ["-i", alphaFile, "-o", "___out" + alphaFile]);
-			Sys.command("waifu2xscript", ["-i", matteFile, "-o", "___out" + matteFile]);
+			Sys.command("waifu2xscript", ["-i", cwd+alphaFile, "-o", cwd+"___out" + alphaFile]);
+			Sys.command("waifu2xscript", ["-i", cwd+matteFile, "-o", cwd+"___out" + matteFile]);
 			
 			var alphaBig = BitmapData.fromFile("___out" + alphaFile);
 			var matteBig = BitmapData.fromFile("___out" + matteFile);
@@ -148,10 +150,4 @@ class Main extends Application
 	{
 		trace("usage: waifu2x <input_file> <output_file>, ex: waifu2x in.png out.png");
 	}
-	
-	public override function addWindow (window:Window):Void
-	{
-		//donothing
-	}
-	
 }
