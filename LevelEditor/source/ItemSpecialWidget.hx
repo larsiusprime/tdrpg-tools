@@ -3,6 +3,7 @@ import com.leveluplabs.tdrpg.CreatureAttackFlavor;
 import com.leveluplabs.tdrpg.FlavorInteraction;
 import com.leveluplabs.tdrpg.ItemSpecial;
 import com.leveluplabs.tdrpg.ItemSpecial.SpecialAbility;
+import com.leveluplabs.tdrpg.enums.Interaction;
 import com.leveluplabs.tdrpg.enums.Operator;
 import com.leveluplabs.tdrpg.enums.SpecialAbilityType;
 import flixel.FlxG;
@@ -174,7 +175,7 @@ class ItemSpecialWidget extends FlxUIGroup
 			case STRONG:
 				var strong = new SpecialStrong();
 				data = strong;
-				strong.interaction = new FlavorInteraction(getStr("strong_flavor"), getStr("strong_interaction"), getFloat("strong_amount"));
+				strong.interaction = new FlavorInteraction(getStr("strong_flavor"), Interaction.fromString(getStr("strong_interaction")), getFloat("strong_amount"));
 			case THORNS:
 				var thorns = new SpecialThorns();
 				data = thorns;
@@ -434,7 +435,7 @@ class ItemSpecialWidget extends FlxUIGroup
 		add(box);
 		
 		if (ability != null){
-			getBtn("strong_interaction").button.label.text = ability.interaction.effect;
+			getBtn("strong_interaction").button.label.text = Std.string(ability.interaction.effect);
 			getBtn("strong_flavor").button.label.text = ability.interaction.flavor;
 			getNum("strong_amount").stepper.value = ability.interaction.amount;
 		}
