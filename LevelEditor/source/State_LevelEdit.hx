@@ -752,8 +752,14 @@ class State_LevelEdit extends FlxUIState
 		
 		for (waveData in bData.waves){
 			var diffI = Util.diffToI(waveData.difficulty);
-			for (waveInfo in waveData.waves){
-				waves[diffI].push(WaveData.copyWaveInfo(waveInfo));
+			if (waveData.waves != null)
+			{
+				for (waveInfo in waveData.waves){
+					if (waves.length > diffI)
+					{
+						waves[diffI].push(WaveData.copyWaveInfo(waveInfo));
+					}
+				}
 			}
 		}
 		
