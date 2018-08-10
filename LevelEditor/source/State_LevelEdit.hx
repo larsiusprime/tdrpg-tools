@@ -54,7 +54,7 @@ class State_LevelEdit extends FlxUIState
 	
 	private static inline var LAYER_X:Int = 60;
 	private static inline var LAYER_Y:Int = 30;
-	private static inline var LAYER_W:Int = 930;
+	private static inline var LAYER_W:Int = 1230;
 	
 	private static inline var WAVE_X:Int = 550;
 	private static inline var WAVE_Y:Int = 225;
@@ -110,6 +110,16 @@ class State_LevelEdit extends FlxUIState
 		}
 		else if (FlxG.keys.justPressed.Y && FlxG.keys.pressed.CONTROL){
 			redo();
+		}
+		
+		if (compositePendingTime > 0)
+		{
+			compositePendingTime -= elapsed;
+			if (compositePendingTime < 0)
+			{
+				compositePendingTime = 0;
+				composite();
+			}
 		}
 		
 		super.update(elapsed);
@@ -216,6 +226,8 @@ class State_LevelEdit extends FlxUIState
 	}
 	
 	//PRIVATE
+	
+	private var compositePendingTime:Float = 0;
 	
 	private var locStrs:Map<String,Map<String,String>>;
 	
@@ -454,16 +466,16 @@ class State_LevelEdit extends FlxUIState
 		}
 		
 		if(change){
-			composite();
-		}
-		
-		if(change){
 			pushUndo(tempState);
 			tempState = new EditState(layers);
 		}
 		
 		if(change){
 			dirty = true;
+		}
+		
+		if(change){
+			compositePendingTime = 0.2;
 		}
 	}
 	

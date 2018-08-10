@@ -12,6 +12,6 @@ class Main extends Sprite
 		var crashDumper = new CrashDumper(SessionData.generateID("LevelEditor", ""), "", "", true);
 		
 		super();
-		addChild(new FlxGame(1280, 720, State_Start, 1, 60, 60, true));
+		addChild(new FlxGame(1600, 900, State_Start, 1, 60, 60, true));
 	}
 }

@@ -10,8 +10,8 @@
 		<start rgb="0xFF00FF" id="a" y="7" x="22"/>
 		<end   rgb="0x00FFFF" id="a" y="7" x="4"/>
 		<tile  rgb="0x000000" value="dq2_noise" layer="0" tile_sheet="single"/>
-		<tile  rgb="0xFF0000" value="dq2_red"   layer="1"/>
-		<tile  rgb="0x00FF00" value="dq2_green" layer="2"/>
+		<tile  rgb="0x00FF00" value="dq2_green" layer="1"/>
+		<tile  rgb="0xFF0000" value="dq2_red"   layer="2"/>
 		<tile  rgb="0x808080" value="dq2_black" layer="3"/>
 		<tile  rgb="0x0000FF" value="dq2_blue"  layer="4"/>
 	</tiles>
