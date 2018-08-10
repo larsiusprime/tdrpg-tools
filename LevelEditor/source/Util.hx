@@ -55,6 +55,7 @@ class Util
 {
 	public static var dq1:Settings;
 	public static var dq2:Settings;
+	public static var dqx:Settings;
 	public static var dataFetcher:DataFetcher;
 	
 	public static function initSettings(){
@@ -71,13 +72,26 @@ class Util
 		dq1.squaresTall = 14;
 		dq1.dqFolder = "DefendersQuest";
 		dq1.APP_ID = 218410;
+		dq1.dqString = "DQ1";
 		
 		dq2.tilesetStyle = "dq2";
 		dq2.tilesPerSquare = 1;
 		dq2.squaresWide = 23;
 		dq2.squaresTall = 15;
-		dq2.dqFolder = "DefendersQuestII";
+		dq2.dqFolder = "DefendersQuest2";
 		dq2.APP_ID = 0;
+		dq2.dqString = "DQ2";
+		
+		dqx = dq1;
+		
+		if (FileSystem.exists("dqnum.txt"))
+		{
+			var dqnum = File.getContent("dqnum.txt");
+			if (dqnum == "2")
+			{
+				dqx = dq2;
+			}
+		}
 		
 		try{
 			if (!Steam.active){
@@ -97,7 +111,7 @@ class Util
 	
 	private static function initSteam(){
 		
-		Steam.init(Util.dq1.APP_ID);
+		Steam.init(Util.dqx.APP_ID);
 		cacheSteamProjectIDs();
 		FlxG.stage.addEventListener(Event.ENTER_FRAME, onEnterFrame, false, 0, true);
 		
@@ -159,7 +173,7 @@ class Util
 		
 		Steam.whenQueryUGCRequestSent = onSteamQuery;
 		
-		var appID = Util.dq1.APP_ID;
+		var appID = Util.dqx.APP_ID;
 		var queryType = EUGCQuery.RankedByVote;
 		var matchingType = EUGCMatchingUGCType.All;
 		var queryHandle:String = Steam.ugc.createQueryAllUGCRequest(queryType, matchingType, appID, appID, 1);
@@ -198,6 +212,26 @@ class Util
 		Steam.ugc.releaseQueryUGCRequest(handle);
 	}
 	
+	public static function tile(str:String):String
+	{
+		if (Util.dqx.dqVersion == "dq1")
+		{
+			return str;
+		}
+		else if (Util.dqx.dqVersion == "dq2")
+		{
+			return switch(str)
+			{
+				case "grass": "dq2_green";
+				case "dark_cliff": "dq2_red";
+				case "water": "dq2_blue";
+				default: str;
+			}
+		}
+		return str;
+	}
+	
+	
 	public static function getFixedModPath():String
 	{
 		var modPath = UU.getDefaultPath("mods");
@@ -213,7 +247,7 @@ class Util
 			
 			var ppPath = Util.getParentDir(Util.getParentDir(modPath));
 			
-			newPath = Util.safePath(ppPath, Util.dq1.dqFolder);
+			newPath = Util.safePath(ppPath, Util.dqx.dqFolder);
 			newPath = Util.safePath(newPath, Util.getLastFolder(modPath));
 			
 		}
@@ -249,8 +283,8 @@ class Util
 	
 	public static function splitMapBitmap(bmp:BitmapData, layers:Int):Array<BitmapData>
 	{
-		var sw = Util.dq1.squaresWide;
-		var sh = Util.dq1.squaresTall;
+		var sw = Util.dqx.squaresWide;
+		var sh = Util.dqx.squaresTall;
 		
 		var arr = [];
 		var rect = new Rectangle(sw, 0, sw, sh);
@@ -677,7 +711,11 @@ class Util
 	
 	
 	public static function getModID():String{
-		return getLastFolder(dataFetcher.modPath).toLowerCase();
+		var modPath = dataFetcher.modPath;
+		var value = getLastFolder(modPath);
+		if (value == null || value == "") return "";
+		value = value.toLowerCase();
+		return value;
 	}
 	
 	public static function matchRewards(a:RewardStruct, b:RewardStruct){
@@ -691,6 +729,11 @@ class Util
 	
 	public static function getLastFolder(path:String):String
 	{
+		if (path == "" || path == null) 
+		{
+			return "";
+		}
+		
 		var arr = splitPath(path);
 		
 		while(arr[arr.length - 1] == ""){

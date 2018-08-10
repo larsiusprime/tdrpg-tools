@@ -68,7 +68,7 @@ class State_Start extends FlxUIState
 		
 		Util.initSettings();
 		
-		saveData = new SaveData();
+		saveData = new SaveData(Util.dqx.dqFolder);
 		
 		newProject = Util.makeBtn(0, 0, "New Project", onNewProject, 150);
 		loadProject = Util.makeBtn(0, 0, "Load Project", onLoadProject, 150);
@@ -171,6 +171,7 @@ class State_Start extends FlxUIState
 		}
 		
 		var modID = Util.getModID();
+		
 		activate(projectID,          (modID != null && modID != ""));
 		activate(projectTitle,       (modID != null && modID != ""));
 		activate(projectDescription, (modID != null && modID != ""));
@@ -178,6 +179,7 @@ class State_Start extends FlxUIState
 	
 	private function activate(w:IFlxUIWidget, b:Bool)
 	{
+		if (w == null) return;
 		w.active = b;
 		w.alpha = b ? 1.0 : 0.5;
 	}
@@ -398,16 +400,12 @@ class State_Start extends FlxUIState
 		if (Util.pathEndsInAssets(path) == false){
 			path = Util.fixDoubleSlash(Util.joinPath([path, "assets"]));
 		}
-		
 		saveData.installPath = path;
-		
 		if (Util.dataFetcher == null){
 			Util.dataFetcher = new DataFetcher(saveData);
 		}
 		Util.dataFetcher.load(saveData);
-		
 		saveStuff();
-		
 	}
 	
 	private function detectInstallPath(path:String="", message:String="", finished:Void->Void)
@@ -420,10 +418,12 @@ class State_Start extends FlxUIState
 				finished();
 			}
 		}
-		else{
+		else
+		{
 			if (message == ""){
 				message = "The editor needs to know where the game is installed.\nPress 'Yes' to select a path, or 'No' to quit.";
 			}
+			
 			var popup = new YesNoPopup("Need game path", message, function(b:Bool){
 				if (!b){
 					Sys.exit(0);
@@ -709,7 +709,7 @@ class State_Start extends FlxUIState
 			
 			var ppPath = Util.getParentDir(Util.getParentDir(modPath));
 			
-			newPath = Util.safePath(ppPath, Util.dq1.dqFolder);
+			newPath = Util.safePath(ppPath, Util.dqx.dqFolder);
 			newPath = Util.safePath(newPath, Util.getLastFolder(modPath));
 			
 		}
@@ -746,14 +746,14 @@ class State_Start extends FlxUIState
 				var popup = new TextPopup(str, "Project Title", function(str:String){
 					
 					title = str;
-					var success = ModUtil.exportMod(name, title, modPath, Util.dq1.dqString, Util.dq1.dqVersion, false);
+					var success = ModUtil.exportMod(name, title, modPath, Util.dqx.dqString, Util.dqx.dqVersion, false);
 					
 					if (!success){
 						var popup = new YesNoPopup("Confirm overwrite", "An existing project was found at path\n" + modPath + "\nOverwrite basic settings?", function(b:Bool){
 							
 							if (b){
 								
-								ModUtil.exportMod(name, title, modPath, Util.dq1.dqString, Util.dq1.dqVersion, true);
+								ModUtil.exportMod(name, title, modPath, Util.dqx.dqString, Util.dqx.dqVersion, true);
 								saveData.modPath = modPath;
 								saveStuff();
 								refreshText();
@@ -849,7 +849,7 @@ class State_Start extends FlxUIState
 		
 		str = Util.fixID(str);
 		
-		var dqString = Utf8Ext.toLowerCase(Util.dq1.dqString);
+		var dqString = Utf8Ext.toLowerCase(Util.dqx.dqString);
 		
 		var basePng:BitmapData = BakedAssets.getBMP(dqString+".png");
 		var baseXml:String = BakedAssets.getTxt(dqString + ".xml");

@@ -13,9 +13,14 @@ class SaveData
 	public var modPath:String = "";
 	public var installPath:String = "";
 	public var mapID:String = "";
+	public var saveName:String = "";
 	
-	public function new()
+	public function new(saveName:String)
 	{
+		if (saveName != "DefendersQuest")
+		{
+			this.saveName = saveName;
+		}
 		load();
 	}
 	
@@ -30,7 +35,7 @@ class SaveData
 	
 	public function save(){
 		var name = FlxG.save.name;
-		if (FlxG.save.bind("level_editor_data")){
+		if (FlxG.save.bind("level_editor_data"+saveName )){
 			setStr("devPath", Util.fixDoubleSlash(devPath));
 			setStr("modPath", Util.fixDoubleSlash(modPath));
 			setStr("installPath", Util.fixDoubleSlash(installPath));
@@ -43,7 +48,7 @@ class SaveData
 	
 	public function load(){
 		var name = FlxG.save.name;
-		if (FlxG.save.bind("level_editor_data")){
+		if (FlxG.save.bind("level_editor_data"+saveName)){
 			devPath = Util.fixDoubleSlash(getStr("devPath"));
 			devPath2 = Util.fixDoubleSlash(getStr("devPath2"));
 			modPath = Util.fixDoubleSlash(getStr("modPath"));

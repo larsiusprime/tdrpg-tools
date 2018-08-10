@@ -296,46 +296,58 @@ class DataFetcher
 	public function getTileColor(tileset:String):FlxColor{
 		
 		tileset = switch(tileset){
-			case "illegal": "dark_cliff";
-			case "legal": "grass";
-			default: tileset;
+			case "illegal": Util.tile("dark_cliff");
+			case "legal": Util.tile("grass");
+			default: Util.tile(tileset);
 		}
 		
 		if (index != null){
 			var bmp = getBitmapData("gfx/_hd/tiles/tile_" + tileset + ".png");
 			if (bmp != null){
-				//TODO: Fix for dq2
-				
-				var lastTileRect = new Rectangle(bmp.width - bmp.height, 0, bmp.height, bmp.height);
-				
-				var lastTile:BitmapData = new BitmapData(Std.int(lastTileRect.width), Std.int(lastTileRect.height), false, 0xFFFFFFFF);
-				lastTile.copyPixels(bmp, lastTileRect, new Point());
-				
-				var px:BitmapData = new BitmapData(1, 1);
-				var m:Matrix = new Matrix();
-				m.scale(1 / lastTile.width, 1 / lastTile.height);
-				px.draw(lastTile, m, null, null, null, true);
-				
-				var color:FlxColor = px.getPixel32(0, 0);
-				
-				if (color.brightness < 0.33){
-					color.brightness = 0.33;
+				var color:FlxColor = FlxColor.WHITE;
+				if (Util.dqx.tilesetStyle == "dq1")
+				{
+					var lastTileRect = new Rectangle(bmp.width - bmp.height, 0, bmp.height, bmp.height);
+					
+					var lastTile:BitmapData = new BitmapData(Std.int(lastTileRect.width), Std.int(lastTileRect.height), false, 0xFFFFFFFF);
+					lastTile.copyPixels(bmp, lastTileRect, new Point());
+					
+					var px:BitmapData = new BitmapData(1, 1);
+					var m:Matrix = new Matrix();
+					m.scale(1 / lastTile.width, 1 / lastTile.height);
+					px.draw(lastTile, m, null, null, null, true);
+					
+					color = px.getPixel32(0, 0);
+					
+					if (color.brightness < 0.33){
+						color.brightness = 0.33;
+					}
+					
+					lastTile.dispose();
+					px.dispose();
 				}
-				
-				lastTile.dispose();
-				px.dispose();
+				else if(Util.dqx.tilesetStyle == "dq2")
+				{
+					if (bmp.height > bmp.width)
+					{
+						color = bmp.getPixel32(96, 96);
+					}
+					
+					if (color.brightness < 0.33) {
+						color.brightness = 0.33;
+					}
+				}
 				
 				return color;
 			}
 		}
-		return switch(tileset){
-			case "water": FlxColor.BLUE;
-			case "grass": FlxColor.GREEN;
-			case "legal": FlxColor.WHITE;
-			case "illegal": FlxColor.RED;
-			case "dark_cliff": FlxColor.GRAY;
-			default: FlxColor.MAGENTA;
-		}
+		
+		if (tileset == Util.tile("water")) return FlxColor.BLUE;
+		if (tileset == Util.tile("grass")) return FlxColor.GREEN;
+		if (tileset == Util.tile("legal")) return FlxColor.WHITE;
+		if (tileset == Util.tile("illegal")) return FlxColor.RED;
+		if (tileset == Util.tile("dark_cliff")) return FlxColor.GRAY;
+		return FlxColor.MAGENTA;
 	}
 	
 	public function getPathText():String{
@@ -572,7 +584,7 @@ class DataFetcher
 					
 					var test = getBitmapData("assets/gfx/_hd/tiles/" + r);
 					var isSingle = false;
-					if (test != null && test.width < test.height * 2)
+					if (test != null && test.width == test.height)
 					{
 						test.dispose();
 						isSingle = true;

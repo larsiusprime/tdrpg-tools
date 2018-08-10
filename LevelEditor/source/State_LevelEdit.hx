@@ -91,7 +91,7 @@ class State_LevelEdit extends FlxUIState
 		dq1 = Util.dq1;
 		dq2 = Util.dq2;
 		
-		load(dq1);
+		load(Util.dqx);
 		
 		dirty = false;
 	}
@@ -709,10 +709,17 @@ class State_LevelEdit extends FlxUIState
 		}
 		
 		for (i in 0...meta.infos.length){
-			var metaInfo:MetaInfo = meta.infos[i];
-			metaInfo.firstWait = bData.waves[i].firstWait;
-			metaInfo.isEndless = bData.waves[i].isEndless;
-			metaInfo.endlessLevelup = bData.waves[i].endlessLevelup;
+			var metaInfo:MetaInfo = (meta.infos != null  && meta.infos.length > i) ? meta.infos[i] : null;
+			if (metaInfo != null)
+			{
+				var wave:WaveData = (bData.waves != null && bData.waves.length > i) ? bData.waves[i] : null;
+				if (wave != null)
+				{
+					metaInfo.firstWait = wave.firstWait;
+					metaInfo.isEndless = wave.isEndless;
+					metaInfo.endlessLevelup = wave.endlessLevelup;
+				}
+			}
 		}
 		
 		metaWidget = new MetaWidget(WAVE_X, WAVE_Y);
@@ -1447,6 +1454,7 @@ class State_LevelEdit extends FlxUIState
 		return new Fast(Util.xmlify(getXMLString()));
 	}
 	
+	
 	private function getXMLString():String{
 		
 		var save_xml:Xml = Xml.parse("<data></data>");
@@ -1471,9 +1479,9 @@ class State_LevelEdit extends FlxUIState
 			{
 				var color:FlxColor = layers[i].drawColor;
 				var value = switch(layers[i].value){
-					case "legal": "grass";
-					case "illegal": "dark_cliff";
-					case "water": "water";
+					case "legal": Util.tile("grass");
+					case "illegal": Util.tile("dark_cliff");
+					case "water": Util.tile("water");
 					default: layers[i].value;
 				}
 				var hexcol = color.toHexString(false, true);
@@ -1727,8 +1735,8 @@ class State_LevelEdit extends FlxUIState
 	{
 		var tileset = value;
 		if (category == "art" || category == "interactive"){
-			tileset = "grass";
-			color = dataFetcher.getTileColor("grass");
+			tileset = Util.tile("grass");
+			color = dataFetcher.getTileColor(Util.tile("grass"));
 		}
 		
 		var heightInPixels = data.tilesPerSquare * data.tilePixelsTall * data.squaresTall;
@@ -1807,6 +1815,15 @@ class State_LevelEdit extends FlxUIState
 		return false;
 	}
 	
+	private function getClass(class_str:String)
+	{
+		#if tdrpg_haxe
+		return null;
+		#else
+		return null;
+		#end
+	}
+	
 	private function getCharacter(class_str:String, ?handle:String, ?index:Int)
 	{
 		#if tdrpg_haxe
@@ -1845,7 +1862,8 @@ class State_LevelEdit extends FlxUIState
 			isSpriteModeHD,
 			getGraphicsHeight,
 			getBitmapData,
-			assetExists
+			assetExists,
+			getClass
 		);
 	}
 	#end
