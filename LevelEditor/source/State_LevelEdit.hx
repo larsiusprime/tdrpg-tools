@@ -4,6 +4,7 @@ package;
 import com.leveluplabs.tdrpg.BattleFieldUtility;
 import com.leveluplabs.tdrpg.IndexData;
 import com.leveluplabs.tdrpg.enums.TerrainType;
+import com.leveluplabs.tdrpg.enums.Stat;
 #end
 import com.leveluplabs.tdrpg.BonusData;
 import flash.display.BitmapData;
@@ -130,6 +131,30 @@ class State_LevelEdit extends FlxUIState
 	{
 		//super.getRequest(id, sender, data, params);
 		switch(id){
+			case "total_psi":
+				var theWaves = waves[diffI()];
+				var amount = 0.0;
+				for (w in theWaves)
+				{
+					amount += Util.dataFetcher.getEnemyStat(w.type, Stat.PSI_REWARD, w.level) * w.count;
+				}
+				return amount;
+			case "total_gold":
+				var theWaves = waves[diffI()];
+				var amount = 0.0;
+				for (w in theWaves)
+				{
+					amount += Util.dataFetcher.getEnemyStat(w.type, Stat.GOLD_REWARD, w.level) * w.count;
+				}
+				return amount;
+			case "total_xp":
+				var theWaves = waves[diffI()];
+				var amount = 0.0;
+				for (w in theWaves)
+				{
+					amount += Util.dataFetcher.getEnemyStat(w.type, Stat.XP_REWARD, w.level) * w.count;
+				}
+				return amount;
 			case "items":
 				
 				var code:String = cast data;
@@ -189,6 +214,17 @@ class State_LevelEdit extends FlxUIState
 				onAddWave();
 			case "wave_change":
 				onWaveChange();
+			case "wave_change_info":
+				for (widget in waveList.members)
+				{
+					if (widget == null) continue;
+					if (Std.is(widget, WaveWidget))
+					{
+						var w:WaveWidget = cast widget; 
+						w.updatePsiGold();
+					}
+				}
+				
 			case "reward_change":
 				onRewardChange(cast data);
 			case "bonus_change":
@@ -282,7 +318,7 @@ class State_LevelEdit extends FlxUIState
 	}
 	
 	private function onBonusChange(bonusData:BonusStruct){
-		if (meta.infos[0].isBonus){
+		if (bonusData != null && meta.infos[0].isBonus){
 			for (bs in dataFetcher.projectData.bonusData){
 				if (bs.id == saveData.mapID){
 					bs.match(bonusData);
@@ -297,7 +333,6 @@ class State_LevelEdit extends FlxUIState
 			for (bs in dataFetcher.projectData.bonusData){
 				if (bs.id == saveData.mapID){
 					bs.matchRewards(rewards);
-					
 				}
 			}
 		}
@@ -745,6 +780,8 @@ class State_LevelEdit extends FlxUIState
 		//syncing rewards for non-bonus levels must come later
 		//metaWidget.syncRewards(dataFetcher.projectData.);
 		
+		isBonus = bData.isBonus;
+		
 		metaWidget.setBonus(isBonus);
 		
 		waves = [[],[],[]];
@@ -1036,12 +1073,14 @@ class State_LevelEdit extends FlxUIState
 	
 	private function refreshWaves(autoScroll:Bool=false)
 	{
-		if (waveList == null){
-			waveList = new FlxUIList(WAVE_X, WAVE_Y+metaWidget.height+20, null, WaveWidget.W, WaveWidget.H * 5);
+		if (waveList == null)
+		{
+			waveList = new FlxUIList(WAVE_X, WAVE_Y+metaWidget.height+20, null, WaveWidget.W, WaveWidget.H * 7);
 			add(waveList);
 		}
 		
-		if (waves == null){
+		if (waves == null)
+		{
 			return;
 		}
 		
@@ -1574,6 +1613,8 @@ class State_LevelEdit extends FlxUIState
 		
 		var i = 0;
 		
+		
+		
 		if(waves != null){
 			for (ws in waves){
 				
@@ -1632,6 +1673,7 @@ class State_LevelEdit extends FlxUIState
 		save_xml.addChild(Util.xmlify('<music value="battle"/>'));
 		save_xml.addChild(Util.xmlify('<victory><condition value="kill_all"/></victory>'));
 		save_xml.addChild(Util.xmlify('<failure/>'));
+		save_xml.addChild(Util.xmlify('<meta bonus="'+meta.infos[0].isBonus+'"/>'));
 		save_xml.addChild(Util.xmlify(tileStr));
 		if (hasArt){
 			save_xml.addChild(Util.xmlify(artStr));

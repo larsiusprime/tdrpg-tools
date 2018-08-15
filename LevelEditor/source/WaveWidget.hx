@@ -1,8 +1,10 @@
 package;
+import com.leveluplabs.tdrpg.enums.Stat;
 import flixel.addons.ui.FlxUI;
 import flixel.addons.ui.FlxUIButton;
 import flixel.addons.ui.FlxUIGroup;
 import flixel.addons.ui.FlxUILine;
+import flixel.addons.ui.FlxUIText;
 import flixel.addons.ui.FlxUISprite;
 import flixel.addons.ui.interfaces.IFlxUIWidget;
 import flixel.util.FlxColor;
@@ -13,7 +15,7 @@ import flixel.util.FlxColor;
  */
 class WaveWidget extends FlxUIGroup
 {
-	public static inline var W:Int = 700;
+	public static inline var W:Int = 800;
 	public static inline var H:Int = 72;
 	
 	public var sigils:SigilWidget;
@@ -25,6 +27,8 @@ class WaveWidget extends FlxUIGroup
 	public var plusMinus:FlxUIButton;
 	public var box:FlxUIGroup;
 	public var info:WaveInfo;
+	
+	public var txtPsiGold:FlxUIText;
 	
 	public var empty(default, set):Bool = false;
 	
@@ -42,6 +46,7 @@ class WaveWidget extends FlxUIGroup
 		level.stepper.value = info.level;
 		rate.stepper.value = info.rate;
 		type.button.label.text = info.type;
+		onChange();
 	}
 	
 	override public function destroy():Void 
@@ -80,6 +85,7 @@ class WaveWidget extends FlxUIGroup
 		info.type = type.button.label.text;
 		info.starts = sigils.starts.copy();
 		info.ends = sigils.ends.copy();
+		onChange();
 	}
 	
 	public function setType(typeStr:String){
@@ -87,6 +93,7 @@ class WaveWidget extends FlxUIGroup
 		type.button.centerLabel();
 		if (info != null){
 			info.type = typeStr;
+			onChange();
 		}
 	}
 	
@@ -105,8 +112,8 @@ class WaveWidget extends FlxUIGroup
 		sigils.setValues([true, false, false, false, false], [true, false, false, false, false]);
 		add(sigils);
 		
-		var X = 4 + sigils.width + 8;
-		var Y = 20;
+		var X = Std.int(4 + sigils.width + 8);
+		var Y = Std.int(20);
 		var ww = Std.int(H*0.8);
 		var dx = ww + 38;
 		
@@ -114,21 +121,26 @@ class WaveWidget extends FlxUIGroup
 		add(type);
 		X += ww*2 + 38;
 		
-		count = new NumberWidget(X, Y, ww, "count", 1, 0, 0, 99);
+		count = new NumberWidget(X, Y, ww, "count", 1, 0, 0, 99, 0, false, onNumber);
 		add(count);
 		X += dx;
 		
-		wait = new NumberWidget(X, Y, ww, "wait", 0.1, 1, 0, 60, 1);
+		wait = new NumberWidget(X, Y, ww, "wait", 0.1, 1, 0, 60, 1, false, onNumber);
 		add(wait);
 		X += dx;
 		
-		level = new NumberWidget(X, Y, ww, "level", 1, 1, 1, 99);
+		level = new NumberWidget(X, Y, ww, "level", 1, 1, 1, 99, 0, false, onNumber);
 		add(level);
 		X += dx;
 		
-		rate = new NumberWidget(X, Y, ww, "rate", 0.1, 1, 0.1, 99, 1);
+		rate = new NumberWidget(X, Y, ww, "rate", 0.05, 1, 0.05, 99, 2, false, onNumber);
 		add(rate);
 		X += dx;
+		
+		txtPsiGold = Util.makeTxt(X, Y - 8, Std.int(ww*2), "Psi: XX\nGold: XX\nXP: XX");
+		add(txtPsiGold);
+		
+		X += 100;
 		
 		plusMinus = new FlxUIButton(X, Std.int((H-ww)/2), "X", onPlusMinus);
 		plusMinus.resize(ww, ww);
@@ -158,6 +170,11 @@ class WaveWidget extends FlxUIGroup
 			rate.visible = false;
 			plusMinus.label.text = "+";
 			sigils.visible = false;
+			txtPsiGold.visible = true;
+			var totalPsi:Float = cast FlxUI.request("total_psi",null,null);
+			var totalGold:Float = cast FlxUI.request("total_gold",null,null);
+			var totalExp:Float = cast FlxUI.request("total_xp",null,null);
+			txtPsiGold.text = "Psi: " + totalPsi + "\nGold: " + totalGold + "\nExp: " + totalExp;
 		}
 		else{
 			box.visible = true;
@@ -168,6 +185,7 @@ class WaveWidget extends FlxUIGroup
 			rate.visible = true;
 			plusMinus.label.text = "X";
 			sigils.visible = true;
+			txtPsiGold.visible = true;
 		}
 		
 		if (!empty && ID == 0){
@@ -179,6 +197,34 @@ class WaveWidget extends FlxUIGroup
 	
 	private function onType(){
 		FlxUI.event("select_type", this, null);
+		onChange();
+	}
+	
+	private function onNumber(w:NumberWidget){
+		onChange();
+	}
+	
+	public function updatePsiGold(){
+		if (empty)
+		{
+			var totalPsi:Float = cast FlxUI.request("total_psi",null,null);
+			var totalGold:Float = cast FlxUI.request("total_gold",null,null);
+			var totalXp:Float = cast FlxUI.request("total_xp",null,null);
+			txtPsiGold.text = "Psi: " + totalPsi + "\nGold: " + totalGold+"\nXP: " + totalXp;
+		}
+		else
+		{
+			var psi = Util.dataFetcher.getEnemyStat(info.type, Stat.PSI_REWARD, info.level) * info.count;
+			var gold = Util.dataFetcher.getEnemyStat(info.type, Stat.GOLD_REWARD, info.level) * info.count;
+			var xp = Util.dataFetcher.getEnemyStat(info.type, Stat.XP_REWARD, info.level) * info.count;
+			txtPsiGold.text = "Psi:" + psi + "\nGold:" + gold + "\nXP:" + xp;
+		}
+	}
+	
+	public function onChange(){
+		Sys.println("ON CHANGE");
+		updatePsiGold();
+		FlxUI.event("wave_change_info",this,null);
 	}
 	
 	private function onPlusMinus(){

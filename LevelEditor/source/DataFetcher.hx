@@ -2,12 +2,15 @@ package;
 #if tdrpg_haxe
 import com.leveluplabs.tdrpg.IndexData;
 import com.leveluplabs.tdrpg.GraphicStyleData;
-#end
+import com.leveluplabs.tdrpg.EnemyStats;
+import com.leveluplabs.tdrpg.enums.Difficulty;
 import com.leveluplabs.tdrpg.FireTongueEx;
 import com.leveluplabs.tdrpg.Item;
 import com.leveluplabs.tdrpg.ItemIndex;
 import com.leveluplabs.tdrpg.enums.ItemClass;
 import com.leveluplabs.tdrpg.enums.TerrainType;
+import com.leveluplabs.tdrpg.enums.Stat;
+#end
 import firetongue.FireTongue;
 import firetongue.TSV;
 import flash.display.BitmapData;
@@ -379,6 +382,16 @@ class DataFetcher
 		return str;
 	}
 	
+	public function getEnemyStat(enemy:String, s:Stat, forLevel:Int):Float
+	{
+		var base = _enemyStats.get(enemy);
+		var ups = _enemyStatsUp.get(enemy);
+		if (base == null || ups == null) return 0;
+		var baseStat = base.get(s);
+		var upStat = ups.get(s);
+		return EnemyStats.getLevelUpStat(s, forLevel, baseStat, upStat, Difficulty.EASY);
+	}
+	
 	public function getEnemyNames(){
 		if (_enemyNames == null) return null;
 		return _enemyNames.copy();
@@ -394,6 +407,8 @@ class DataFetcher
 	private var _path:String;
 	private var _enemyNames:Array<String>;
 	private var _enemyTypes:Array<String>;
+	private var _enemyStats:Map<String,EnemyStats>;
+	private var _enemyStatsUp:Map<String,EnemyStats>;
 	
 	private function get_path():String{
 		return _path;
@@ -685,6 +700,8 @@ class DataFetcher
 	private function loadEnemies(){
 		_enemyNames = [];
 		_enemyTypes = [];
+		_enemyStats = new Map<String,EnemyStats>();
+		_enemyStatsUp = new Map<String,EnemyStats>();
 		
 		var file = getXMLFile("enemy");
 		
@@ -705,9 +722,14 @@ class DataFetcher
 							}
 						}
 					}
+					var name = U.xml_name(enemy.x);
 					if(!hide && !stationary){
-						_enemyNames.push(U.xml_name(enemy.x));
+						_enemyNames.push(name);
 					}
+					var stats = EnemyStats.fromXML(enemy);
+					var statsUp = EnemyStats.fromXML(enemy, true);
+					_enemyStats.set(name, stats);
+					_enemyStatsUp.set(name, statsUp);
 				}
 			}
 		}

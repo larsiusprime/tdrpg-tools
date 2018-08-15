@@ -27,8 +27,6 @@ class TextWidget extends FlxUIGroup
 		input.textField.textColor = FlxColor.BLACK;
 		input.alignment = FlxTextAlign.CENTER;
 		input.size = 16;
-		//input.fieldBorderColor = 0xFFFFFFFF;
-		//input.backgroundColor = 0xFFFFFFFF;
 		add(input);
 		
 		label = new FlxUIText(0, 0, input.width, Label, 12);

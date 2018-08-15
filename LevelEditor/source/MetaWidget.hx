@@ -45,7 +45,7 @@ class MetaWidget extends FlxUIGroup
 	public var rewards1:RewardStruct;
 	public var rewards2:RewardStruct;
 	
-	public static inline var LOCK_ISBONUS:Bool = true;
+	public static inline var LOCK_ISBONUS:Bool = false;
 	
 	public function new(X:Float=0,Y:Float=0) 
 	{
@@ -81,6 +81,10 @@ class MetaWidget extends FlxUIGroup
 		refreshRadios();
 		isBonus.active = !LOCK_ISBONUS;
 		isBonus.alpha = LOCK_ISBONUS ? 0.5 : 1.0;
+		isBonus.callback = function() {
+			FlxUI.event("bonus_change", null, null);
+			meta.infos[0].isBonus = isBonus.checked;
+		}
 	}
 	
 	public function sync(Meta:MetaEntry, refresh:Bool=true){
@@ -178,7 +182,21 @@ class MetaWidget extends FlxUIGroup
 		
 		var Y = 20;
 		
-		difficulty = Util.makeRadios(5, 5, ["easy", "normal", "hard"], ["Normal", "Advanced", "Extreme"], 
+		var arr1 = [];
+		var arr2 = [];
+		
+		if (Util.dqx.dqString == "DQ2")
+		{
+			arr1 = ["easy", "normal"];
+			arr2 = ["Normal", "Advanced"];
+		}
+		else
+		{
+			arr1 = ["easy", "normal", "hard"];
+			arr2 = ["Normal", "Advanced", "Extreme"];
+		}
+		
+		difficulty = Util.makeRadios(5, 5, arr1, arr2,
 			function(str:String){
 				onDiffChange();
 			}
@@ -337,7 +355,6 @@ class MetaWidget extends FlxUIGroup
 	
 	private function onChange(){
 		if (meta == null) return;
-		trace("WRITE");
 		write(meta);
 		refreshRadios();
 	}
@@ -353,7 +370,18 @@ class MetaWidget extends FlxUIGroup
 			isBonus.checked = true;
 			onWaveChange();
 		}else{
-			Util.activateRadios(difficulty, ["easy", "normal", "hard"], true);
+			
+			var arr1 = [];
+			if (Util.dqx.dqString == "DQ2")
+			{
+				arr1 = ["easy", "normal"];
+			}
+			else
+			{
+				arr1 = ["easy", "normal", "hard"];
+			}
+			
+			Util.activateRadios(difficulty, arr1, true);
 		}
 	}
 	

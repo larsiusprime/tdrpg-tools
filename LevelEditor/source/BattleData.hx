@@ -21,6 +21,7 @@ class BattleData
 	public var layers:Array<LayerData>;
 	public var waves:Array<WaveData>;
 	public var interactives:Array<InteractiveStruct>;
+	public var isBonus:Bool = false;
 	
 	public function new() 
 	{
@@ -62,6 +63,11 @@ class BattleData
 					return 0;
 				});
 			}
+		}
+		
+		if (xml.hasNode.meta)
+		{
+			bd.isBonus = U.xml_bool(xml.node.meta.x, "bonus");
 		}
 		
 		bd.interactives = [];
