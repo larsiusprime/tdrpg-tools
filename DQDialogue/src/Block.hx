@@ -26,10 +26,10 @@ class Block
 		error = parse(str, names);
 	}
 	
-	public function getParameter(name:String = ""):String
+	public function getParameter(name:String = "", default_:String = ""):String
 	{
 		name = name.toLowerCase();
-		return switch(keyword)
+		var value = switch(keyword)
 		{
 			case Keyword.BEGIN: getParameter_BEGIN(name);
 			case Keyword.SPEECH: getParameter_SPEECH(name);
@@ -38,6 +38,11 @@ class Block
 			case Keyword.JOIN: getParameter_JOIN(name);
 			default: getParameter_GENERIC( -1, name);
 		}
+		if (value == "")
+		{
+			return default_;
+		}
+		return value;
 	}
 	
 	private function getParameter_JOIN(name:String):String
@@ -89,7 +94,15 @@ class Block
 	{
 		return switch(name)
 		{
-			case "title": getParameter_GENERIC(0, name);
+			case "trigger":
+			               getParameter_GENERIC(0, name);
+			case "id":     getParameter_GENERIC(0, name);
+			case "arrow", "click": 
+			               getParameter_GENERIC(0, name);
+			case "target": getParameter_GENERIC(0, name);
+			case "facing": getParameter_GENERIC(0, name);
+			case "title":  getParameter_GENERIC(0, name);
+			case "action": getParameter_GENERIC(0, name);
 			default: "";
 		}
 	}

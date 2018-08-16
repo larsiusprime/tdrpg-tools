@@ -61,10 +61,8 @@ class ScriptParser
 				if (a > b) return  1;
 				return 0;
 			});
-			Sys.println("inFiles = " + inFiles);
 			for (file in inFiles){
 				var theFile = inDir + "script/" + file;
-				Sys.println("what about " + theFile + " " + FileSystem.exists(theFile) + " " + FileSystem.isDirectory(theFile));
 				if (FileSystem.exists(theFile) && FileSystem.isDirectory(theFile) == false)
 				{
 					found = true;
@@ -431,8 +429,6 @@ class ScriptParser
 								modifier:mod
 							});
 						}
-						
-						trace("plot entries = " + plot.entries);
 					default: //donothing
 				}
 			}
@@ -456,7 +452,7 @@ class ScriptParser
 		
 		var sceneNodes = "";
 		var bs:BeginSettings = null;
-		var lineData = {tsv:titleFlag+"\t"+scene.title+"\n", xml:""};
+		var lineData = {tsv:titleFlag+"\t"+scene.title+"\n", xml:"", xml2:"", id:""};
 		
 		for (block in scene.blocks)
 		{
@@ -514,7 +510,7 @@ class ScriptParser
 			case "movies": 
 				sceneXML = getMoviesXML(scene, titleFlag, bs, lineData.xml);
 			case "battle_movies","reward_movies","overworld_movies","party_movies","town_movies":
-				sceneXML = getTutMoviesXML(scene, titleFlag, bs, lineData.xml);
+				sceneXML = getTutMoviesXML(scene, titleFlag, bs, lineData.xml, lineData.xml2);
 			default:
 				sceneXML = "";
 		}
@@ -533,12 +529,13 @@ lineData +
 '</scene>';
 	}
 	
-	private function getTutMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
+	private function getTutMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String, endData:String):String
 	{
 		return
 '<scene ' + att("name", scene.name) + att("title", titleFlag) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + att("sort", Std.string(scene.number)) + '>' +
 lineData +
-'</scene>';
+'</scene>' + 
+endData;
 	}
 	
 	private function doBlock_Begin(block:Block):BeginSettings
@@ -609,7 +606,7 @@ lineData +
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			
-			lineData.tsv += flag + "\t" + content + "\n";
+			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "PLAINTEXT") + att("text", flag) + "/>";
 		}
@@ -622,7 +619,7 @@ lineData +
 		{
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag + "\t" + content + "\n";
+			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) +"/>";
 		}
@@ -635,7 +632,7 @@ lineData +
 		{
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag +"\t" + content + "\n";
+			lineData.tsv += flag +"\t" + fixContent(content) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
 		}
@@ -657,7 +654,7 @@ lineData +
 		{
 			flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag + "\t" + content + "\n";
+			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
 		}
@@ -687,22 +684,366 @@ lineData +
 		return lineData;
 	}
 	
+	private function getNextBlock(scene:Scene, block:Block):Block
+	{
+		var i = scene.blocks.indexOf(block);
+		if (i == -1) return null;
+		if (scene.blocks.length > i + 1)
+		{
+			return scene.blocks[i + 1];
+		}
+		return null;
+	}
+	
+	private function getTutorialHeader(id:String, scene:Scene, block:Block, lineData:BlockLineData)
+	{
+		var nextId = id;
+		var lastWasMe = false;
+		var nextBlock = getNextBlock(scene, block);
+		
+		while(nextBlock != null && nextId == id)
+		{
+			nextId = nextBlock.getParameter("id");
+			nextBlock = getNextBlock(scene, nextBlock);
+		}
+		if (nextId == id) nextId = "";
+		
+		var locked:Bool = (lineData.id != "");
+		var trigger = getTriggerAndParams(block.getParameter("trigger"));
+		lineData.xml2 += '<tutorial id="' + id + '" trigger = "' + trigger.verb + '">';
+		if(trigger.params != null)
+		{
+			var triggerType:String = trigger.params.length > 0 ? trigger.params[0] : "";
+			var triggerValue:String = trigger.params.length > 1 ? trigger.params[1] : "";
+			if (triggerType != "" && triggerValue != "")
+			{
+				lineData.xml2 += '<param type="' + triggerType+'" value="' + triggerValue+'"/>';
+			}
+		}
+		
+		lineData.xml2 += '<locked value="' + locked + '"/>';
+		if (nextId != "")
+		{
+			lineData.xml2 += '<unlock id="' + nextId + '"/>';
+		}
+		
+		var action  = getActionAndParams(block.getParameter("action"));
+		
+		if (action != null && action.verb != "")
+		{
+			lineData.xml2 += '<action id="' + action.verb + '"';
+			var i:Int = 1;
+			for (param in action.params)
+			{
+				if (param == "") continue;
+				var p = "p" + i;
+				lineData.xml2 += ' ' + p + '="' + param + '"';
+				i++;
+			}
+			lineData.xml2 += '/>';
+		}
+	}
+	
+	private function getVerbAndParams(str:String, testWords:Array<String>):{verb:String, params:Array<String>}
+	{
+		var words = str.toLowerCase().split(" ");
+		var result = {verb:"", params:[]};
+		if (words != null)
+		{
+			if (words.length > 0)
+			{
+				var wordStr = words.join("_");
+				for (test in testWords)
+				{
+					var i:Int = wordStr.indexOf(test);
+					if (i == 0)
+					{
+						result.verb = test;
+						
+						var wordBit = Util.firstReplace(wordStr, test, "");
+						if (wordBit.length > 1 && wordBit.charAt(0) == "_")
+						{
+							wordBit = wordBit.substr(0, wordBit.length);
+							if (wordBit.length > 1)
+							{
+								var params = wordBit.split("_");
+								if (params.length > 1 && params[0] == ""){
+									params.splice(0, 1);
+								}
+								result.params = params;
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	private function getTriggerAndParams(str:String):{verb:String, params:Array<String>}
+	{
+		var testWords = [
+			"summon_defender",
+			"boost",
+			"boost_defender",
+			"select_character",
+			"start",
+			"select_class",
+			"place_defender",
+			"defender_die",
+			"select_defender",
+			"reach_wave",
+			"select_spell",
+			"cast_psell",
+			"kill",
+			"start_kill",
+			"start_kill_type",
+			"time",
+			"instant",
+			"victory",
+			"enemy_reach_node",
+			"apc_spawn",
+			"enemy_start_swim",
+			"exalted_barrier",
+			"kill_exalted"
+		];
+		return getVerbAndParams(str, testWords);
+	}
+	
+	private function getActionAndParams(str:String):{verb:String, params:Array<String>}
+	{
+		var testWords = [
+			"select_defender",
+			"set_time",
+			"hide_craters",
+			"show_craters",
+			"guarantee_psi",
+			"spawn",
+			"summon",
+			"friend_spell",
+			"set_defender_value",
+			"gamepad_menu",
+			"gamepad_menu_back"
+		];
+		return getVerbAndParams(str, testWords);
+	}
+	
+	private function fixContent(str:String):String
+	{
+		var tokens = [
+			["line", "break"]
+		];
+		
+		var values = [
+			"<N>"
+		];
+		
+		var lStr:String = Utf8Ext.toLowerCase(str);
+		for (i in 0...tokens.length)
+		{
+			var token = tokens[i];
+			var value = values[i];
+			var variants = getAllTokenVariants(token);
+			for (variant in variants)
+			{
+				var i:Int = lStr.uIndexOf(variant);
+				while(i != -1)
+				{
+					var bit = lStr.uSubstr(i, variant.length);
+					var before = str.uSubstr(0, i);
+					var after = str.uSubstr(i + variant.length, str.uLength());
+					
+					str = before + value + after;
+					lStr = Utf8Ext.toLowerCase(str);
+					i = lStr.uIndexOf(variant);
+				}
+			}
+		}
+		
+		return str;
+	}
+	
+	static function getAllTokenVariants(tokens:Array<String>):Array<String>
+	{
+		var baseWord:String = tokens.join("");
+		var withSpace:String = tokens.join(" ");
+		var arr = [baseWord, withSpace];
+		
+		arr = arr.concat(getToken_with(arr, "", "."));
+		arr = arr.concat(getToken_with(arr, " ", " "));
+		
+		arr.sort(function(a:String,b:String):Int{
+			if(a.length > b.length) return -1;
+			if(a.length < b.length) return  1;
+			return 0;
+		});
+		
+		return arr;
+	}
+	
+	static  function getToken_with(arr:Array<String>, prefix:String = "", suffix:String = ""):Array<String>
+	{
+		var all = [];
+		for (str in arr)
+		{
+			if (prefix != "") all.push(prefix + str);
+			if (suffix != "") all.push(str + suffix);
+			if (prefix != "" && suffix != "") all.push(prefix + str + suffix);
+		}
+		return all;
+	}
+	
+	private function trimBlock_Tutorial(block:Block)
+	{
+		var params = ["id", "trigger", "arrow", "target", "click", "facing", "action"];
+		var punctuation = [".", "?", "!", ":", ";", "-"];
+		
+		//Try to find parameters at the beginning of the block
+		// - exit on the first line with a word that isn't also a parameter
+		// - if a line starts with a parameter word, treat it as text if:
+		//   - it contains more than three words after the first
+		//   - it ends with a punctuation mark
+		//Otherwise, they'll show up as regular text
+		//Make sure that we've already read all the parameter information we need in the section above
+		
+		var badlines = [];
+		for (i in 0...block.lines.length)
+		{
+			var line = block.lines[i].toLowerCase();
+			var words = line.split(" ");
+			if (words == null || words.length == 0 || words.length >= 8)
+			{
+				break;
+			}
+			var word = words[0];
+			if (params.indexOf(word) == -1)
+			{
+				break;
+			}
+			var fail = false;
+			for (p in punctuation)
+			{
+				if (line.indexOf(p) == line.length-1)
+				{
+					fail = true;
+					break;
+				}
+			}
+			if (fail){
+				break;
+			}
+			badlines.push(i);
+		}
+		
+		for (i in 0...badlines.length)
+		{
+			var j = badlines.length - i - 1;
+			var line = badlines[j];
+			block.lines.splice(j, 1);
+		}
+	}
+	
 	private function doBlock_Tutorial(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
+		var extraString = "";
+		extraString += doBlock_Tutorial_Arrow(block);
+		extraString += doBlock_Tutorial_Click(block);
+		
+		var id = block.getParameter("id");
+		var newId = false;
+		if (id != lineData.id)
+		{
+			newId = true;
+		}
+		
+		var nextBlock = getNextBlock(scene, block);
+		var nextId = (nextBlock != null) ? nextBlock.getParameter("id") : "";
+		
+		if (newId)
+		{
+			getTutorialHeader(id, scene, block, lineData);
+		}
+		lineData.id = id;
+		
+		trimBlock_Tutorial(block);
+		
 		for (i in 0...block.lines.length)
 		{
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag + "\t" + content + "\n";
+			
+			var lContent = content.toLowerCase();
+			
+			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			var title = block.getParameter("title");
 			if (title == "")
 			{
 				title = "TUTORIAL";
 			}
 			
-			lineData.xml += "<tut " + att("title", title) + att("text", flag) + "/>";
+			var linexml = "<tut " + att("title", title) + att("text", flag);
+			
+			if (extraString == "")
+			{
+				linexml += "/>";
+			}
+			else
+			{
+				linexml += ">" + extraString + "</tut>";
+			}
+			
+			if (id == "")
+			{
+				lineData.xml += linexml;
+			}
+			else
+			{
+				lineData.xml2 += linexml;
+			}
 		}
+		
+		if (id != "" && nextId != id)
+		{
+			lineData.xml2 += "</tutorial>";
+		}
+		
 		return lineData;
+	}
+	
+	private function doBlock_Tutorial_Arrow(block:Block)
+	{
+		var arrow = block.getParameter("arrow");
+		var target = block.getParameter("target");
+		
+		arrow = StringTools.replace(arrow, " ", "_");
+		target = StringTools.replace(target, " ", "_");
+		
+		var extraString = "";
+		if (arrow != "")
+		{
+			return '<arrow target_type="' + arrow + '" target_value="' + target + '"/>';
+		}
+		
+		return "";
+	}
+	
+	private function doBlock_Tutorial_Click(block:Block)
+	{
+		var arrow = block.getParameter("click");
+		var target = block.getParameter("target");
+		var facing = block.getParameter("facing", "right");
+		
+		arrow = StringTools.replace(arrow, " ", "_");
+		target = StringTools.replace(target, " ", "_");
+		
+		var extraString = "";
+		if (arrow != "")
+		{
+			return '<tut_arrow target_type="' + arrow + '" target_value="' + target + '" facing="'+facing+'"/>';
+		}
+		
+		return "";
 	}
 	
 	public static function error(block:Int,line:Int,msg:String,?context:String):Void
@@ -746,5 +1087,5 @@ lineData +
 	}
 }
 
-typedef BlockLineData = {tsv:String, ?xml:String, ?mapXml:String, ?listPlots:Array<String>};
+typedef BlockLineData = {tsv:String, ?xml:String, ?mapXml:String, ?listPlots:Array<String>, ?xml2:String, ?id:String};
 typedef BeginSettings = {background:String, music:String, demoMusic:String, act:Int, scene:Int, foreLeft:String, foreRight:String, plotLine:String};

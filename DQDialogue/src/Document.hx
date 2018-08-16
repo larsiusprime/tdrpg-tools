@@ -119,7 +119,7 @@ class Document
 				{
 					switch(block.keyword)
 					{
-						case Keyword.BEGIN, Keyword.END, Keyword.ERROR, Keyword.UNKNOWN, Keyword.IGNORED, Keyword.NAMES:
+						case Keyword.BEGIN, Keyword.END, Keyword.ERROR, Keyword.UNKNOWN, Keyword.IGNORED, Keyword.NAMES, Keyword.COMMENT:
 							//donothing
 						default:
 							if (sceneBlocks == null)

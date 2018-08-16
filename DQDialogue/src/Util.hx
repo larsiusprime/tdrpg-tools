@@ -36,6 +36,15 @@ class Util
 		return "";
 	}
 	
+	public static function firstReplace(str:String, pattern:String, withWhat:String):String
+	{
+		var i:Int = str.uIndexOf(pattern);
+		if (i == -1) return str;
+		var first = str.uSubstr(0, i);
+		var last = str.uSubstr(i + pattern.uLength(), str.uLength());
+		return first + withWhat + last;
+	}
+	
 	public static function saveXML(fileName:String, xml:Xml, ?xmlString:String)
 	{
 		if (xmlString != null)
