@@ -50,8 +50,6 @@ class MetaParser
 				var document = processScenes(str);
 				Util.saveXML(outDir + "xml/game_progression.xml", document);
 				
-				trace('cutscenes = ' + cutscenes);
-				
 				document = processIndex(str);
 				Util.saveXML(outDir + "xml/scenes.xml", document);
 				
@@ -124,8 +122,6 @@ class MetaParser
 			{
 				var plotline:String = entry[0];
 				var plottype:String = entry[1];
-				
-				trace(plotline + " " + plottype);
 				
 				var cells:Array<String> = entry[2].split(",");
 				

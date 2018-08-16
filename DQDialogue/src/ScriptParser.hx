@@ -386,7 +386,6 @@ class ScriptParser
 		{
 			if (block.keyword == Keyword.JOIN || block.keyword == Keyword.DUB)
 			{
-				trace("block = " + block.keyword + " " + scene.trigger);
 				switch(scene.trigger)
 				{
 					case SceneTrigger.NEWGAME, SceneTrigger.INTRO, SceneTrigger.OUTRO, SceneTrigger.BATTLE:
@@ -413,13 +412,7 @@ class ScriptParser
 						}
 						
 						var className = block.getParameter("class");
-						if (className == "")
-						{
-							//className = block.getParameter("character");
-						}
 						className = Utf8Ext.toLowerCase(Util.cleanString(className));
-						
-						trace("className = " + className + "block = " + block);
 						
 						if (className != "" && alreadyJoined.indexOf(className) == -1)
 						{
