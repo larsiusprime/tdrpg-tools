@@ -120,6 +120,7 @@ class Block
 			               getParameter_GENERIC(0, name);
 			case "target": getParameter_GENERIC(0, name);
 			case "facing": getParameter_GENERIC(0, name);
+			case "mouse": getParameter_GENERIC(0, name);
 			case "title":  getParameter_GENERIC(0, name);
 			case "action": getParameter_GENERIC(0, name);
 			default: "";

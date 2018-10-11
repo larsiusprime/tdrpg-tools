@@ -963,7 +963,7 @@ endData;
 	
 	private function trimBlock_Tutorial(block:Block)
 	{
-		var params = ["id", "trigger", "arrow", "target", "click", "facing", "action"];
+		var params = ["id", "trigger", "arrow", "target", "click", "facing", "mouse", "action"];
 		var punctuation = [".", "?", "!", ":", ";", "-"];
 		
 		//Try to find parameters at the beginning of the block
@@ -1104,10 +1104,16 @@ endData;
 		arrow = StringTools.replace(arrow, " ", "_");
 		target = StringTools.replace(target, " ", "_");
 		
+		var mouseOver = "";
+		var mouse = block.getParameter("mouse");
+		if (mouse == "over"){
+			mouseOver = ' mouse_over="true" ';
+		}
+		
 		var extraString = "";
 		if (arrow != "")
 		{
-			return '<tut_arrow target_type="' + arrow + '" target_value="' + target + '" facing="'+facing+'"/>';
+			return '<tut_arrow target_type="' + arrow + '" target_value="' + target + '" facing="'+facing+'"' + mouseOver + '/>';
 		}
 		
 		return "";
