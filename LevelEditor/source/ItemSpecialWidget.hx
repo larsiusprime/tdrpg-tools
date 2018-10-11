@@ -618,7 +618,7 @@ class ItemSpecialWidget extends FlxUIGroup
 							"dark", "frenzy", "dark_frenzy", "inspire",
 						"apply bonus effect with attack:",
 							"armor_pierce", "armor_break", "armor_ignore", "critical", "inspired_hit", "knock_back",
-							"devour", "strike_through", "max_damage", "undodgeable",
+							"devour", "strike_through", "max_damage", "undodgeable", "disarm",
 						"apply penalty effect with attack:",
 							"psi_burn",
 						/*
