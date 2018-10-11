@@ -8,6 +8,7 @@ abstract SceneTrigger(String) from String to String
 {
 	public static inline var NEWGAME:String = "NEWGAME";
 	public static inline var INTRO:String = "INTRO";
+	public static inline var WATCH:String = "WATCH";
 	public static inline var OUTRO:String = "OUTRO";
 	public static inline var BATTLE:String = "BATTLE";
 	public static inline var OVERWORLD:String = "OVERWORLD";
@@ -29,6 +30,7 @@ abstract SceneTrigger(String) from String to String
 		{
 			case "NEWGAME": NEWGAME;
 			case "INTRO": INTRO;
+			case "WATCH": WATCH;
 			case "OUTRO": OUTRO;
 			case "BATTLE": BATTLE;
 			case "OVERWORLD": OVERWORLD;

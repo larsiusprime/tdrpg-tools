@@ -20,6 +20,7 @@ class Scene
 	public var triggerParams:Array<String>;
 	public var pearlID:String;
 	public var townID:String;
+	public var sceneID:String;
 	public var blocks:Array<Block>;
 	public var sortID:Int;
 	
@@ -97,6 +98,15 @@ class Scene
 								{
 									townID = mainID;
 								}
+							case SceneTrigger.WATCH:
+								if (mainID == "" || block.parameters.length < 2)
+								{
+									error(blockNum, lineNum, "Block type \"" + trigger + "\" requires a scene ID! context:(" + block + ")");
+								}
+								else
+								{
+									sceneID = mainID.toLowerCase();
+								}
 						}
 						triggerParams = block.parameters.copy();
 					}
@@ -127,6 +137,7 @@ class Scene
 			case SceneTrigger.OUTRO:   name = p + "_outro";
 			case SceneTrigger.BATTLE:  name = p + "_battle";
 			case SceneTrigger.REWARDS: name = p + "_rewards";
+			case SceneTrigger.WATCH:   name = p + "_" + sceneID + "_watch";
 			case SceneTrigger.TOWN:    
 				var town = getParam("town");
 				var section = getParam("section");
@@ -160,6 +171,7 @@ class Scene
 					case SceneTrigger.TOWN: "default_towns";
 					case SceneTrigger.PARTY: "default_party";
 					case SceneTrigger.REWARDS: "default_rewards";
+					case SceneTrigger.WATCH: "default_watch";
 					default: "default_unknown";
 				}
 			}
@@ -172,6 +184,7 @@ class Scene
 		return switch(trigger)
 		{
 			case SceneTrigger.NEWGAME:   "";
+			case SceneTrigger.WATCH:     getParam_WATCH(string);
 			case SceneTrigger.INTRO:     getParam_INTRO(string);
 			case SceneTrigger.OUTRO:     getParam_OUTRO(string);
 			case SceneTrigger.TOWN:      getParam_TOWN(string);
@@ -241,6 +254,16 @@ class Scene
 		var i:Int = switch(string)
 		{
 			case "pearl": 0;
+			default: -1;
+		}
+		return getParam_GENERIC(i, string);
+	}
+	
+	private function getParam_WATCH(string:String):String
+	{
+		var i:Int = switch(string)
+		{
+			case "pearl": 1;
 			default: -1;
 		}
 		return getParam_GENERIC(i, string);

@@ -125,9 +125,10 @@ class ScriptParser
 	
 	private function metaRank(a:MetaStruct):Int
 	{
-		if (a.plotType == "heroes") return -3;
-		if (a.plotType == "movies") return -2;
-		if (a.plotType == "pearls") return -1;
+		if (a.plotType == "heroes")  return -4;
+		if (a.plotType == "actions") return -3;
+		if (a.plotType == "movies")  return -2;
+		if (a.plotType == "pearls")  return -1;
 		return 0;
 	}
 	
@@ -255,6 +256,7 @@ class ScriptParser
 			case OVERWORLD: "overworld_movies";
 			case PARTY: "party_movies";
 			case TOWN: "town_movies";
+			case WATCH: "actions";
 			default: "unknown";
 		}
 	}
@@ -274,6 +276,7 @@ class ScriptParser
 		
 		switch(plot.plotType)
 		{
+			case "actions": processPlotActions(plot, scene);
 			case "movies": processPlotMovies(plot, scene);
 			case "battle_movies", "reward_movies", "overworld_movies", "party_movies", "town_movies": processPlotTutMovies(plot, scene, plot.plotType);
 			case "unknown":
@@ -321,7 +324,6 @@ class ScriptParser
 			var town = scene.getParam("town");
 			var pearl = scene.getParam("pearl");
 			var section = scene.getParam("section");
-			trace("town = " + town + " pearl = " + pearl + " section = " + section);
 			theName = town;
 			if (section != "" && section != null)
 			{
@@ -337,6 +339,50 @@ class ScriptParser
 		}
 		
 		processPartyJoins(scene);
+	}
+	
+	private function processPlotActions(plot:MetaStruct, scene:Scene)
+	{
+		var theName = sceneName(scene);
+		var entry = getMetaEntry(plot, theName);
+		if (entry == null)
+		{
+			entry = {name:theName, modifier:""};
+			var actionBlob:String = "";
+			for (block in scene.blocks)
+			{
+				if (block.keyword == Keyword.ACTION)
+				{
+					var text = block.getParameter("text");
+					var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_ACTION");
+					actionBlob += getActionLine(block, flag);
+				}
+			}
+			entry.modifier = actionBlob;
+			plot.entries.push(entry);
+		}
+	}
+	
+	private function getActionLine(block:Block, flag:String)
+	{
+		var str = "<action ";
+		for (line in block.lines)
+		{
+			var words = line.split(" ");
+			if (words != null && words.length > 0)
+			{
+				var word = words[0].toLowerCase();
+				words.splice(0, 1);
+				var content = words.join("_").toLowerCase();
+				if (word == "text")
+				{
+					content = flag;
+				}
+				str += (word + '="' + content + '" ');
+			}
+		}
+		str += "/>";
+		return str;
 	}
 	
 	private function processPlotMovies(plot:MetaStruct, scene:Scene)
@@ -465,6 +511,8 @@ class ScriptParser
 					lineData = doBlock_Tutorial(scene, block, lineData);
 				case Keyword.DUB:
 					lineData = doBlock_Dub(scene, block, lineData);
+				case Keyword.ACTION:
+					lineData = doBlock_Action(scene, block, lineData);
 			}
 		}
 		
@@ -654,6 +702,21 @@ endData;
 		return lineData;
 	}
 	
+	private function doBlock_Action(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
+	{
+		var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_ACTION");
+		
+		var text = block.getParameter("text");
+		if (text == "") flag = "";
+		
+		if(flag != "")
+		{
+			lineData.tsv += flag + "\t" + text + "\n";
+		}
+		
+		return lineData;
+	}
+	
 	private function doBlock_Dub(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
 		var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_DUB");
@@ -764,6 +827,14 @@ endData;
 									params.splice(0, 1);
 								}
 								result.params = params;
+								if (result.params.length == 1)
+								{
+									var verbSplit = result.verb.split("_");
+									if (verbSplit != null && verbSplit.length > 1)
+									{
+										result.params = [verbSplit[verbSplit.length - 1], params[0]];
+									}
+								}
 							}
 						}
 						break;
@@ -788,7 +859,7 @@ endData;
 			"select_defender",
 			"reach_wave",
 			"select_spell",
-			"cast_psell",
+			"cast_spell",
 			"kill",
 			"start_kill",
 			"start_kill_type",
@@ -799,7 +870,10 @@ endData;
 			"apc_spawn",
 			"enemy_start_swim",
 			"exalted_barrier",
-			"kill_exalted"
+			"kill_exalted",
+			"level_up",
+			"click_level_up_gem",
+			"view_skill_have_points"
 		];
 		return getVerbAndParams(str, testWords);
 	}

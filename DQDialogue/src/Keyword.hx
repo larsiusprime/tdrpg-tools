@@ -18,6 +18,7 @@ abstract Keyword(String) from String to String
 	public static inline var TUTORIAL:String = "TUTORIAL";
 	public static inline var NEWGAME:String = "NEWGAME";
 	public static inline var INTRO:String = "INTRO";
+	public static inline var WATCH:String = "WATCH";
 	public static inline var BATTLE:String = "BATTLE";
 	public static inline var OUTRO:String = "OUTRO";
 	public static inline var OVERWORLD:String = "OVERWORLD";
@@ -25,6 +26,7 @@ abstract Keyword(String) from String to String
 	public static inline var TOWN:String = "TOWN";
 	public static inline var REWARDS:String = "REWARDS";
 	public static inline var SPEECH:String = "SPEECH";
+	public static inline var ACTION:String = "ACTION";
 	public static inline var ERROR:String = "ERROR";
 	public static inline var UNKNOWN:String = "UNKNOWN";
 	public static inline var IGNORED:String = "IGNORED";
@@ -51,6 +53,7 @@ abstract Keyword(String) from String to String
 			case "TUTORIAL": TUTORIAL;
 			case "NEWGAME": NEWGAME;
 			case "INTRO": INTRO;
+			case "WATCH": WATCH;
 			case "BATTLE": BATTLE;
 			case "OUTRO": OUTRO;
 			case "OVERWORLD": OVERWORLD;
@@ -58,6 +61,7 @@ abstract Keyword(String) from String to String
 			case "TOWN": TOWN;
 			case "REWARDS": REWARDS;
 			case "SPEECH": SPEECH;
+			case "ACTION": ACTION;
 			case "ERROR": ERROR;
 			case "UNKNOWN": UNKNOWN;
 			case "IGNORED": IGNORED;

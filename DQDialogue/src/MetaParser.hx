@@ -76,14 +76,13 @@ class MetaParser
 	{
 		data = StringTools.replace(data, "\r", "");
 		data = StringTools.replace(data, "\n", "");
-		data = StringTools.replace(data, " ", "");
 		data = StringTools.replace(data, "\t", "");
 		return data;
 	}
 	
 	private function processScenes(data:String)
 	{
-		return processData(data, "<plotlines></plotlines>", ["heroes","movies","pearls","join_pearls"]);
+		return processData(data, "<plotlines></plotlines>", ["heroes","movies","pearls","join_pearls","actions"]);
 	}
 	
 	private function processIndex(data:String)
@@ -129,7 +128,7 @@ class MetaParser
 				{
 					switch(plottype)
 					{
-						case "pearls", "movies", "heroes", "join_pearls":
+						case "pearls", "movies", "heroes", "join_pearls", "actions":
 							var xml = Xml.parse('<plotline name="$plotline"></plotline>').firstChild();
 							xml = addCells(xml, cells, plottype);
 							document.addChild(xml);
@@ -225,8 +224,16 @@ class MetaParser
 			var prevCell = i > 0 ? cells [i - 1] : "";
 			var nextCell = i < cells.length - 1 ? cells[i + 1] : "dummy";
 			
-			var el:Fast = getEl(cell, nextCell);
+			var cellName = cell;
+			var nextCellName = nextCell;
 			
+			if (plottype == "actions")
+			{
+				cellName = cell.split("*")[0];
+				nextCellName = nextCell.split("*")[0];
+			}
+			
+			var el:Fast = getEl(cellName, nextCellName);
 			switch(plottype)
 			{
 				case "join_pearls":
@@ -341,7 +348,12 @@ class MetaParser
 						el = addMovie(el, i, cell, outro, outroDelta, next2, false, req);
 						if (el != null) xml.addChild(el.x);
 					}
-					
+				case "actions":
+					var cellSplit = splitCell(cell, "*");
+					cell = cellSplit[0];
+					var code = cellSplit[1];
+					el = addAction(el, i, cell, code);
+					xml.addChild(el.x);
 				case "heroes": 
 					
 					var cellSplit = splitCell(cell, "*");
@@ -472,9 +484,33 @@ class MetaParser
 		
 		if (requiredScene != "")
 		{
-			var requirement = Xml.parse('<requirement type="watched_cutscene" value="$requiredScene"/>').firstChild();
+			var requirement = Xml.parse('<requirement type="watch_cutscene" value="$requiredScene"/>').firstChild();
 			el.node.requirements.x.addChild(requirement);
 		}
+		
+		return el;
+	}
+	
+	private function addAction(el:Fast, i:Int, cell:String, code:String = ""):Fast
+	{
+		var scene = cell;
+		
+		if (scene.indexOf("_watch") != -1)
+		{
+			var sceneSplit = scene.split("_");
+			if (sceneSplit != null && sceneSplit[sceneSplit.length - 1] == "watch")
+			{
+				sceneSplit.splice(sceneSplit.length - 1, 1);
+				scene = sceneSplit.join("_");
+			}
+		}
+		
+		var requirement = Xml.parse('<requirement type="watch_cutscene" value="$scene"/>').firstChild();
+		el.node.requirements.x.addChild(requirement);
+		
+		var actionXml = Xml.parse(code).firstChild();
+		
+		el.node.actions.x.addChild(actionXml);
 		
 		return el;
 	}

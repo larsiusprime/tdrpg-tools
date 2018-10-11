@@ -31,6 +31,7 @@ class Block
 		name = name.toLowerCase();
 		var value = switch(keyword)
 		{
+			case Keyword.ACTION: getParameter_ACTION(name);
 			case Keyword.BEGIN: getParameter_BEGIN(name);
 			case Keyword.SPEECH: getParameter_SPEECH(name);
 			case Keyword.TUTORIAL: getParameter_TUTORIAL(name);
@@ -45,6 +46,25 @@ class Block
 		return value;
 	}
 	
+	private function getParameter_ACTION(name:String):String
+	{
+		var value = "";
+		switch(name)
+		{
+			case "text": 
+				for (line in lines)
+				{
+					if (Utf8Ext.toLowerCase(line).indexOf("text") == 0)
+					{
+						value = Util.cutStrCaseInsensitive(line, "text ");
+						break;
+					}
+				}
+			default: value = "";
+		}
+		return value;
+	}
+	
 	private function getParameter_JOIN(name:String):String
 	{
 		var value = "";
@@ -53,7 +73,6 @@ class Block
 			case "character": value = getParameter_GENERIC(0, name);
 			case "name": value = getParameter_GENERIC(1, name);
 			case "class": value = getParameter_GENERIC(2, name);
-			              //value = value.uReplace(" ", "_");
 			default: value = "";
 		}
 		return value;
