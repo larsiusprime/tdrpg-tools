@@ -36,6 +36,16 @@ class Util
 		return "";
 	}
 	
+	public static function cutStrCaseInsensitive(str:String, pattern:String):String
+	{
+		var lowerStr = Utf8Ext.toLowerCase(str);
+		if (lowerStr.indexOf(pattern) == 0)
+		{
+			str = str.uSubstr(pattern.uLength(), str.uLength());
+		}
+		return str;
+	}
+	
 	public static function firstReplace(str:String, pattern:String, withWhat:String):String
 	{
 		var i:Int = str.uIndexOf(pattern);
