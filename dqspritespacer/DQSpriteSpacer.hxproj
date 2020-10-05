@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <project version="2">
   <!-- Output SWF options -->
   <output>
@@ -12,23 +12,24 @@
     <movie minorVersion="0" />
     <movie platform="Lime" />
     <movie background="#FFFFFF" />
-    <movie preferredSDK=";3;" />
+    <movie preferredSDK=";3.1.3;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="T:\development\git\lime" />
-    <class path="T:\development\git\openfl" />
+    <class path="T:\git\DefendersQuest2\libs\openfl8\openfl\src" />
+    <class path="T:\git\DefendersQuest2\libs\openfl8\lime\src" />
+    <class path="T:\git\DefendersQuest2\libs\actuate\src" />
     <class path="src" />
-    <class path="bin\windows\neko\haxe" />
+    <class path="bin\windows\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="lime=2.5.2&#xA;openfl=3.2.2&#xA;openfl-next&#xA;tools=2.5.2&#xA;no-compilation&#xA;native&#xA;lime-native&#xA;openfl-native&#xA;windows&#xA;desktop" />
+    <option directives="openfl=8.7.0&#xA;lime=7.1.1&#xA;actuate=1.8.8&#xA;lime-harfbuzz&#xA;lime-openal&#xA;tools=7.1.1&#xA;lime-cairo&#xA;lime-opengl&#xA;no-compilation&#xA;native&#xA;lime-curl&#xA;lime-native&#xA;lime-vorbis&#xA;openfl-native&#xA;lime-cffi&#xA;windows&#xA;desktop" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="ApplicationMain" />
     <option enabledebug="True" />
-    <option additional="--remap flash:openfl&#xA;#--macro keep(&quot;Main&quot;)" />
+    <option additional="--macro openfl._internal.macros.ExtraParams.include()&#xA;--macro lime._internal.macros.DefineMacro.run()&#xA;--remap flash:openfl" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>

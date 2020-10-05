@@ -460,11 +460,13 @@ class ScriptParser
 						var className = block.getParameter("class");
 						className = Utf8Ext.toLowerCase(Util.cleanString(className));
 						
+						var hiddenOrNot:String = block.keyword == Keyword.JOIN ? "?" : "";
+						
 						if (className != "" && alreadyJoined.indexOf(className) == -1)
 						{
 							alreadyJoined.push(className);
 							plot.entries.push({
-								name:sceneName+"=?"+className,
+								name:sceneName+"=" + hiddenOrNot +className,
 								modifier:mod
 							});
 						}
@@ -558,6 +560,7 @@ class ScriptParser
 		
 		if (sceneXML != "")
 		{
+			trace("scene : " + scene.name+".xml ************");
 			Util.saveXML(scenesDir + scene.name+".xml", null, sceneXML);
 		}
 	}
@@ -765,15 +768,29 @@ endData;
 		if (nextId == id) nextId = "";
 		
 		var locked:Bool = (lineData.id != "");
+		
+		var lockOverride = block.getParameter("locked", "");
+		if (lockOverride == "true"){
+			locked = true;
+		}else if (lockOverride == "false"){
+			locked = false;
+		}
+		
 		var trigger = getTriggerAndParams(block.getParameter("trigger"));
-		lineData.xml2 += '<tutorial id="' + id + '" trigger = "' + trigger.verb + '">';
+		var style = doBlock_Tutorial_Style(block);
+		lineData.xml2 += '<tutorial id="' + id + '" trigger = "' + trigger.verb + '"' + style + '>';
 		if(trigger.params != null)
 		{
-			var triggerType:String = trigger.params.length > 0 ? trigger.params[0] : "";
-			var triggerValue:String = trigger.params.length > 1 ? trigger.params[1] : "";
-			if (triggerType != "" && triggerValue != "")
+			for (i in 0...Std.int(trigger.params.length / 2))
 			{
-				lineData.xml2 += '<param type="' + triggerType+'" value="' + triggerValue+'"/>';
+				var a = i * 2;
+				var b = (i * 2) + 1;
+				var type = trigger.params.length > a ? trigger.params[a] : "";
+				var value = trigger.params.length > b ? trigger.params[b] : "";
+				if (type != "" && value != "")
+				{
+					lineData.xml2 += '<param type="' + type + '" value="' + value + '"/>';
+				}
 			}
 		}
 		
@@ -781,6 +798,11 @@ endData;
 		if (nextId != "")
 		{
 			lineData.xml2 += '<unlock id="' + nextId + '"/>';
+		}
+		
+		var tags = doBlock_Tutorial_Tags(block);
+		if (tags != ""){
+			lineData.xml2 += tags;
 		}
 		
 		var action  = getActionAndParams(block.getParameter("action"));
@@ -845,13 +867,15 @@ endData;
 		return result;
 	}
 	
-	private function getTriggerAndParams(str:String):{verb:String, params:Array<String>}
+	private function getTestWords()
 	{
 		var testWords = [
+			"skip_proximity_defender",
 			"summon_defender",
 			"boost",
 			"boost_defender",
 			"select_character",
+			"hurt_defender",
 			"start",
 			"select_class",
 			"place_defender",
@@ -860,6 +884,7 @@ endData;
 			"reach_wave",
 			"select_spell",
 			"cast_spell",
+			"cast_delayed_spell",
 			"kill",
 			"start_kill",
 			"start_kill_type",
@@ -873,8 +898,23 @@ endData;
 			"kill_exalted",
 			"level_up",
 			"click_level_up_gem",
-			"view_skill_have_points"
+			"view_skill_have_points",
+			"shop",
+			"select_merch",
+			"equipped",
+			"buy",
+			"sell",
+			"downgrade",
+			"upgrade",
+			"jumpzone",
+			"item_upgraded"
 		];
+		return testWords;
+	}
+	
+	private function getTriggerAndParams(str:String):{verb:String, params:Array<String>}
+	{
+		var testWords = getTestWords();
 		return getVerbAndParams(str, testWords);
 	}
 	
@@ -891,7 +931,8 @@ endData;
 			"friend_spell",
 			"set_defender_value",
 			"gamepad_menu",
-			"gamepad_menu_back"
+			"gamepad_menu_back",
+			"suppress"
 		];
 		return getVerbAndParams(str, testWords);
 	}
@@ -963,26 +1004,29 @@ endData;
 	
 	private function trimBlock_Tutorial(block:Block)
 	{
-		var params = ["id", "trigger", "arrow", "target", "click", "facing", "mouse", "action"];
+		var params = ["id", "trigger", "arrow", "target", "click", "facing", "mouse", "action", "offset", "style", "tags", "locked"];
 		var punctuation = [".", "?", "!", ":", ";", "-"];
 		
 		//Try to find parameters at the beginning of the block
 		// - exit on the first line with a word that isn't also a parameter
 		// - if a line starts with a parameter word, treat it as text if:
-		//   - it contains more than three words after the first
+		//   - it contains more than four words after the first
 		//   - it ends with a punctuation mark
 		//Otherwise, they'll show up as regular text
 		//Make sure that we've already read all the parameter information we need in the section above
+		
+		var testWords = getTestWords();
 		
 		var badlines = [];
 		for (i in 0...block.lines.length)
 		{
 			var line = block.lines[i].toLowerCase();
 			var words = line.split(" ");
-			if (words == null || words.length == 0 || words.length >= 8)
+			if (words == null || words.length == 0 || words.length >= 9)
 			{
 				break;
 			}
+			
 			var word = words[0];
 			if (params.indexOf(word) == -1)
 			{
@@ -1016,6 +1060,9 @@ endData;
 		var extraString = "";
 		extraString += doBlock_Tutorial_Arrow(block);
 		extraString += doBlock_Tutorial_Click(block);
+		extraString += doBlock_Tutorial_Offset(block);
+		
+		trace("doBlock_Tutorial() " + extraString);
 		
 		var id = block.getParameter("id");
 		var newId = false;
@@ -1117,6 +1164,74 @@ endData;
 		}
 		
 		return "";
+	}
+	
+	private function doBlock_Tutorial_Offset(block:Block)
+	{
+		var offset = block.getParameter("offset");
+		if (offset != "")
+		{
+			var xy = offset.split(",");
+			if(xy != null && xy.length == 2){
+				var x = Std.parseInt(xy[0]);
+				var y = Std.parseInt(xy[1]);
+				return '<offset x="' + x + '" y="' + y + '"/>';
+			}
+		}
+		return "";
+	}
+	
+	private function doBlock_Tutorial_Tags(block:Block)
+	{
+		var tags = block.getParameter("tags");
+		if (tags != "")
+		{
+			var entries = tags.split(";");
+			var returnValue = "";
+			if (entries != null && entries.length > 0){
+				for (entry in entries)
+				{
+					//dont_show,condition,have,value,defender_berserker:ls_eq:0;dont_show,condition,have,defender-boost_berserker:gr_eq:2
+					
+					var tagName:String = "unknown_tag";
+					var varName:String = "";
+					var varValue:String = "";
+					var entryValue:String = "";
+					
+					var bits = entry.split(",");
+					var temp = "";
+					
+					for (i in 0...bits.length){
+						trace(i + " " + bits[i]);
+						if (i == 0) {
+							tagName = bits[i];
+						}
+						else {
+							if (i % 2 != 0) varName = bits[i];
+							else {
+								varValue = bits[i];
+								temp += ' ' + varName + '="' + varValue+'"';
+							}
+						}
+					}
+					entryValue += '<' + tagName+temp + '/>';
+					
+					returnValue += entryValue;
+				}
+			}
+			return returnValue;
+		}
+		return "";
+	}
+	
+	private function doBlock_Tutorial_Style(block:Block)
+	{
+		var style = block.getParameter("style");
+		if (style != "")
+		{
+			return ' style = "' + style+'"';
+		}
+		return ' style = "default"';
 	}
 	
 	public static function error(block:Int,line:Int,msg:String,?context:String):Void

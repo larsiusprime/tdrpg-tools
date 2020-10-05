@@ -116,13 +116,16 @@ class Block
 			case "trigger":
 			               getParameter_GENERIC(0, name);
 			case "id":     getParameter_GENERIC(0, name);
-			case "arrow", "click": 
+			case "arrow", "click", "locked": 
 			               getParameter_GENERIC(0, name);
 			case "target": getParameter_GENERIC(0, name);
 			case "facing": getParameter_GENERIC(0, name);
+			case "offset": getParameter_GENERIC(0, name);
+			case "style":  getParameter_GENERIC(0, name);
 			case "mouse": getParameter_GENERIC(0, name);
 			case "title":  getParameter_GENERIC(0, name);
 			case "action": getParameter_GENERIC(0, name);
+			case "tags": getParameter_GENERIC(0, name);
 			default: "";
 		}
 	}
