@@ -615,7 +615,7 @@ class ItemSpecialWidget extends FlxUIGroup
 						"apply negative status effect with attack:",
 							"chill", "slow", "freeze", "burn", "poison", "bleed", "blinded", "stun", "light", 
 						"apply positive status effect with attack:",
-							"dark", "frenzy", "dark_frenzy", "inspire",
+							"dark", "frenzy", "dark_frenzy", "inspire","mcg_proximity_bonus"
 						"apply bonus effect with attack:",
 							"armor_pierce", "armor_break", "armor_ignore", "critical", "inspired_hit", "knock_back",
 							"devour", "strike_through", "max_damage", "undodgeable", "disarm",

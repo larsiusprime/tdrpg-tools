@@ -612,7 +612,7 @@ class State_ItemEdit extends FlxUIState
 	}
 	
 	private function onItemClass(){
-		var popup = new TypePopup(["weapon", "armor", "accessory"], itemClass, function(str:String, category:String){
+		var popup = new TypePopup(["weapon", "armor", "accessory", "cannon"], itemClass, function(str:String, category:String){
 			
 			itemClass = str;
 			classBtn.button.label.text = itemClass;
