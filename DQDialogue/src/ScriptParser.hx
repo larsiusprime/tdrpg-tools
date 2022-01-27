@@ -898,6 +898,7 @@ endData;
 			"kill_exalted",
 			"level_up",
 			"click_level_up_gem",
+			"click_bonus",
 			"view_skill_have_points",
 			"shop",
 			"select_merch",
