@@ -691,7 +691,7 @@ class DataFetcher
 	
 	private function isIgnoreType(type:String){
 		switch(type){
-			case "hide_level", "nuke_on_kill", "no_end_damage", "max_end_hit": return true;
+			case "hide_level", "nuke_on_kill", "nuke_on_kill_all", "no_end_damage", "max_end_hit": return true;
 			default: //blah
 		}
 		return false;
