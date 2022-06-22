@@ -495,8 +495,10 @@ class ScriptParser
 		var bs:BeginSettings = null;
 		var lineData = {tsv:titleFlag+"\t"+scene.title+"\n", xml:"", xml2:"", id:""};
 		
+		var i = 0;
 		for (block in scene.blocks)
 		{
+			i++;
 			switch(block.keyword)
 			{
 				case Keyword.BEGIN:
@@ -688,6 +690,7 @@ endData;
 		var flag = "";
 		var speaker = block.getParameter("speaker");
 		var emote = block.getParameter("emote");
+		var id = block.getParameter("id");
 		if (emote == "")
 		{
 			emote = "NORMAL";
@@ -698,8 +701,12 @@ endData;
 		{
 			flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			
+			if (content == "Emote " + emote){
+				continue;
+			}
+			
+			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
 		}
 		return lineData;
@@ -908,7 +915,8 @@ endData;
 			"downgrade",
 			"upgrade",
 			"jumpzone",
-			"item_upgraded"
+			"item_upgraded",
+			"speaker"
 		];
 		return testWords;
 	}
@@ -1005,7 +1013,7 @@ endData;
 	
 	private function trimBlock_Tutorial(block:Block)
 	{
-		var params = ["id", "trigger", "arrow", "target", "click", "facing", "mouse", "action", "offset", "style", "tags", "locked"];
+		var params = ["id", "trigger", "arrow", "target", "click", "facing", "mouse", "action", "offset", "style", "tags", "locked", "emote", "speaker"];
 		var punctuation = [".", "?", "!", ":", ";", "-"];
 		
 		//Try to find parameters at the beginning of the block
@@ -1063,8 +1071,6 @@ endData;
 		extraString += doBlock_Tutorial_Click(block);
 		extraString += doBlock_Tutorial_Offset(block);
 		
-		trace("doBlock_Tutorial() " + extraString);
-		
 		var id = block.getParameter("id");
 		var newId = false;
 		if (id != lineData.id)
@@ -1081,6 +1087,9 @@ endData;
 		}
 		lineData.id = id;
 		
+		var speaker = block.getParameter("speaker");
+		var emote = block.getParameter("emote");
+		
 		trimBlock_Tutorial(block);
 		
 		for (i in 0...block.lines.length)
@@ -1090,11 +1099,19 @@ endData;
 			
 			var lContent = content.toLowerCase();
 			
+			
 			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			var title = block.getParameter("title");
 			if (title == "")
 			{
 				title = "TUTORIAL";
+			}
+			
+			if (speaker != "" && speaker != null){
+				if (emote == "" || emote == null){
+					emote = "NORMAL";
+				}
+				title = "TALK_$" + speaker.toUpperCase() + "_" + emote;
 			}
 			
 			var linexml = "<tut " + att("title", title) + att("text", flag);

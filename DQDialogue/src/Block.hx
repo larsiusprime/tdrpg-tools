@@ -126,6 +126,8 @@ class Block
 			case "title":  getParameter_GENERIC(0, name);
 			case "action": getParameter_GENERIC(0, name);
 			case "tags": getParameter_GENERIC(0, name);
+			case "speaker": getParameter_GENERIC(0, name);
+			case "emote": getParameter_GENERIC(0, name);
 			default: "";
 		}
 	}
