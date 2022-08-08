@@ -24,6 +24,10 @@ class Scene
 	public var blocks:Array<Block>;
 	public var sortID:Int;
 	
+	public function toString(){
+		return 'SCENE {plotLine:$plotLine,next:$next,previous:$previous,number:$number,name:$name,title:$title,pearlID:$pearlID,townID:$townID,sceneID:$sceneID,sortID:$sortID}';
+	}
+	
 	public function new(Blocks:Array<Block>, endBlock:Int=0, SceneNumber:Int=0)
 	{
 		number = SceneNumber;

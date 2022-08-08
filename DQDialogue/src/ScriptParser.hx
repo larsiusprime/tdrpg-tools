@@ -31,6 +31,7 @@ class ScriptParser
 	public static var logDir(default,null):String;
 	
 	private var tsvContent:String = "";
+	private var loremContent:String = "";
 	
 	private var alreadyJoined:Array<String> = [];
 	private var plotContent:Array<MetaStruct>;
@@ -80,12 +81,14 @@ class ScriptParser
 		
 		var document = new Document(str);
 		tsvContent = "flag\tcontent\n";
+		loremContent = "flag\tcontent\n";
 		plotContent = [];
 		processDocument(document, outDir, locale);
 		
 		var localeDir = outDir+"/locales/" + Locale+"/";
 		if (!FileSystem.exists(localeDir)) FileSystem.createDirectory(localeDir);
-		File.saveContent(localeDir + "scenes.tsv", tsvContent);
+		File.saveContent(localeDir + "scenes_text.tsv", tsvContent);
+		File.saveContent(localeDir + "scenes_lorem.tsv", loremContent);
 		
 		var tempDir = outDir + "/_temp/";
 		if (!FileSystem.exists(tempDir)) FileSystem.createDirectory(tempDir);
@@ -493,7 +496,7 @@ class ScriptParser
 		
 		var sceneNodes = "";
 		var bs:BeginSettings = null;
-		var lineData = {tsv:titleFlag+"\t"+scene.title+"\n", xml:"", xml2:"", id:""};
+		var lineData = {tsv:titleFlag+"\t"+scene.title+"\n", xml:"", xml2:"", id:"", loremIpsum:titleFlag+"\t"+scene.title+"\n"};
 		
 		var i = 0;
 		for (block in scene.blocks)
@@ -522,6 +525,7 @@ class ScriptParser
 		
 		//append TSV data
 		tsvContent += lineData.tsv;
+		loremContent += lineData.loremIpsum;
 		
 		//create unique scene entry
 		if (!FileSystem.exists(scenesDir))
@@ -653,6 +657,8 @@ endData;
 			var content = block.lines[i];
 			
 			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			lineData.loremIpsum += flag + "\t" + fixContent(content) + "\n";
+			
 			
 			lineData.xml += "<tut " + att("title", "PLAINTEXT") + att("text", flag) + "/>";
 		}
@@ -666,6 +672,7 @@ endData;
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) +"/>";
 		}
@@ -679,6 +686,7 @@ endData;
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			lineData.tsv += flag +"\t" + fixContent(content) + "\n";
+			lineData.loremIpsum += flag +"\t" + fixContent(content) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
 		}
@@ -707,6 +715,7 @@ endData;
 			}
 			
 			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
 		}
 		return lineData;
@@ -722,6 +731,7 @@ endData;
 		if(flag != "")
 		{
 			lineData.tsv += flag + "\t" + text + "\n";
+			lineData.loremIpsum += flag + "\t" + text + "\n";
 		}
 		
 		return lineData;
@@ -744,6 +754,7 @@ endData;
 		if (flag != "")
 		{
 			lineData.tsv += flag + "\t" + text + "\n";
+			lineData.loremIpsum += flag + "\t" + text + "\n";
 		}
 		
 		lineData.xml += "<dub " + att("class", charClass) + att("text", flag) + "/>";
@@ -879,6 +890,7 @@ endData;
 		var testWords = [
 			"skip_proximity_defender",
 			"summon_defender",
+			"summon_defender_or_reach_wave",
 			"boost",
 			"boost_defender",
 			"select_character",
@@ -916,7 +928,14 @@ endData;
 			"upgrade",
 			"jumpzone",
 			"item_upgraded",
-			"speaker"
+			"speaker",
+			"long_shot",
+			"parasite_1",
+			"parasite_2",
+			"medium_shot",
+			"quarter_health",
+			"half_health",
+			"black_hat_ship"
 		];
 		return testWords;
 	}
@@ -944,6 +963,23 @@ endData;
 			"suppress"
 		];
 		return getVerbAndParams(str, testWords);
+	}
+	
+	private static var loremText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Eu scelerisque felis imperdiet proin. Lacus sed viverra tellus in hac habitasse platea dictumst. Platea dictumst vestibulum rhoncus est pellentesque elit ullamcorper. Sagittis id consectetur purus ut faucibus. Facilisis leo vel fringilla est. Rhoncus dolor purus non enim praesent elementum facilisis. Lacus vestibulum sed arcu non odio euismod. Sit amet risus nullam eget. Nisl pretium fusce id velit ut tortor pretium viverra suspendisse. Et ultrices neque ornare aenean.";
+	private static var loremSentences = [];
+	private static var loremSentence:Int = 0;
+	
+	private function loremIpsum(str:String):String
+	{
+		if (loremSentences.length == 0){
+			loremSentences = loremText.split(". ");
+		}
+		var text = loremSentences[loremSentence] + ".";
+		loremSentence++;
+		if (loremSentence >= loremSentences.length){
+			loremSentence = 0;
+		}
+		return text;
 	}
 	
 	private function fixContent(str:String):String
@@ -1099,19 +1135,24 @@ endData;
 			
 			var lContent = content.toLowerCase();
 			
-			
 			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			
 			var title = block.getParameter("title");
 			if (title == "")
 			{
 				title = "TUTORIAL";
 			}
 			
+			speaker = Util.cleanString(speaker, "");
+			
 			if (speaker != "" && speaker != null){
 				if (emote == "" || emote == null){
 					emote = "NORMAL";
 				}
 				title = "TALK_$" + speaker.toUpperCase() + "_" + emote;
+				lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
+			}else{
+				lineData.loremIpsum += flag + "\t" + fixContent(content) + "\n";
 			}
 			
 			var linexml = "<tut " + att("title", title) + att("text", flag);
@@ -1293,5 +1334,5 @@ endData;
 	}
 }
 
-typedef BlockLineData = {tsv:String, ?xml:String, ?mapXml:String, ?listPlots:Array<String>, ?xml2:String, ?id:String};
+typedef BlockLineData = {tsv:String, ?xml:String, ?mapXml:String, ?listPlots:Array<String>, ?xml2:String, ?id:String, loremIpsum:String};
 typedef BeginSettings = {background:String, music:String, demoMusic:String, act:Int, scene:Int, foreLeft:String, foreRight:String, plotLine:String};
