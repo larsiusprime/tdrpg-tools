@@ -714,6 +714,7 @@ endData;
 				continue;
 			}
 			
+			speaker = Util.uReplace(speaker, " ", "");
 			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
 			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
@@ -1149,6 +1150,7 @@ endData;
 				if (emote == "" || emote == null){
 					emote = "NORMAL";
 				}
+				speaker = Util.uReplace(speaker, " ", "");
 				title = "TALK_$" + speaker.toUpperCase() + "_" + emote;
 				lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			}else{
