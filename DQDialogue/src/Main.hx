@@ -10,6 +10,8 @@ import sys.io.File;
  */
 class Main 
 {
+	public static var PRINT_SPEAKER = false;
+	
 	static function main() 
 	{
 		doStuff(Sys.args());

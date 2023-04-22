@@ -80,8 +80,15 @@ class ScriptParser
 		}
 		
 		var document = new Document(str);
-		tsvContent = "flag\tcontent\n";
-		loremContent = "flag\tcontent\n";
+		
+		tsvContent = "flag\tcontent\tspeaker\n";
+		loremContent = "flag\tcontent\tspeaker\n";
+		
+		if (!Main.PRINT_SPEAKER){
+			tsvContent = "flag\tcontent\n";
+			loremContent = "flag\tcontent\n";
+		}
+		
 		plotContent = [];
 		processDocument(document, outDir, locale);
 		
@@ -496,6 +503,7 @@ class ScriptParser
 		
 		var sceneNodes = "";
 		var bs:BeginSettings = null;
+		
 		var lineData = {tsv:titleFlag+"\t"+scene.title+"\n", xml:"", xml2:"", id:"", loremIpsum:titleFlag+"\t"+scene.title+"\n"};
 		
 		var i = 0;
@@ -566,7 +574,7 @@ class ScriptParser
 		
 		if (sceneXML != "")
 		{
-			trace("scene : " + scene.name+".xml ************");
+			trace("   --> " + scene.name+".xml");
 			Util.saveXML(scenesDir + scene.name+".xml", null, sceneXML);
 		}
 	}
@@ -671,7 +679,13 @@ endData;
 		{
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			
+			if(Main.PRINT_SPEAKER){
+				lineData.tsv += flag + "\t" + fixContent(content) + "\t" + "NARRATOR" + "\n";
+			}else{
+				lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			}
+			
 			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) +"/>";
@@ -685,7 +699,7 @@ endData;
 		{
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
-			lineData.tsv += flag +"\t" + fixContent(content) + "\n";
+			lineData.tsv += flag +"\t" + fixContent(content) + "\t" + "PLACEHOLDER" + "\n";
 			lineData.loremIpsum += flag +"\t" + fixContent(content) + "\n";
 			
 			lineData.xml += "<tut " + att("title", "PLACEHOLDER") + att("text", flag) + "/>";
@@ -715,7 +729,13 @@ endData;
 			}
 			
 			speaker = Util.uReplace(speaker, " ", "");
-			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			
+			if(Main.PRINT_SPEAKER){
+				lineData.tsv += flag + "\t" + fixContent(content) + "\t" + Utf8Ext.toUpperCase(speaker) + "\n";
+			}else{
+				lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			}
+			
 			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
 		}
@@ -896,12 +916,16 @@ endData;
 			"boost_defender",
 			"select_character",
 			"hurt_defender",
+			"defender_status",
 			"start",
 			"select_class",
 			"place_defender",
 			"defender_die",
 			"select_defender",
 			"reach_wave",
+			"knock", 
+			"knock_back",
+			"inflict",
 			"select_spell",
 			"cast_spell",
 			"cast_delayed_spell",
@@ -1136,7 +1160,11 @@ endData;
 			
 			var lContent = content.toLowerCase();
 			
-			lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			if(Main.PRINT_SPEAKER){
+				lineData.tsv += flag + "\t" + fixContent(content) + "\t" + Utf8Ext.toUpperCase(speaker) + "\n";
+			}else{
+				lineData.tsv += flag + "\t" + fixContent(content) + "\n";
+			}
 			
 			var title = block.getParameter("title");
 			if (title == "")
