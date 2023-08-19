@@ -92,7 +92,24 @@ class MetaParser
 		{
 			for (cutscene in cutscenes)
 			{
-				var node = Xml.parse('<progress scene="$cutscene"/>');
+				var pearl = "";
+				var town = "";
+				if (cutscene.indexOf("_") != -1){
+					var bits = cutscene.split("_");
+					if(bits.length > 1){
+						var bit = bits[0];
+						if (bit.indexOf("place") != -1){
+							town = bit;
+						}else{
+							var tryInt = Std.parseInt(bit);
+							if (tryInt != null){
+								pearl = Std.string(tryInt);
+							}
+						}
+					}
+				}
+				
+				var node = Xml.parse('<progress scene="$cutscene" pearl="$pearl" town="$town"/>');
 				xml.addChild(node);
 			}
 		}
@@ -503,6 +520,13 @@ class MetaParser
 				sceneSplit.splice(sceneSplit.length - 1, 1);
 				scene = sceneSplit.join("_");
 			}
+		}
+		
+		//DISGUSTING HACK but it works
+		if (scene.indexOf("_town") != -1){
+			scene = StringTools.replace(scene, "_town", "");
+			scene = StringTools.replace(scene, "_", "");
+			scene = "town_" + scene + "__";
 		}
 		
 		var requirement = Xml.parse('<requirement type="watch_cutscene" value="$scene"/>').firstChild();

@@ -32,6 +32,7 @@ class Block
 		var value = switch(keyword)
 		{
 			case Keyword.ACTION: getParameter_ACTION(name);
+			case Keyword.NARRATOR: getParameter_NARRATOR(name);
 			case Keyword.BEGIN: getParameter_BEGIN(name);
 			case Keyword.SPEECH: getParameter_SPEECH(name);
 			case Keyword.TUTORIAL: getParameter_TUTORIAL(name);
@@ -60,6 +61,17 @@ class Block
 						break;
 					}
 				}
+			default: value = "";
+		}
+		return value;
+	}
+	
+	private function getParameter_NARRATOR(name:String):String
+	{
+		var value = "";
+		switch(name)
+		{
+			case "background": value = getParameter_GENERIC(0, name);
 			default: value = "";
 		}
 		return value;
@@ -105,6 +117,8 @@ class Block
 		{
 			case "speaker": getParameter_GENERIC(0, name);
 			case "emote": getParameter_GENERIC(1, name);
+			case "sound": getParameter_GENERIC(999, name);
+			case "effect": getParameter_GENERIC(999, name);
 			default: "";
 		}
 	}
@@ -118,6 +132,7 @@ class Block
 			case "id":     getParameter_GENERIC(0, name);
 			case "arrow", "click", "locked": 
 			               getParameter_GENERIC(0, name);
+			case "input":  getParameter_GENERIC(0, name);
 			case "target": getParameter_GENERIC(0, name);
 			case "facing": getParameter_GENERIC(0, name);
 			case "offset": getParameter_GENERIC(0, name);
@@ -125,9 +140,11 @@ class Block
 			case "mouse": getParameter_GENERIC(0, name);
 			case "title":  getParameter_GENERIC(0, name);
 			case "action": getParameter_GENERIC(0, name);
-			case "tags": getParameter_GENERIC(0, name);
+			case "tags", "subtags": getParameter_GENERIC(0, name);
 			case "speaker": getParameter_GENERIC(0, name);
 			case "emote": getParameter_GENERIC(0, name);
+			case "sound": getParameter_GENERIC(999, name);
+			case "effect": getParameter_GENERIC(999, name);
 			default: "";
 		}
 	}

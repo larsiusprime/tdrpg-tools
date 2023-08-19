@@ -269,6 +269,7 @@
   </file>
   <file name="src/MetaParser.cpp" >
    <depend name="include/MetaParser.h"/>
+   <depend name="include/Std.h"/>
    <depend name="include/StringTools.h"/>
    <depend name="include/Sys.h"/>
    <depend name="include/Util.h"/>
@@ -312,7 +313,6 @@
    <depend name="include/Std.h"/>
    <depend name="include/StringTools.h"/>
    <depend name="include/Util.h"/>
-   <depend name="include/haxe/Log.h"/>
    <depend name="include/org/zamedev/lib/Utf8Ext.h"/>
    <depend name="include/unifill/_Utf8/Utf8_Impl_.h"/>
   </file>

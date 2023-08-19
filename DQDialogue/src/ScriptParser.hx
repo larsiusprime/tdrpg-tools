@@ -675,10 +675,21 @@ endData;
 	
 	private function doBlock_Narrator(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
+		var background = block.getParameter("background");
+		
 		for (i in 0...block.lines.length)
 		{
-			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
+			var bkg = "";
+			if (background != ""){
+				bkg = att("background", background);
+			}
+			
 			var content = block.lines[i];
+			if (background != "" && (content.toUpperCase() == ("BACKGROUND "+background.toUpperCase()))){
+				continue;
+			}
+			
+			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			
 			if(Main.PRINT_SPEAKER){
 				lineData.tsv += flag + "\t" + fixContent(content) + "\t" + "NARRATOR" + "\n";
@@ -688,7 +699,7 @@ endData;
 			
 			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
 			
-			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) +"/>";
+			lineData.xml += "<tut " + att("title", "$TALK_NARRATOR_NORMAL") + att("text", flag) + bkg + " />";
 		}
 		return lineData;
 	}
@@ -712,7 +723,11 @@ endData;
 		var flag = "";
 		var speaker = block.getParameter("speaker");
 		var emote = block.getParameter("emote");
+		var sound = block.getParameter("sound");
+		var effect = block.getParameter("effect");
 		var id = block.getParameter("id");
+		var trigger = block.getParameter("trigger");
+		
 		if (emote == "")
 		{
 			emote = "NORMAL";
@@ -727,6 +742,16 @@ endData;
 			if (content == "Emote " + emote){
 				continue;
 			}
+			if (content == "Effect " + effect){
+				continue;
+			}
+			if (content == "Sound " + sound){
+				continue;
+			}
+			
+			if (content.indexOf("Trigger") != -1){
+				trace("trigger = " + content + " " + scene.name + " " + block.number + " " + i);
+			}
 			
 			speaker = Util.uReplace(speaker, " ", "");
 			
@@ -737,7 +762,18 @@ endData;
 			}
 			
 			lineData.loremIpsum += flag + "\t" + loremIpsum(fixContent(content)) + "\n";
-			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + "/>";
+			
+			var soundBit = "";
+			var effectBit = "";
+			
+			if (sound != ""){
+				soundBit = att("sound", sound);
+			}
+			if (effect != ""){
+				effectBit = att("effect", effect);
+			}
+			
+			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + soundBit + effectBit + "/>";
 		}
 		return lineData;
 	}
@@ -912,11 +948,14 @@ endData;
 			"skip_proximity_defender",
 			"summon_defender",
 			"summon_defender_or_reach_wave",
+			"defender_status",
+			"enemy_status",
+			"field_defender",
+			"bench_defender",
 			"boost",
 			"boost_defender",
 			"select_character",
 			"hurt_defender",
-			"defender_status",
 			"start",
 			"select_class",
 			"place_defender",
@@ -1074,13 +1113,13 @@ endData;
 	
 	private function trimBlock_Tutorial(block:Block)
 	{
-		var params = ["id", "trigger", "arrow", "target", "click", "facing", "mouse", "action", "offset", "style", "tags", "locked", "emote", "speaker"];
+		var params = ["id", "trigger", "arrow", "target", "click", "input", "facing", "mouse", "action", "offset", "style", "tags", "subtags", "locked", "emote", "speaker"];
 		var punctuation = [".", "?", "!", ":", ";", "-"];
 		
 		//Try to find parameters at the beginning of the block
 		// - exit on the first line with a word that isn't also a parameter
 		// - if a line starts with a parameter word, treat it as text if:
-		//   - it contains more than four words after the first
+		//   - it contains more than four words after the first and doesn't start with the word "Trigger"
 		//   - it ends with a punctuation mark
 		//Otherwise, they'll show up as regular text
 		//Make sure that we've already read all the parameter information we need in the section above
@@ -1092,7 +1131,7 @@ endData;
 		{
 			var line = block.lines[i].toLowerCase();
 			var words = line.split(" ");
-			if (words == null || words.length == 0 || words.length >= 9)
+			if (words == null || words.length == 0 || words.length >= 11)
 			{
 				break;
 			}
@@ -1131,6 +1170,7 @@ endData;
 		extraString += doBlock_Tutorial_Arrow(block);
 		extraString += doBlock_Tutorial_Click(block);
 		extraString += doBlock_Tutorial_Offset(block);
+		extraString += doBlock_Tutorial_SubTags(block);
 		
 		var id = block.getParameter("id");
 		var newId = false;
@@ -1150,6 +1190,16 @@ endData;
 		
 		var speaker = block.getParameter("speaker");
 		var emote = block.getParameter("emote");
+		var trigger = block.getParameter("trigger");
+		var inputType = block.getParameter("input");
+		
+		if (inputType == "gamepad"){
+			inputType = ' gamepad="true" ';
+		}else if (inputType == "keyboard"){
+			inputType = ' kb_mouse="true" ';
+		}else{
+			inputType = "";
+		}
 		
 		trimBlock_Tutorial(block);
 		
@@ -1185,7 +1235,12 @@ endData;
 				lineData.loremIpsum += flag + "\t" + fixContent(content) + "\n";
 			}
 			
-			var linexml = "<tut " + att("title", title) + att("text", flag);
+			if (content.indexOf("Trigger") != -1){
+				trace("trigger = " + content + " " + scene.name + " " + block.number + " " + i);
+				trace("(" + trigger + ")");
+			}
+			
+			var linexml = "<tut " + att("title", title) + att("text", flag) + inputType;
 			
 			if (extraString == "")
 			{
@@ -1275,6 +1330,7 @@ endData;
 		var tags = block.getParameter("tags");
 		if (tags != "")
 		{
+			trace("doBlock_Tutorial_Tags() tags = " + tags);
 			var entries = tags.split(";");
 			var returnValue = "";
 			if (entries != null && entries.length > 0){
@@ -1308,6 +1364,60 @@ endData;
 					returnValue += entryValue;
 				}
 			}
+			return returnValue;
+		}
+		return "";
+	}
+	
+	private function doBlock_Tutorial_SubTags(block:Block)
+	{
+		var subTags = block.getParameter("subtags");
+		if (subTags!= "")
+		{
+			trace("doBlock_Tutorial_SubTags() subTags = " + subTags);
+			var entries = subTags.split(";");
+			var returnValue = "";
+			if (entries != null && entries.length > 0){
+				for (entry in entries)
+				{
+					//gamepad menu,root,cursor,0--0,actions,defenders|up
+					
+					var tagName:String = "unknown_tag";
+					var varName:String = "";
+					var varValue:String = "";
+					var entryValue:String = "";
+					
+					var bits = entry.split(",");
+					var temp = "";
+					
+					trace("bits = " + bits);
+					
+					for (i in 0...bits.length){
+						if (i == 0) {
+							tagName = bits[i];
+						}
+						else {
+							if (i % 2 != 0) {
+								varName = bits[i];
+							}
+							else {
+								varValue = bits[i];
+								if (varValue.indexOf("--") != -1){
+									varValue = StringTools.replace(varValue, "--", ",");
+									
+								}
+								temp += ' ' + varName + '="' + varValue+'"';
+							}
+						}
+					}
+					
+					entryValue += '<' + tagName+temp + '/>';
+					
+					returnValue += entryValue;
+				}
+			}
+			trace("SUBTAGS");
+			trace(returnValue);
 			return returnValue;
 		}
 		return "";
