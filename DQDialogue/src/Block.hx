@@ -50,6 +50,7 @@ class Block
 	private function getParameter_ACTION(name:String):String
 	{
 		var value = "";
+		var i = 0;
 		switch(name)
 		{
 			case "text": 
@@ -60,6 +61,7 @@ class Block
 						value = Util.cutStrCaseInsensitive(line, "text ");
 						break;
 					}
+					i++;
 				}
 			default: value = "";
 		}
@@ -142,6 +144,8 @@ class Block
 			case "action": getParameter_GENERIC(0, name);
 			case "tags", "subtags": getParameter_GENERIC(0, name);
 			case "speaker": getParameter_GENERIC(0, name);
+			case "background": getParameter_GENERIC(0, name);
+			case "overlay": getParameter_GENERIC(0, name);
 			case "emote": getParameter_GENERIC(0, name);
 			case "sound": getParameter_GENERIC(999, name);
 			case "effect": getParameter_GENERIC(999, name);
@@ -153,7 +157,7 @@ class Block
 	{
 		return switch(name)
 		{
-			case "plotline", "background", "music", "demo music", "act", "scene", "foreground left", "foreground right": getParameter_GENERIC( -1, name);
+			case "plotline", "background", "overlay", "music", "demo music", "act", "scene", "foreground left", "foreground right": getParameter_GENERIC( -1, name);
 			default: "";
 		}
 	}
@@ -161,6 +165,11 @@ class Block
 	private function getParameter_GENERIC(i:Int = -1, name:String = ""):String
 	{
 		if (i == -1) return "";
+		
+		var isAction = false;
+		if (name == "action"){
+			isAction = true;
+		}
 		
 		if (parameters != null && parameters.length > i)
 		{

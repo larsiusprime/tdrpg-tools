@@ -549,6 +549,7 @@ class ScriptParser
 		{
 			bs = {
 				background:"",
+				overlay:"",
 				music:"",
 				demoMusic:"",
 				act:0,
@@ -582,7 +583,7 @@ class ScriptParser
 	private function getMoviesXML(scene:Scene, titleFlag:String, bs:BeginSettings, lineData:String):String
 	{
 		return 
-'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + att("sort", Std.string(scene.number)) + '>' +
+'<scene ' + att("name", scene.name) + att("title", titleFlag) + att("background", bs.background) + att("overlay", bs.overlay) + att("music", bs.music) + att("demo_music", bs.demoMusic) + att("foreground_left", bs.foreLeft) + att("foreground_right", bs.foreRight) + att("act", Std.string(bs.act)) + att("scene", Std.string(bs.scene)) + att("sort", Std.string(scene.number)) + '>' +
 lineData +
 '</scene>';
 	}
@@ -598,7 +599,8 @@ endData;
 	
 	private function doBlock_Begin(block:Block):BeginSettings
 	{
-		var bkg:String="";
+		var bkg:String = "";
+		var overlay:String = "";
 		var music:String="";
 		var demoMusic:String="";
 		var actNum:Null<Int>=0;
@@ -613,7 +615,7 @@ endData;
 			if (line != null && line != "")
 			{
 				var line = Utf8Ext.toLowerCase(line);
-				var words = ["background", "music", "demo music", "act", "scene", "foreground left", "foreground right", "plotline"];
+				var words = ["background", "overlay", "music", "demo music", "act", "scene", "foreground left", "foreground right", "plotline"];
 				for (word in words)
 				{
 					if (line.uIndexOf(word+" ") == 0)
@@ -622,6 +624,7 @@ endData;
 						switch(word)
 						{
 							case "background": bkg = Utf8Ext.toLowerCase(line);
+							case "overlay": overlay = Utf8Ext.toLowerCase(line);
 							case "music": music = Utf8Ext.toLowerCase(line);
 							case "demo music": demoMusic = Utf8Ext.toLowerCase(line);
 							case "act": 
@@ -647,6 +650,7 @@ endData;
 		
 		return {
 			background:bkg,
+			overlay:overlay,
 			music:music,
 			demoMusic:demoMusic,
 			act:actNum,
@@ -720,6 +724,9 @@ endData;
 	
 	private function doBlock_Speech(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
+		var background = block.getParameter("background");
+		var overlay = block.getParameter("overlay");
+		
 		var flag = "";
 		var speaker = block.getParameter("speaker");
 		var emote = block.getParameter("emote");
@@ -736,6 +743,23 @@ endData;
 		
 		for (i in 0...block.lines.length)
 		{
+			var bkg = "";
+			var ovl = "";
+			if (background != ""){
+				bkg = att("background", background);
+			}
+			if (overlay != ""){
+				ovl = att("overlay", overlay);
+			}
+			
+			var content = block.lines[i];
+			if (background != "" && (content.toUpperCase() == ("BACKGROUND "+background.toUpperCase()))){
+				continue;
+			}
+			if (overlay != "" && (content.toUpperCase() == ("OVERLAY " + overlay.toUpperCase()))){
+				continue;
+			}
+			
 			flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			
@@ -773,7 +797,7 @@ endData;
 				effectBit = att("effect", effect);
 			}
 			
-			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + soundBit + effectBit + "/>";
+			lineData.xml += "<tut " + att("title", "TALK_$" + speaker + "_" + emote) + att("text", flag) + soundBit + effectBit + bkg + ovl + "/>";
 		}
 		return lineData;
 	}
@@ -853,6 +877,7 @@ endData;
 		
 		var trigger = getTriggerAndParams(block.getParameter("trigger"));
 		var style = doBlock_Tutorial_Style(block);
+		
 		lineData.xml2 += '<tutorial id="' + id + '" trigger = "' + trigger.verb + '"' + style + '>';
 		if(trigger.params != null)
 		{
@@ -961,6 +986,8 @@ endData;
 			"place_defender",
 			"defender_die",
 			"select_defender",
+			"gamepad_select_gem",
+			"gamepadselectgem",
 			"reach_wave",
 			"knock", 
 			"knock_back",
@@ -1024,6 +1051,8 @@ endData;
 			"set_defender_value",
 			"gamepad_menu",
 			"gamepad_menu_back",
+			"gamepad_select_gem",
+			"gamepadselectgem",
 			"suppress"
 		];
 		return getVerbAndParams(str, testWords);
@@ -1166,6 +1195,16 @@ endData;
 	
 	private function doBlock_Tutorial(scene:Scene, block:Block, lineData:BlockLineData):BlockLineData
 	{
+		var background = block.getParameter("background");
+		var overlay = block.getParameter("overlay");
+		
+		if (background != ""){
+			trace("background = " + background);
+		}
+		if (overlay != ""){
+			trace("overlay = " + overlay);
+		}
+		
 		var extraString = "";
 		extraString += doBlock_Tutorial_Arrow(block);
 		extraString += doBlock_Tutorial_Click(block);
@@ -1208,6 +1247,22 @@ endData;
 			var flag = Utf8Ext.toUpperCase("$S_" + scene.name+"_B" + block.number + "_L" + i);
 			var content = block.lines[i];
 			
+			var bkg = "";
+			var ovl = "";
+			if (background != ""){
+				bkg = att("background", background);
+			}
+			if (overlay != ""){
+				ovl = att("overlay", overlay);
+			}
+			
+			if (background != "" && (content.toUpperCase() == ("BACKGROUND "+background.toUpperCase()))){
+				continue;
+			}
+			if (overlay != "" && (content.toUpperCase() == ("OVERLAY " + overlay.toUpperCase()))){
+				continue;
+			}
+			
 			var lContent = content.toLowerCase();
 			
 			if(Main.PRINT_SPEAKER){
@@ -1235,12 +1290,7 @@ endData;
 				lineData.loremIpsum += flag + "\t" + fixContent(content) + "\n";
 			}
 			
-			if (content.indexOf("Trigger") != -1){
-				trace("trigger = " + content + " " + scene.name + " " + block.number + " " + i);
-				trace("(" + trigger + ")");
-			}
-			
-			var linexml = "<tut " + att("title", title) + att("text", flag) + inputType;
+			var linexml = "<tut " + att("title", title) + att("text", flag) + inputType + bkg + ovl;
 			
 			if (extraString == "")
 			{
@@ -1330,7 +1380,6 @@ endData;
 		var tags = block.getParameter("tags");
 		if (tags != "")
 		{
-			trace("doBlock_Tutorial_Tags() tags = " + tags);
 			var entries = tags.split(";");
 			var returnValue = "";
 			if (entries != null && entries.length > 0){
@@ -1347,7 +1396,6 @@ endData;
 					var temp = "";
 					
 					for (i in 0...bits.length){
-						trace(i + " " + bits[i]);
 						if (i == 0) {
 							tagName = bits[i];
 						}
@@ -1374,7 +1422,6 @@ endData;
 		var subTags = block.getParameter("subtags");
 		if (subTags!= "")
 		{
-			trace("doBlock_Tutorial_SubTags() subTags = " + subTags);
 			var entries = subTags.split(";");
 			var returnValue = "";
 			if (entries != null && entries.length > 0){
@@ -1389,8 +1436,6 @@ endData;
 					
 					var bits = entry.split(",");
 					var temp = "";
-					
-					trace("bits = " + bits);
 					
 					for (i in 0...bits.length){
 						if (i == 0) {
@@ -1416,8 +1461,6 @@ endData;
 					returnValue += entryValue;
 				}
 			}
-			trace("SUBTAGS");
-			trace(returnValue);
 			return returnValue;
 		}
 		return "";
@@ -1475,4 +1518,4 @@ endData;
 }
 
 typedef BlockLineData = {tsv:String, ?xml:String, ?mapXml:String, ?listPlots:Array<String>, ?xml2:String, ?id:String, loremIpsum:String};
-typedef BeginSettings = {background:String, music:String, demoMusic:String, act:Int, scene:Int, foreLeft:String, foreRight:String, plotLine:String};
+typedef BeginSettings = {background:String, overlay:String, music:String, demoMusic:String, act:Int, scene:Int, foreLeft:String, foreRight:String, plotLine:String};
